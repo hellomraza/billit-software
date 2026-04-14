@@ -1,5 +1,7 @@
 # Frontend Build Contract
+
 ## POS + Inventory SaaS — MVP 1
+
 ## Target Stack: Next.js 16.2.3, TypeScript, App Router
 
 ---
@@ -275,9 +277,11 @@ public/
 Build components in this order:
 
 #### Tier 1 — UI Primitives
+
 These are the smallest reusable pieces.
 
 Examples:
+
 - Button
 - Input
 - Select
@@ -290,6 +294,7 @@ Examples:
 - Skeleton
 
 Rules:
+
 - no page-specific text
 - no business logic
 - no hardcoded product behavior
@@ -297,9 +302,11 @@ Rules:
 - must be configurable by props
 
 #### Tier 2 — Shared Domain Components
+
 These are reusable across multiple pages.
 
 Examples:
+
 - PageHeader
 - StatCard
 - SearchBar
@@ -312,15 +319,18 @@ Examples:
 - FilterBar
 
 Rules:
+
 - reusable across features
 - should not fetch data
 - should not know about routes unless explicitly passed
 - should stay presentational where possible
 
 #### Tier 3 — Feature Components
+
 These are domain-aware sections.
 
 Examples:
+
 - BillingCart
 - BillingSummary
 - ProductForm
@@ -329,6 +339,7 @@ Examples:
 - SettingsBusinessPanel
 
 Rules:
+
 - may combine multiple shared components
 - should contain business-specific UI logic only
 - keep them small and composable
@@ -423,6 +434,7 @@ The app must use a refined business UI style.
 Use a restrained palette.
 
 Primary direction:
+
 - one strong primary color for actions and emphasis
 - neutral background system
 - semantic colors for success, warning, error, and info
@@ -430,6 +442,7 @@ Primary direction:
 The interface should not feel colorful for its own sake.
 
 Recommended feel:
+
 - calm neutrals
 - subtle borders
 - soft contrast
@@ -467,6 +480,7 @@ Recommended feel:
 Motion should be helpful, not theatrical.
 
 Use motion for:
+
 - modal entry/exit
 - drawer open/close
 - dropdown expansion
@@ -477,6 +491,7 @@ Use motion for:
 - drag-free state changes
 
 Avoid:
+
 - constant looping animation
 - large page transitions
 - bouncy UI
@@ -509,6 +524,7 @@ The main app navigation should reflect the product structure:
 ### 9.3 Secondary Navigation
 
 Use secondary navigation only where needed, such as:
+
 - product subpages
 - auth flow steps
 - onboarding steps
@@ -543,6 +559,7 @@ This section defines what each page should contain. Follow it closely.
 Purpose: allow existing users to enter the app.
 
 Contains:
+
 - email field
 - password field
 - login button
@@ -552,6 +569,7 @@ Contains:
 - simple trust-building layout
 
 UX rules:
+
 - no distraction
 - no unnecessary marketing content
 - focused and quick
@@ -561,6 +579,7 @@ UX rules:
 Purpose: create an account.
 
 Contains:
+
 - email
 - password
 - password rules helper
@@ -568,6 +587,7 @@ Contains:
 - login link
 
 UX rules:
+
 - emphasize account creation
 - keep form centered and obvious
 - make validation readable
@@ -577,12 +597,14 @@ UX rules:
 Purpose: request a reset email.
 
 Contains:
+
 - email field
 - submit button
 - explanatory text
 - success confirmation state
 
 UX rules:
+
 - message should feel safe and calm
 - avoid exposing account existence details
 
@@ -591,6 +613,7 @@ UX rules:
 Purpose: set a new password from a tokenized link.
 
 Contains:
+
 - new password
 - confirm password
 - token validation state
@@ -598,6 +621,7 @@ Contains:
 - return-to-login action
 
 UX rules:
+
 - make invalid token states clearly understandable
 - keep the form compact
 
@@ -608,6 +632,7 @@ UX rules:
 Purpose: collect business identity.
 
 Contains:
+
 - business name input
 - generated abbreviation field
 - editable abbreviation input
@@ -616,6 +641,7 @@ Contains:
 - progress indicator for the onboarding flow
 
 Rules:
+
 - show the abbreviation preview clearly
 - keep the experience guided
 - make the step feel like setup, not admin work
@@ -623,6 +649,7 @@ Rules:
 ### 10.6 Onboarding — Outlet Page
 
 Contains:
+
 - outlet name input
 - abbreviation preview
 - editable abbreviation input
@@ -630,18 +657,21 @@ Contains:
 - onboarding progress indicator
 
 Rules:
+
 - same interaction model as business step
 - visually consistent with the previous step
 
 ### 10.7 Onboarding — GST Page
 
 Contains:
+
 - optional GST number input
 - validation hint if invalid format
 - finish setup button
 - clear note that it can be updated later
 
 Rules:
+
 - do not overload the page
 - keep the optional nature obvious
 
@@ -654,6 +684,7 @@ This is the most important screen.
 It should be the most polished and most efficient page in the app.
 
 Contains:
+
 - top search bar
 - product results list or panel
 - selected cart items
@@ -668,12 +699,14 @@ Contains:
 - success state after invoice generation
 
 Layout direction:
+
 - desktop: two-panel or three-panel workspace
 - left/main: search + cart
 - right: summary + actions
 - mobile: stacked sections with sticky action area
 
 Rules:
+
 - make item scanning easy
 - keep totals visually prominent
 - show quantity controls clearly
@@ -683,6 +716,7 @@ Rules:
 ### 10.9 Products Page
 
 Contains:
+
 - page header with add product action
 - search field
 - show deleted toggle
@@ -693,6 +727,7 @@ Contains:
 - delete/restore action
 
 Rules:
+
 - stock values should be easy to scan
 - list density should balance information and readability
 - use a strong empty state if no products exist
@@ -700,6 +735,7 @@ Rules:
 ### 10.10 Add Product Page
 
 Contains:
+
 - name
 - base price
 - GST rate
@@ -708,6 +744,7 @@ Contains:
 - save/cancel actions
 
 Rules:
+
 - forms should be well grouped
 - numeric inputs should be clearly labeled
 - helper text should reduce mistakes
@@ -715,17 +752,20 @@ Rules:
 ### 10.11 Edit Product Page
 
 Contains:
+
 - same base fields as add product
 - clear distinction between editable and non-editable state if applicable
 - save action
 
 Rules:
+
 - preserve the same layout as add product to reduce cognitive load
 - reuse the same form components
 
 ### 10.12 CSV Import Page
 
 Contains:
+
 - upload area
 - template download button
 - file instructions
@@ -734,6 +774,7 @@ Contains:
 - results summary
 
 Rules:
+
 - make the process understandable
 - give strong feedback on errors
 - keep the upload flow frictionless
@@ -741,6 +782,7 @@ Rules:
 ### 10.13 Invoices Page
 
 Contains:
+
 - date range filter
 - invoice number search
 - payment method filter
@@ -750,6 +792,7 @@ Contains:
 - pagination controls
 
 Rules:
+
 - filters should be visually grouped
 - rows should read quickly
 - totals and metadata should be clearly separated
@@ -757,6 +800,7 @@ Rules:
 ### 10.14 Invoice Detail Page
 
 Contains:
+
 - invoice metadata
 - invoice status labels
 - customer info
@@ -766,12 +810,14 @@ Contains:
 - back link to invoice list
 
 Rules:
+
 - this should feel like a record view, not an edit screen
 - emphasize clarity and traceability
 
 ### 10.15 Deficits Page
 
 Contains:
+
 - grouped deficit overview
 - product-level expansion
 - pending count and quantities
@@ -780,6 +826,7 @@ Contains:
 - linked invoice references
 
 Rules:
+
 - use visual warning states carefully
 - keep the hierarchy obvious
 - make the relationship between deficit and invoice easy to understand
@@ -787,6 +834,7 @@ Rules:
 ### 10.16 Settings Page
 
 Contains:
+
 - business information
 - outlet information
 - GST settings
@@ -794,6 +842,7 @@ Contains:
 - logout action
 
 Rules:
+
 - separate identity, tax, and account settings visually
 - avoid mixing unrelated controls into one block
 - keep read-only and editable states visually different
@@ -826,6 +875,7 @@ Rules:
 ### 11.4 Data-Heavy Pages
 
 For products, invoices, and deficits:
+
 - use tables where scanning is better
 - use cards if mobile readability improves
 - preserve visual consistency across listing screens
@@ -839,6 +889,7 @@ Every page and major module must support these states.
 ### 12.1 Empty States
 
 Empty states should:
+
 - explain what is missing
 - tell the user what to do next
 - avoid being overly verbose
@@ -847,6 +898,7 @@ Empty states should:
 ### 12.2 Loading States
 
 Use:
+
 - skeleton loaders
 - shimmer placeholders
 - button loading states
@@ -855,6 +907,7 @@ Use:
 ### 12.3 Error States
 
 Errors should:
+
 - be visible
 - be specific
 - not break layout
@@ -863,6 +916,7 @@ Errors should:
 ### 12.4 Success States
 
 Success should be:
+
 - clear
 - short
 - reassuring
@@ -877,6 +931,7 @@ Success should be:
 Use a reusable form architecture.
 
 Recommended pattern:
+
 - reusable field wrapper
 - label
 - input
@@ -888,6 +943,7 @@ Recommended pattern:
 ### 13.2 Validation UX
 
 Validation should:
+
 - appear inline
 - avoid overwhelming the user
 - explain what to fix
@@ -896,6 +952,7 @@ Validation should:
 ### 13.3 Numeric Inputs
 
 For money, quantity, and stock:
+
 - keep labels precise
 - prevent ambiguous formatting
 - align numbers carefully
@@ -904,6 +961,7 @@ For money, quantity, and stock:
 ### 13.4 Search Inputs
 
 Search inputs should:
+
 - feel instant
 - be easy to clear
 - use debounce only if it improves performance or UX
@@ -918,6 +976,7 @@ Search inputs should:
 Build once, reuse everywhere.
 
 Examples:
+
 - Button
 - Input
 - Textarea
@@ -940,6 +999,7 @@ Examples:
 ### 14.2 Shared Business Components
 
 Examples:
+
 - SearchBar
 - PageHeader
 - SectionHeading
@@ -955,6 +1015,7 @@ Examples:
 ### 14.3 Feature Components
 
 Examples:
+
 - BillingProductSearch
 - BillingCartItems
 - BillingSummaryPanel
@@ -996,6 +1057,7 @@ Mock data should include:
 ### 15.2 Mock Data Organization
 
 Keep mock data in dedicated files, such as:
+
 - `lib/mock-data/products.ts`
 - `lib/mock-data/invoices.ts`
 - `lib/mock-data/deficits.ts`
@@ -1004,6 +1066,7 @@ Keep mock data in dedicated files, such as:
 ### 15.3 Mock Data Quality
 
 Mock data should:
+
 - feel realistic
 - cover edge cases
 - include empty states
@@ -1025,6 +1088,7 @@ Import them from the mock-data layer or pass them in from route pages.
 Centralize reusable logic for display formatting.
 
 Examples:
+
 - currency formatting
 - date formatting
 - quantity formatting
@@ -1076,6 +1140,7 @@ Every meaningful UI element should support:
 - sensible aria attributes where needed
 
 Specific requirements:
+
 - buttons must not rely on color alone
 - form fields must have labels
 - icons used as actions must have accessible text
@@ -1104,6 +1169,7 @@ Tablet should preserve productivity and not feel broken or cramped.
 ### 19.3 Mobile
 
 Mobile should prioritize:
+
 - readability
 - touch targets
 - stacked layout
@@ -1113,6 +1179,7 @@ Mobile should prioritize:
 ### 19.4 Billing Screen Responsiveness
 
 Billing should be responsive without losing clarity:
+
 - search remains obvious
 - cart remains usable
 - summary remains visible or accessible
@@ -1125,6 +1192,7 @@ Billing should be responsive without losing clarity:
 Use motion sparingly and meaningfully.
 
 ### Use Motion For:
+
 - opening and closing modals
 - drawer transitions
 - filter expansion
@@ -1134,6 +1202,7 @@ Use motion sparingly and meaningfully.
 - small state changes
 
 ### Do Not Use Motion For:
+
 - decorative loops
 - exaggerated easing
 - constant attention-grabbing movement
@@ -1160,6 +1229,7 @@ Do not create abstractions that are not needed yet.
 ### 21.4 No Dead Code
 
 Remove:
+
 - unused components
 - unused imports
 - unused constants
@@ -1197,6 +1267,7 @@ Then `FeatureScreen` should compose smaller pieces.
 ### 22.2 Section Composition Pattern
 
 A screen should be composed of:
+
 - header
 - content sections
 - actions
@@ -1205,10 +1276,12 @@ A screen should be composed of:
 ### 22.3 Presentational vs Interactive Split
 
 Prefer:
+
 - server parent
 - client child for interaction
 
 Example:
+
 - server page renders layout and data
 - client search bar handles typing
 - client modal handles decisions
