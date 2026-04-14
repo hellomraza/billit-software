@@ -1,97 +1,101 @@
-import React from "react";
-import { getProducts } from "@/lib/mock-data/product";
+"use client";
+
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
+import { PageHeader } from "@/components/shared/page-header";
+import { SearchBar } from "@/components/shared/search-bar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { StatusBadge } from "@/components/shared/status-badge";
-import { MoneyText } from "@/components/shared/money-text";
-import { Plus, Download, Search, MoreHorizontal } from "lucide-react";
-import { EmptyState } from "@/components/shared/empty-state";
+import { ProductTable } from "@/features/products/product-table";
+import { getProducts } from "@/lib/mock-data/product";
+import { ROUTES } from "@/lib/routes";
+import { Download, Plus } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
-export const metadata = { title: "Products | BillIt" };
+export default function ProductsPage() {
+  const [products, setProducts] = useState<any[]>([]);
 
-export default async function ProductsPage() {
-  const products = await getProducts("", true); // fetch all including deleted for MVP
+  useEffect(() => {
+    getProducts().then(setProducts);
+  }, []);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [deleteCandidate, setDeleteCandidate] = useState<any>(null);
+
+  const filteredProducts = products.filter((p) =>
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
+  const handleDeleteInitial = (product: any) => setDeleteCandidate(product);
+
+  const handleConfirmDelete = () => {
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.id === deleteCandidate.id ? { ...p, isDeleted: true } : p,
+      ),
+    );
+    toast.success("Product marked as deleted");
+    setDeleteCandidate(null);
+  };
+
+  const handleRestore = (product: any) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.id === product.id ? { ...p, isDeleted: false } : p)),
+    );
+    toast.success("Product restored");
+  };
 
   return (
-    <div className="flex flex-col space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Products Catalog</h1>
-          <p className="text-muted-foreground text-sm">Manage your inventory, pricing, and tax rates.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" className="gap-2">
-            <Download className="h-4 w-4" /> Import CSV
-          </Button>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" /> Add Product
-          </Button>
-        </div>
+    <div className="p-4 sm:p-8 space-y-6 h-full flex flex-col max-w-[1400px] mx-auto">
+      <PageHeader
+        title="Products"
+        actions={[
+          <Button key="import" variant="outline" asChild>
+            <Link href={ROUTES.PRODUCTS_IMPORT}>
+              <Download className="mr-2 h-4 w-4" /> Import CSV
+            </Link>
+          </Button>,
+          <Button key="new" asChild>
+            <Link href={ROUTES.PRODUCTS_NEW}>
+              <Plus className="mr-2 h-4 w-4" /> Add Product
+            </Link>
+          </Button>,
+        ]}
+      />
+
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start">
+        <SearchBar
+          onSearch={setSearchQuery}
+          placeholder="Search products..."
+          className="w-full sm:max-w-xs"
+        />
+        <Button
+          variant="ghost"
+          onClick={() => setShowDeleted(!showDeleted)}
+          className="text-muted-foreground"
+        >
+          {showDeleted ? "Hide Deleted" : "Show Deleted"}
+        </Button>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search products..." className="pl-9 bg-card" />
-        </div>
-        <div className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-          <span>Show Deleted</span>
-          {/* Note: This would be a Switch component in reality */}
-        </div>
+      <div className="flex-1 overflow-auto">
+        <ProductTable
+          products={filteredProducts}
+          showDeleted={showDeleted}
+          onDelete={handleDeleteInitial}
+          onRestore={handleRestore}
+        />
       </div>
 
-      <div className="border rounded-md bg-card">
-        {products.length === 0 ? (
-          <EmptyState 
-            icon={Plus} 
-            title="No products yet" 
-            description="Add your first product or import a catalog from CSV."
-            actionLabel="Add Product" 
-          />
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Stock</TableHead>
-                <TableHead>GST</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.map(p => (
-                <TableRow key={p.id} className={p.isDeleted ? "opacity-50" : ""}>
-                  <TableCell className="font-medium">{p.name}</TableCell>
-                  <TableCell><MoneyText amount={p.basePrice} /></TableCell>
-                  <TableCell>
-                    <span className={p.currentStock <= p.deficitThreshold ? "text-warning font-semibold" : ""}>
-                      {p.currentStock}
-                    </span>
-                  </TableCell>
-                  <TableCell>{p.gstRate}%</TableCell>
-                  <TableCell>
-                    {p.isDeleted ? (
-                      <StatusBadge status="default" variant="secondary">Deleted</StatusBadge>
-                    ) : p.currentStock <= 0 ? (
-                      <StatusBadge status="danger" variant="secondary">Out of Stock</StatusBadge>
-                    ) : (
-                      <StatusBadge status="success" variant="secondary">Active</StatusBadge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </div>
+      <ConfirmationDialog
+        isOpen={!!deleteCandidate}
+        title="Delete Product"
+        description={`Are you sure you want to delete ${deleteCandidate?.name}? This will hide it from active billing but maintain references in past invoices.`}
+        confirmText="Delete"
+        isDangerous={true}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteCandidate(null)}
+      />
     </div>
   );
 }

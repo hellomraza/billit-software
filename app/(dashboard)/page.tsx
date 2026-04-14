@@ -16,7 +16,14 @@ export default async function BillingPage() {
         <h1 className="text-2xl font-bold tracking-tight">Billing</h1>
         {/* We can add quick actions here like 'Refresh Stock' */}
       </div>
-      <BillingWorkspace initialProducts={initialProducts} />
+      <BillingWorkspace 
+        initialProducts={initialProducts} 
+        tenantSettings={{
+          isGstEnabled: true,
+          defaultGstRate: 18,
+          currency: "INR"
+        }}
+      />
     </div>
   );
 }

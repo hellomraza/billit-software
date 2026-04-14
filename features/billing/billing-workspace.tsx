@@ -2,239 +2,180 @@
 
 import React, { useState, useMemo } from "react";
 import { Product, InvoiceItem } from "@/types";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Search, ShoppingCart, Plus, Trash2 } from "lucide-react";
-import { QuantityControl } from "@/components/shared/quantity-control";
-import { MoneyText } from "@/components/shared/money-text";
-import { StatusBadge } from "@/components/shared/status-badge";
+import { BillingSearch } from "./billing-search";
+import { BillingCart } from "./billing-cart";
+import { BillingSummaryPanel } from "./billing-summary-panel";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
+import { InsufficientStockModal, DeficitResolutionAction, InsufficientItem } from "@/components/shared/insufficient-stock-modal";
 import { toast } from "sonner";
+import { Card } from "@/components/ui/card";
 
 interface BillingWorkspaceProps {
   initialProducts: Product[];
+  tenantSettings: {
+    isGstEnabled: boolean;
+    defaultGstRate: number;
+    currency: string;
+  };
 }
 
-export function BillingWorkspace({ initialProducts }: BillingWorkspaceProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+export function BillingWorkspace({ initialProducts, tenantSettings }: BillingWorkspaceProps) {
   const [cart, setCart] = useState<InvoiceItem[]>([]);
-  const [isGstEnabled, setIsGstEnabled] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState<"CASH" | "CARD" | "UPI">("UPI");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("CASH");
+  const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
+  
+  // Stock Validation State
+  const [isStockModalOpen, setIsStockModalOpen] = useState(false);
+  const [conflictItems, setConflictItems] = useState<InsufficientItem[]>([]);
 
-  // Client-side fast filtering
-  const filteredProducts = useMemo(() => {
-    if (!searchQuery) return initialProducts;
-    return initialProducts.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [searchQuery, initialProducts]);
-
-  const addToCart = (product: Product) => {
-    if (product.currentStock <= 0) {
-      toast.warning(`Cannot add ${product.name}. Out of stock.`);
-      // In a full implementation, we'd open the Insufficient Stock Modal here.
-      return;
-    }
-
+  const handleSelectProduct = (product: Product) => {
     setCart(prev => {
       const existing = prev.find(item => item.productId === product.id);
+      
+      // Stock checking immediately on add
+      const requestedQty = existing ? existing.quantity + 1 : 1;
+      if (requestedQty > product.currentStock) {
+        toast.warning(`Insufficient inventory for ${product.name}`, {
+          description: `Only ${product.currentStock} remaining in stock.`
+        });
+      }
+
       if (existing) {
-        return prev.map(item => 
-          item.productId === product.id 
-            ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * product.basePrice }
-            : item
+        return prev.map(item =>
+          item.productId === product.id ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * item.unitPrice } : item
         );
       }
       return [...prev, {
         productId: product.id,
         productName: product.name,
-        unitPrice: product.basePrice,
         quantity: 1,
+        unitPrice: product.basePrice,
         gstRate: product.gstRate,
-        subtotal: product.basePrice,
+        subtotal: product.basePrice
       }];
     });
   };
 
-  const updateQuantity = (productId: string, newQuantity: number) => {
-    if (newQuantity <= 0) {
-      setCart(prev => prev.filter(item => item.productId !== productId));
-      return;
-    }
-    
-    // Check against mock stock logically (simplification for MVP)
+  const handleUpdateQuantity = (productId: string, quantity: number) => {
     const product = initialProducts.find(p => p.id === productId);
-    if (product && newQuantity > product.currentStock) {
-      toast.error(`Only ${product.currentStock} units available.`);
-      return;
+    if (product && quantity > product.currentStock) {
+      toast.warning(`Insufficient stock for ${product.name}`);
     }
 
-    setCart(prev => prev.map(item => 
-      item.productId === productId 
-        ? { ...item, quantity: newQuantity, subtotal: newQuantity * item.unitPrice }
-        : item
+    setCart(prev => prev.map(item =>
+      item.productId === productId ? { ...item, quantity, subtotal: quantity * item.unitPrice } : item
     ));
   };
 
-  const clearBill = () => {
-    setCart([]);
-    toast.success("Bill cleared.");
+  const handleRemoveItem = (productId: string) => {
+    setCart(prev => prev.filter(item => item.productId !== productId));
   };
 
-  const finalizeBill = () => {
-    if (cart.length === 0) return;
-    toast.success(`Invoice generated for ${cart.length} items (${paymentMethod}).`);
-    setCart([]);
+  const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.subtotal, 0), [cart]);
+  
+  const gstAmount = useMemo(() => {
+    if (!tenantSettings.isGstEnabled) return 0;
+    return cart.reduce((sum, item) => sum + (item.subtotal * (item.gstRate / 100)), 0);
+  }, [cart, tenantSettings.isGstEnabled]);
+  
+  const grandTotal = subtotal + gstAmount;
+
+  const handleFinalizeInit = () => {
+    const conflicts = cart.map(item => {
+      const product = initialProducts.find(p => p.id === item.productId)!;
+      return { product, requested: item.quantity, available: product.currentStock };
+    }).filter(i => i.requested > i.available);
+
+    if (conflicts.length > 0) {
+      setConflictItems(conflicts);
+      setIsStockModalOpen(true);
+    } else {
+      finalizeSuccess();
+    }
   };
 
-  const subtotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
-  const totalGst = isGstEnabled 
-    ? cart.reduce((sum, item) => sum + (item.subtotal * (item.gstRate / 100)), 0)
-    : 0;
-  const grandTotal = subtotal + totalGst;
+  const handleResolveConflicts = (resolutions: { productId: string; action: DeficitResolutionAction }[]) => {
+    let newCart = [...cart];
+    
+    resolutions.forEach(res => {
+      if (res.action === "remove") {
+        newCart = newCart.filter(i => i.productId !== res.productId);
+      } else if (res.action === "use-available") {
+        const item = newCart.find(i => i.productId === res.productId);
+        const product = initialProducts.find(p => p.id === res.productId);
+        if (item && product) {
+          item.quantity = product.currentStock;
+          item.subtotal = item.quantity * item.unitPrice;
+        }
+      }
+      // if "sell-anyway", do nothing to the cart quantities
+    });
+
+    setCart(newCart);
+    setIsStockModalOpen(false);
+    
+    // Only continue if cart is not empty after resolution
+    if (newCart.length > 0) {
+      finalizeSuccess(resolutions.filter(r => r.action === "sell-anyway"));
+    }
+  };
+
+  const finalizeSuccess = (deficitsLogged: any[] = []) => {
+    toast.success("Invoice #INV-2049 Finalized", {
+      description: `Total ${tenantSettings.currency} ${grandTotal.toFixed(2)} via ${paymentMethod}`
+    });
+    if (deficitsLogged.length > 0) toast.error(`${deficitsLogged.length} inventory defects logged.`);
+    setCart([]);
+    setPaymentMethod("CASH");
+  };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-      
-      {/* Left Panel: Products */}
-      <div className="lg:col-span-2 flex flex-col space-y-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search products by name or code (Alt+S)" 
-            className="pl-9 h-12 text-md bg-card"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        
-        <div className="flex-1 overflow-auto grid grid-cols-2 sm:grid-cols-3 gap-4 pb-4 h-[500px] lg:h-auto content-start">
-          {filteredProducts.map(product => (
-            <Card 
-              key={product.id} 
-              className="cursor-pointer hover:border-primary/50 transition-colors flex flex-col"
-              onClick={() => addToCart(product)}
-            >
-              <CardHeader className="p-4 pb-2">
-                <div className="flex justify-between items-start gap-2">
-                  <div className="font-medium line-clamp-2 text-sm">{product.name}</div>
-                  <MoneyText amount={product.basePrice} className="text-sm shrink-0" />
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 pt-0 mt-auto flex justify-between items-center text-xs">
-                {product.currentStock > 0 ? (
-                  <span className="text-muted-foreground font-medium">{product.currentStock} in stock</span>
-                ) : (
-                  <StatusBadge status="danger" variant="secondary" className="text-[10px] px-1 h-4">Out of Stock</StatusBadge>
-                )}
-                {product.currentStock > 0 && product.currentStock <= product.deficitThreshold && (
-                  <span className="text-warning font-medium">Low</span>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-          {filteredProducts.length === 0 && (
-            <div className="col-span-full py-12 text-center text-muted-foreground">
-              No products found matching "{searchQuery}"
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Right Panel: Cart */}
-      <Card className="flex flex-col h-full max-h-[600px] lg:max-h-full">
-        <CardHeader className="border-b px-4 py-3 flex flex-row items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5" />
-            Current Bill
-          </CardTitle>
-          <BadgeCartCount count={cart.length} />
-        </CardHeader>
-        
-        <CardContent className="flex-1 overflow-auto p-0">
-          {cart.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground h-full">
-              <ShoppingCart className="h-12 w-12 opacity-20 mb-4" />
-              <p>Scan or select products to add them to the bill.</p>
-            </div>
-          ) : (
-            <div className="divide-y">
-              {cart.map(item => (
-                <div key={item.productId} className="p-4 flex gap-3">
-                  <div className="flex-1 flex flex-col justify-between">
-                    <div className="font-medium text-sm leading-tight mb-2">{item.productName}</div>
-                    <MoneyText amount={item.unitPrice} className="text-muted-foreground text-xs" />
-                  </div>
-                  <div className="flex flex-col items-end gap-2 shrink-0">
-                    <QuantityControl 
-                      quantity={item.quantity} 
-                      onChange={(q) => updateQuantity(item.productId, q)} 
-                      min={0}
-                    />
-                    <MoneyText amount={item.subtotal} className="font-semibold text-sm" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-
-        <div className="border-t bg-muted/30">
-          <div className="p-4 space-y-3 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Subtotal</span>
-              <MoneyText amount={subtotal} />
-            </div>
-            {isGstEnabled && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">GST</span>
-                <MoneyText amount={totalGst} />
-              </div>
-            )}
-            <Separator />
-            <div className="flex justify-between items-center">
-              <span className="font-semibold text-base">Grand Total</span>
-              <MoneyText amount={grandTotal} className="text-xl font-bold text-primary" />
-            </div>
-          </div>
-          <div className="p-4 pt-0 gap-2 flex flex-col">
-            <div className="flex gap-2 mb-2">
-              {(["CASH", "CARD", "UPI"] as const).map(method => (
-                <Button 
-                  key={method}
-                  variant={paymentMethod === method ? "default" : "outline"}
-                  size="sm"
-                  className="flex-1 text-xs h-8"
-                  onClick={() => setPaymentMethod(method)}
-                >
-                  {method}
-                </Button>
-              ))}
-            </div>
-            <Button 
-              size="lg" 
-              className="w-full font-bold" 
-              disabled={cart.length === 0}
-              onClick={finalizeBill}
-            >
-              Finalize Invoice
-            </Button>
-            {cart.length > 0 && (
-              <Button variant="ghost" className="w-full text-muted-foreground" onClick={clearBill}>
-                Clear Bill
-              </Button>
-            )}
-          </div>
-        </div>
+    <div className="flex flex-col md:flex-row h-full gap-4 relative">
+      <Card className="flex-1 flex flex-col min-h-0 bg-transparent border-0 shadow-none">
+        <BillingSearch 
+          products={initialProducts} 
+          onSelectProduct={handleSelectProduct} 
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+        />
       </Card>
-    </div>
-  );
-}
+      
+      <Card className="w-full md:w-[400px] flex flex-col shadow-sm border overflow-hidden shrink-0 min-h-[500px]">
+        <BillingCart 
+          items={cart} 
+          onUpdateQuantity={handleUpdateQuantity} 
+          onRemoveItem={handleRemoveItem} 
+        />
+        <BillingSummaryPanel 
+          subtotal={subtotal} 
+          gstAmount={gstAmount} 
+          grandTotal={grandTotal} 
+          isGstEnabled={tenantSettings.isGstEnabled} 
+          paymentMethod={paymentMethod}
+          onPaymentMethodChange={setPaymentMethod}
+          onFinalize={handleFinalizeInit}
+          onClear={() => setIsClearDialogOpen(true)}
+          isEnabled={cart.length > 0}
+        />
+      </Card>
 
-function BadgeCartCount({ count }: { count: number }) {
-  if (count === 0) return null;
-  return (
-    <span className="bg-primary text-primary-foreground text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
-      {count}
-    </span>
+      <ConfirmationDialog 
+        isOpen={isClearDialogOpen}
+        title="Clear Bill"
+        description="Are you sure you want to remove all items from the current bill?"
+        confirmText="Clear Bill"
+        isDangerous={true}
+        onConfirm={() => { setCart([]); setIsClearDialogOpen(false); }}
+        onCancel={() => setIsClearDialogOpen(false)}
+      />
+
+      <InsufficientStockModal 
+        isOpen={isStockModalOpen}
+        items={conflictItems}
+        onResolve={handleResolveConflicts}
+        onCancel={() => setIsStockModalOpen(false)}
+      />
+    </div>
   );
 }
