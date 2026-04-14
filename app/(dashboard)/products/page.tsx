@@ -7,12 +7,16 @@ import { Button } from "@/components/ui/button";
 import { ProductTable } from "@/features/products/product-table";
 import { getProducts } from "@/lib/mock-data/product";
 import { ROUTES } from "@/lib/routes";
+import { EmptyState } from "@/components/shared/empty-state";
+import { PackageSearch } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Download, Plus } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function ProductsPage() {
+  const router = useRouter();
   const [products, setProducts] = useState<any[]>([]);
 
   useEffect(() => {
@@ -79,12 +83,23 @@ export default function ProductsPage() {
       </div>
 
       <div className="flex-1 overflow-auto">
-        <ProductTable
-          products={filteredProducts}
-          showDeleted={showDeleted}
-          onDelete={handleDeleteInitial}
-          onRestore={handleRestore}
-        />
+        {products.length === 0 ? (
+          <EmptyState
+            icon={PackageSearch}
+            title="No Products Yet"
+            description="No products found in your catalog. Create your first product or import a CSV to get started."
+            actionLabel="Add Product"
+            onAction={() => router.push(ROUTES.PRODUCTS_NEW)}
+            className="mt-8"
+          />
+        ) : (
+          <ProductTable
+            products={filteredProducts}
+            showDeleted={showDeleted}
+            onDelete={handleDeleteInitial}
+            onRestore={handleRestore}
+          />
+        )}
       </div>
 
       <ConfirmationDialog

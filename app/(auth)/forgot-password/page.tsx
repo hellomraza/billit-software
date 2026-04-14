@@ -7,16 +7,29 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ROUTES } from "@/lib/routes";
+import { validateEmail } from "@/lib/validators/auth";
 
 export default function ForgotPasswordPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
-      setIsSubmitted(true);
+    setError(null);
+    
+    const emailError = validateEmail(email);
+    if (emailError) {
+      setError(emailError);
+      return;
     }
+
+    setIsLoading(true);
+    // Mock API
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setIsLoading(false);
+    setIsSubmitted(true);
   };
 
   if (isSubmitted) {
@@ -47,6 +60,7 @@ export default function ForgotPasswordPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <div className="text-sm font-medium text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
         <div className="space-y-2">
           <Label htmlFor="email">Email address</Label>
           <Input 
@@ -56,10 +70,11 @@ export default function ForgotPasswordPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            disabled={isLoading}
           />
         </div>
-        <Button type="submit" className="w-full">
-          Reset password
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? "Sending instructions..." : "Reset password"}
         </Button>
       </form>
 

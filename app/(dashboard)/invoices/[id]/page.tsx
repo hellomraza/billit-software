@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { InvoiceDetailPanel } from "@/features/invoices/invoice-detail-panel";
-import { MOCK_INVOICES } from "@/lib/mock-data/invoice";
+import { getInvoiceById } from "@/lib/mock-data/invoice";
 import { Invoice } from "@/types";
 import { ROUTES } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
@@ -16,9 +16,13 @@ export default function InvoiceDetailPage() {
   const [invoice, setInvoice] = useState<Invoice | null>(null);
 
   useEffect(() => {
-    const inv = MOCK_INVOICES.find(i => i.id === params.id);
-    if (inv) setInvoice(inv);
-    else router.push(ROUTES.INVOICES);
+    getInvoiceById(params.id as string).then((inv) => {
+      if (inv) {
+        setInvoice(inv);
+      } else {
+        router.push(ROUTES.INVOICES);
+      }
+    });
   }, [params.id, router]);
 
   if (!invoice) return null;

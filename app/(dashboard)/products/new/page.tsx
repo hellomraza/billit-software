@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { ProductForm } from "@/components/shared/product-form";
@@ -9,9 +9,12 @@ import { toast } from "sonner";
 
 export default function NewProductPage() {
   const router = useRouter();
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async (data: any) => {
+    setIsSaving(true);
     // Mock API
+    await new Promise(resolve => setTimeout(resolve, 800));
     toast.success("Product created successfully");
     router.push(ROUTES.PRODUCTS);
   };
@@ -29,6 +32,7 @@ export default function NewProductPage() {
         <ProductForm 
           onSubmit={handleSave} 
           onCancel={() => router.push(ROUTES.PRODUCTS)} 
+          isLoading={isSaving}
         />
       </div>
     </div>

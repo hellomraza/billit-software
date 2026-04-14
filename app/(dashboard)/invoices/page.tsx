@@ -9,6 +9,8 @@ import {
 import { InvoiceTable } from "@/features/invoices/invoice-table";
 import { getInvoices } from "@/lib/mock-data/invoice";
 import { ROUTES } from "@/lib/routes";
+import { EmptyState } from "@/components/shared/empty-state";
+import { Receipt } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -43,12 +45,22 @@ export default function InvoicesPage() {
       </div>
 
       <div className="flex-1 overflow-auto">
-        <InvoiceTable
-          invoices={invoices}
-          filters={filters}
-          searchQuery={searchQuery}
-          onSelectInvoice={(inv) => router.push(ROUTES.INVOICE_DETAIL(inv.id))}
-        />
+        {invoices.length === 0 ? (
+          <EmptyState
+            icon={Receipt}
+            title="No Invoices Found"
+            description="No invoices found. Create your first bill to get started."
+            actionLabel="Go to Billing"
+            onAction={() => router.push(ROUTES.BILLING)}
+          />
+        ) : (
+          <InvoiceTable
+            invoices={invoices}
+            filters={filters}
+            searchQuery={searchQuery}
+            onSelectInvoice={(inv) => router.push(ROUTES.INVOICE_DETAIL(inv.id))}
+          />
+        )}
       </div>
     </div>
   );

@@ -7,19 +7,36 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ROUTES } from "@/lib/routes";
 import { CheckCircle2 } from "lucide-react";
+import { validatePassword } from "@/lib/validators/auth";
 
 export default function ResetPasswordPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    
+    const { valid, errors } = validatePassword(password);
+    if (!valid) {
+      setError(errors.join(" "));
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
     setIsLoading(true);
     // Mock network request
-    setTimeout(() => {
-      setIsLoading(false);
-      setIsSuccess(true);
-    }, 800);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setIsLoading(false);
+    setIsSuccess(true);
   };
 
   if (isSuccess) {
@@ -49,14 +66,15 @@ export default function ResetPasswordPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <div className="text-sm font-medium text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
-          <Input id="password" type="password" required minLength={8} />
+          <Input id="password" type="password" required minLength={8} value={password} onChange={e => setPassword(e.target.value)} disabled={isLoading} />
           <p className="text-[10px] text-muted-foreground">Must be at least 8 characters.</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="confirm-password">Confirm Password</Label>
-          <Input id="confirm-password" type="password" required minLength={8} />
+          <Input id="confirm-password" type="password" required minLength={8} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} disabled={isLoading} />
         </div>
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? "Resetting..." : "Reset password"}

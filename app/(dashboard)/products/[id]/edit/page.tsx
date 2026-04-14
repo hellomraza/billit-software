@@ -5,7 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { ProductForm } from "@/components/shared/product-form";
 import { ROUTES } from "@/lib/routes";
-import { MOCK_PRODUCTS } from "@/lib/mock-data/product";
+import { getProductById } from "@/lib/mock-data/product";
 import { Product } from "@/types";
 import { toast } from "sonner";
 
@@ -13,19 +13,23 @@ export default function EditProductPage() {
   const router = useRouter();
   const params = useParams();
   const [product, setProduct] = useState<Product | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    // Mock fetch
-    const prod = MOCK_PRODUCTS.find(p => p.id === params.id);
-    if (prod) setProduct(prod);
-    else {
-      toast.error("Product not found");
-      router.push(ROUTES.PRODUCTS);
-    }
+    getProductById(params.id as string).then((prod) => {
+      if (prod) {
+        setProduct(prod);
+      } else {
+        toast.error("Product not found");
+        router.push(ROUTES.PRODUCTS);
+      }
+    });
   }, [params.id, router]);
 
   const handleSave = async (data: any) => {
+    setIsSaving(true);
     // Mock API
+    await new Promise(resolve => setTimeout(resolve, 800));
     toast.success("Product updated successfully", {
       description: "Changes will apply to future invoices only."
     });
@@ -53,6 +57,7 @@ export default function EditProductPage() {
           initialData={product}
           onSubmit={handleSave} 
           onCancel={() => router.push(ROUTES.PRODUCTS)} 
+          isLoading={isSaving}
         />
       </div>
     </div>
