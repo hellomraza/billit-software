@@ -37,9 +37,9 @@ export default function SignupPage() {
     setIsLoading(true);
     await new Promise(resolve => setTimeout(resolve, 800));
     toast.success("Account created successfully", {
-      description: "Please log in with your new credentials."
+      description: "Please complete the onboarding steps."
     });
-    router.push(ROUTES.AUTH_LOGIN);
+    router.push("/onboarding");
   };
 
   return (

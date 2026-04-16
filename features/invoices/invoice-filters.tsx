@@ -3,10 +3,14 @@
 import React from "react";
 import { FilterBar, FilterDefinition } from "@/components/shared/filter-bar";
 import { PAYMENT_METHODS } from "@/lib/constants/defaults";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export interface InvoiceFiltersState {
   paymentMethod?: string;
   isGst?: boolean | string;
+  startDate?: string;
+  endDate?: string;
 }
 
 interface InvoiceFiltersProps {
@@ -35,15 +39,44 @@ const FILTER_DEF: FilterDefinition[] = [
 
 export function InvoiceFilters({ filters, onFilterChange, onReset }: InvoiceFiltersProps) {
   const handleFilterChange = (newFilters: Record<string, string | boolean>) => {
-    onFilterChange(newFilters as InvoiceFiltersState);
+    onFilterChange({ ...filters, ...newFilters } as InvoiceFiltersState);
+  };
+
+  const handleDateChange = (field: "startDate" | "endDate", value: string) => {
+    onFilterChange({ ...filters, [field]: value });
   };
 
   return (
-    <FilterBar 
-      filters={FILTER_DEF}
-      activeFilters={filters as any}
-      onFilterChange={handleFilterChange}
-      onReset={onReset}
-    />
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-4 p-3 bg-muted/40 border rounded-lg">
+        <div className="flex items-center gap-2">
+          <Label className="text-xs text-muted-foreground">From</Label>
+          <Input 
+            type="date" 
+            className="h-8 text-xs w-auto" 
+            value={filters.startDate || ""} 
+            onChange={(e) => handleDateChange("startDate", e.target.value)} 
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Label className="text-xs text-muted-foreground">To</Label>
+          <Input 
+            type="date" 
+            className="h-8 text-xs w-auto" 
+            value={filters.endDate || ""} 
+            onChange={(e) => handleDateChange("endDate", e.target.value)} 
+          />
+        </div>
+      </div>
+      <FilterBar 
+        filters={FILTER_DEF}
+        activeFilters={{
+          paymentMethod: filters.paymentMethod || "",
+          isGst: filters.isGst || "" // FilterBar expects simple strings/booleans
+        }}
+        onFilterChange={handleFilterChange}
+        onReset={onReset}
+      />
+    </div>
   );
 }

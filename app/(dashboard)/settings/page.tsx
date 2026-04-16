@@ -1,19 +1,84 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import { getTenant, getOutlet, getGSTSettings } from "@/lib/mock-data/tenant";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { LogOut } from "lucide-react";
-import Link from "next/link";
+import { LogOut, KeyRound } from "lucide-react";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
+import { useAuth } from "@/components/providers/auth-provider";
+import { toast } from "sonner";
+import { validatePassword } from "@/lib/validators/auth";
 
-export const metadata = { title: "Settings | BillIt" };
+export default function SettingsPage() {
+  const [tenant, setTenant] = useState<any>(null);
+  const [outlet, setOutlet] = useState<any>(null);
+  const [gst, setGst] = useState<any>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showLogout, setShowLogout] = useState(false);
+  const { logout } = useAuth();
 
-export default async function SettingsPage() {
-  const tenant = await getTenant();
-  const outlet = await getOutlet();
-  const gst = await getGSTSettings();
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  useEffect(() => {
+    Promise.all([getTenant(), getOutlet(), getGSTSettings()]).then(([t, o, g]) => {
+      setTenant(t);
+      setOutlet(o);
+      setGst(g);
+    });
+  }, []);
+
+  const handleSaveTax = async () => {
+    setIsSaving(true);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setIsSaving(false);
+    toast.success("Tax Config Saved", { description: "GST Details updated." });
+  };
+
+  const handleSavePassword = async () => {
+    setPasswordError(null);
+    if (!currentPassword) {
+      setPasswordError("Current password is required.");
+      return;
+    }
+
+    const { valid, errors } = validatePassword(newPassword);
+    if (!valid) {
+      setPasswordError(errors.join(" "));
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New passwords do not match.");
+      return;
+    }
+
+    setIsSavingPassword(true);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsSavingPassword(false);
+    
+    // Simulate successful change
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    toast.success("Password Updated", { description: "Your account password has been changed." });
+  };
+
+  const handleLogoutConfirm = () => {
+    setShowLogout(false);
+    logout();
+  };
+
+  if (!tenant || !outlet || !gst) {
+    return <div className="animate-pulse p-4 text-muted-foreground">Loading settings...</div>;
+  }
 
   return (
     <div className="flex flex-col space-y-6 max-w-4xl">
@@ -64,19 +129,63 @@ export default async function SettingsPage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button>Save Tax Details</Button>
+            <Button onClick={handleSaveTax} disabled={isSaving}>
+              {isSaving ? "Saving..." : "Save Tax Details"}
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-muted-foreground" />
+              <CardTitle>Change Password</CardTitle>
+            </div>
+            <CardDescription>Update your account security credentials.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="max-w-md space-y-4">
+              {passwordError && <div className="text-sm font-medium text-destructive bg-destructive/10 p-3 rounded-md">{passwordError}</div>}
+              <div className="space-y-2">
+                <Label>Current Password</Label>
+                <Input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} disabled={isSavingPassword} />
+              </div>
+              <div className="space-y-2">
+                <Label>New Password</Label>
+                <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} disabled={isSavingPassword} />
+                <p className="text-[10px] text-muted-foreground">Must be at least 8 characters long.</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Confirm New Password</Label>
+                <Input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} disabled={isSavingPassword} />
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={handleSavePassword} disabled={isSavingPassword} variant="default">
+              {isSavingPassword ? "Updating..." : "Update Password"}
+            </Button>
           </CardFooter>
         </Card>
 
         <Separator />
         
         <div className="flex justify-start">
-          <Link href="/login" className={buttonVariants({ variant: "destructive" })}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Link>
+          <Button variant="destructive" onClick={() => setShowLogout(true)}>
+            <LogOut className="mr-2 h-4 w-4" /> Sign Out
+          </Button>
         </div>
       </div>
+
+      <ConfirmationDialog 
+        isOpen={showLogout}
+        title="Sign out of BillIt?"
+        description="Your current active cart session will be cleared."
+        confirmText="Sign Out"
+        isDangerous={true}
+        onConfirm={handleLogoutConfirm}
+        onCancel={() => setShowLogout(false)}
+      />
     </div>
   );
 }
