@@ -116,6 +116,7 @@ export default function DeficitsPage() {
           deficits={deficitGroups}
           recordsByGroup={recordsByGroup}
           onResolve={handleResolve}
+          isLoading={isLoading}
         />
       </div>
     </div>

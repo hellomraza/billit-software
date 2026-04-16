@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { validateProductForm } from "@/lib/validators/product";
 import { Product } from "@/types";
+import { Loader2 } from "lucide-react";
 import React, { useState } from "react";
 import { SectionCard } from "./section-card";
 
@@ -165,11 +166,23 @@ export function ProductForm({
       </div>
 
       <div className="flex justify-end gap-3 pt-2">
-        <Button type="button" variant="ghost" onClick={onCancel}>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onCancel}
+          disabled={isLoading}
+        >
           Cancel
         </Button>
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Saving..." : "Save Product"}
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            "Save Product"
+          )}
         </Button>
       </div>
     </form>

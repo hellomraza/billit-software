@@ -37,6 +37,7 @@ export function BillingWorkspace({
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
+  const [isFinalizing, setIsFinalizing] = useState(false);
   const [products, setProducts] = useState<Product[]>(initialProducts);
 
   // Load imported products and merge with initial products
@@ -126,27 +127,32 @@ export function BillingWorkspace({
 
   const grandTotal = subtotal + gstAmount;
 
-  const handleFinalizeInit = () => {
-    const conflicts = cart
-      .map((item) => {
-        const product = products.find((p) => p.id === item.productId)!;
-        return {
-          product,
-          requested: item.quantity,
-          available: product.currentStock,
-        };
-      })
-      .filter((i) => i.requested > i.available);
+  const handleFinalizeInit = async () => {
+    setIsFinalizing(true);
+    try {
+      const conflicts = cart
+        .map((item) => {
+          const product = products.find((p) => p.id === item.productId)!;
+          return {
+            product,
+            requested: item.quantity,
+            available: product.currentStock,
+          };
+        })
+        .filter((i) => i.requested > i.available);
 
-    if (conflicts.length > 0) {
-      setConflictItems(conflicts);
-      setIsStockModalOpen(true);
-    } else {
-      finalizeSuccess();
+      if (conflicts.length > 0) {
+        setConflictItems(conflicts);
+        setIsStockModalOpen(true);
+      } else {
+        await finalizeSuccess();
+      }
+    } finally {
+      setIsFinalizing(false);
     }
   };
 
-  const handleResolveConflicts = (
+  const handleResolveConflicts = async (
     resolutions: { productId: string; action: DeficitResolutionAction }[],
   ) => {
     let newCart = [...cart];
@@ -175,7 +181,7 @@ export function BillingWorkspace({
 
     // Only continue if cart is not empty after resolution
     if (newCart.length > 0) {
-      finalizeSuccess(resolutions);
+      await finalizeSuccess(resolutions);
 
       // Show toast about removed items if any
       if (removedItems.length > 0) {
@@ -191,12 +197,15 @@ export function BillingWorkspace({
       toast.error("All items were removed", {
         description: "Your bill has been cleared. No invoice was created.",
       });
+      setIsFinalizing(false);
     }
   };
 
-  const finalizeSuccess = (
+  const finalizeSuccess = async (
     resolutions: { productId: string; action: DeficitResolutionAction }[] = [],
   ) => {
+    // Simulate processing delay
+    await new Promise((resolve) => setTimeout(resolve, 600));
     // Generate next invoice number
     const nextInvoiceNum = parseInt(
       localStorage.getItem("billit_next_invoice_num") || "1",
@@ -311,6 +320,7 @@ export function BillingWorkspace({
           onFinalize={handleFinalizeInit}
           onClear={() => setIsClearDialogOpen(true)}
           isEnabled={cart.length > 0}
+          isFinalizing={isFinalizing}
         />
       </Card>
 

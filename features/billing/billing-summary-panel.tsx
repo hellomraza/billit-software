@@ -1,10 +1,10 @@
 "use client";
 
-import React from "react";
+import { MoneyText } from "@/components/shared/money-text";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { MoneyText } from "@/components/shared/money-text";
 import { PAYMENT_METHODS } from "@/lib/constants/defaults";
+import { Loader2 } from "lucide-react";
 
 interface BillingSummaryPanelProps {
   subtotal: number;
@@ -16,6 +16,7 @@ interface BillingSummaryPanelProps {
   onFinalize: () => void;
   onClear: () => void;
   isEnabled: boolean;
+  isFinalizing?: boolean;
 }
 
 export function BillingSummaryPanel({
@@ -27,7 +28,8 @@ export function BillingSummaryPanel({
   onPaymentMethodChange,
   onFinalize,
   onClear,
-  isEnabled
+  isEnabled,
+  isFinalizing = false,
 }: BillingSummaryPanelProps) {
   return (
     <div className="border-t bg-muted/30 shrink-0">
@@ -45,14 +47,17 @@ export function BillingSummaryPanel({
         <Separator />
         <div className="flex justify-between items-center">
           <span className="font-semibold text-base">Grand Total</span>
-          <MoneyText amount={grandTotal} className="text-xl font-bold text-primary" />
+          <MoneyText
+            amount={grandTotal}
+            className="text-xl font-bold text-primary"
+          />
         </div>
       </div>
-      
+
       <div className="p-4 pt-0 gap-2 flex flex-col">
         <div className="flex gap-2 mb-2">
-          {PAYMENT_METHODS.map(method => (
-            <Button 
+          {PAYMENT_METHODS.map((method) => (
+            <Button
               key={method}
               variant={paymentMethod === method ? "default" : "outline"}
               size="sm"
@@ -63,16 +68,28 @@ export function BillingSummaryPanel({
             </Button>
           ))}
         </div>
-        <Button 
-          size="lg" 
-          className="w-full font-bold" 
-          disabled={!isEnabled}
+        <Button
+          size="lg"
+          className="w-full font-bold"
+          disabled={!isEnabled || isFinalizing}
           onClick={onFinalize}
+          aria-busy={isFinalizing}
         >
-          Finalize Invoice
+          {isFinalizing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            "Finalize Invoice"
+          )}
         </Button>
         {isEnabled && (
-          <Button variant="ghost" className="w-full text-muted-foreground mt-1 h-8 text-xs" onClick={onClear}>
+          <Button
+            variant="ghost"
+            className="w-full text-muted-foreground mt-1 h-8 text-xs"
+            onClick={onClear}
+          >
             Clear Bill
           </Button>
         )}

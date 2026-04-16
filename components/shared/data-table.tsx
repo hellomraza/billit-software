@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import React from "react";
 
@@ -38,15 +39,46 @@ export function DataTable<T>({
   if (isLoading) {
     return (
       <div
-        className="border rounded-md animate-pulse"
+        className="border rounded-md bg-card overflow-hidden"
         aria-busy="true"
         role="status"
         aria-label="Loading table data"
       >
-        <div className="h-12 border-b bg-muted/40" />
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-16 border-b" />
-        ))}
+        <Table>
+          <TableHeader className="bg-muted/30">
+            <TableRow>
+              {columns.map((col) => (
+                <TableHead
+                  key={col.id}
+                  className={cn(
+                    col.align === "right" && "text-right",
+                    col.align === "center" && "text-center",
+                    col.className,
+                  )}
+                >
+                  <Skeleton className="h-4 w-20 rounded" />
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {[1, 2, 3, 4, 5].map((rowNum) => (
+              <TableRow key={`skeleton-${rowNum}`} className="animate-in fade-in duration-300" style={{ animationDelay: `${rowNum * 50}ms` }}>
+                {columns.map((col) => (
+                  <TableCell
+                    key={`${rowNum}-${col.id}`}
+                    className={cn(
+                      col.align === "right" && "text-right",
+                      col.align === "center" && "text-center",
+                    )}
+                  >
+                    <Skeleton className="h-4 w-full rounded" />
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     );
   }

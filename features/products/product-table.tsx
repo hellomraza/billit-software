@@ -16,6 +16,7 @@ interface ProductTableProps {
   showDeleted: boolean;
   onDelete: (product: Product) => void;
   onRestore: (product: Product) => void;
+  isLoading?: boolean;
 }
 
 export function ProductTable({
@@ -23,6 +24,7 @@ export function ProductTable({
   showDeleted,
   onDelete,
   onRestore,
+  isLoading,
 }: ProductTableProps) {
   const visibleProducts = useMemo(() => {
     return showDeleted ? products : products.filter((p) => !p.isDeleted);
@@ -31,6 +33,7 @@ export function ProductTable({
   return (
     <DataTable
       data={visibleProducts}
+      isLoading={isLoading}
       rowClassName={(row) => (row.isDeleted ? "opacity-50" : "")}
       columns={[
         {

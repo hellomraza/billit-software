@@ -147,6 +147,7 @@ export default function InvoicesPage() {
             onSelectInvoice={(inv) =>
               router.push(ROUTES.INVOICE_DETAIL(inv.id))
             }
+            isLoading={isLoading}
           />
         )}
       </div>

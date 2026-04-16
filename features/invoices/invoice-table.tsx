@@ -9,13 +9,19 @@ import { Invoice } from "@/types";
 interface InvoiceTableProps {
   invoices: Invoice[];
   onSelectInvoice: (invoice: Invoice) => void;
+  isLoading?: boolean;
 }
 
-export function InvoiceTable({ invoices, onSelectInvoice }: InvoiceTableProps) {
+export function InvoiceTable({
+  invoices,
+  onSelectInvoice,
+  isLoading,
+}: InvoiceTableProps) {
   return (
     <DataTable
       data={invoices}
       onRowClick={onSelectInvoice}
+      isLoading={isLoading}
       columns={[
         {
           id: "invoiceNumber",

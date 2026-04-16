@@ -52,6 +52,7 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDeleted, setShowDeleted] = useState(false);
   const [deleteCandidate, setDeleteCandidate] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -59,24 +60,35 @@ export default function ProductsPage() {
 
   const handleDeleteInitial = (product: any) => setDeleteCandidate(product);
 
-  const handleConfirmDelete = () => {
-    const updatedProducts = products.map((p) =>
-      p.id === deleteCandidate.id ? { ...p, isDeleted: true } : p,
-    );
-    setProducts(updatedProducts);
+  const handleConfirmDelete = async () => {
+    try {
+      setIsDeleting(true);
+      // Simulate deletion delay
+      await new Promise((resolve) => setTimeout(resolve, 600));
 
-    // Persist changes to localStorage for imported products
-    const importedStr = localStorage.getItem("billit_imported_products");
-    if (importedStr) {
-      const imported = JSON.parse(importedStr);
-      const updated = imported.map((p: any) =>
+      const updatedProducts = products.map((p) =>
         p.id === deleteCandidate.id ? { ...p, isDeleted: true } : p,
       );
-      localStorage.setItem("billit_imported_products", JSON.stringify(updated));
-    }
+      setProducts(updatedProducts);
 
-    toast.success("Product marked as deleted");
-    setDeleteCandidate(null);
+      // Persist changes to localStorage for imported products
+      const importedStr = localStorage.getItem("billit_imported_products");
+      if (importedStr) {
+        const imported = JSON.parse(importedStr);
+        const updated = imported.map((p: any) =>
+          p.id === deleteCandidate.id ? { ...p, isDeleted: true } : p,
+        );
+        localStorage.setItem(
+          "billit_imported_products",
+          JSON.stringify(updated),
+        );
+      }
+
+      toast.success("Product marked as deleted");
+      setDeleteCandidate(null);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleRestore = (product: any) => {
@@ -149,6 +161,8 @@ export default function ProductsPage() {
             showDeleted={showDeleted}
             onDelete={handleDeleteInitial}
             onRestore={handleRestore}
+            isLoading={isLoading}
+            onRestore={handleRestore}
           />
         )}
       </div>
@@ -159,6 +173,7 @@ export default function ProductsPage() {
         description={`Are you sure you want to delete ${deleteCandidate?.name}? This will hide it from active billing but maintain references in past invoices.`}
         confirmText="Delete"
         isDangerous={true}
+        isLoading={isDeleting}
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeleteCandidate(null)}
       />
