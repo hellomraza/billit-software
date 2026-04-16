@@ -12,6 +12,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  formatAbbreviation,
+  generateSmartAbbreviation,
+} from "@/lib/formatters/abbreviation";
 import { ROUTES } from "@/lib/routes";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
@@ -26,8 +30,10 @@ export default function BusinessSetupPage() {
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setName(val);
+    // Auto-generate smart abbreviation if user hasn't manually entered one
     if (val.length > 0 && !abbrev) {
-      setAbbrev(val.substring(0, 3).toUpperCase());
+      const generated = generateSmartAbbreviation(val);
+      setAbbrev(generated);
     }
   };
 
@@ -81,12 +87,13 @@ export default function BusinessSetupPage() {
             id="abbrev"
             placeholder="SMC"
             value={abbrev}
-            onChange={(e) => setAbbrev(e.target.value.toUpperCase())}
-            maxLength={5}
+            onChange={(e) => setAbbrev(formatAbbreviation(e.target.value))}
+            maxLength={4}
             required
           />
           <p className="text-xs text-muted-foreground">
-            A short prefix used for your official invoice numbers.
+            A 2-4 character prefix used for your official invoice numbers.
+            Generated intelligently from your business name.
           </p>
         </div>
       </CardContent>

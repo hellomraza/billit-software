@@ -33,16 +33,9 @@ export function BillingCart({
           className="p-4 flex gap-3 animate-in fade-in duration-300 transition-all hover:bg-muted/50"
           style={{ animationDelay: `${index * 50}ms` }}
         >
-          <div className="flex-1 flex flex-col justify-between">
-            <div className="font-medium text-sm leading-tight mb-2 pr-4 relative">
-              {item.productName}
-              <button
-                className="absolute -right-2 -top-2 p-1 text-muted-foreground hover:text-destructive transition-colors hidden sm:block"
-                onClick={() => onRemoveItem(item.productId)}
-                title="Remove item"
-              >
-                ×
-              </button>
+          <div className="flex-1 flex flex-col justify-between min-w-0">
+            <div className="font-medium text-sm leading-tight mb-2 pr-2">
+              <div className="line-clamp-2">{item.productName}</div>
             </div>
             <MoneyText
               amount={item.unitPrice}
@@ -50,6 +43,14 @@ export function BillingCart({
             />
           </div>
           <div className="flex flex-col items-end gap-2 shrink-0">
+            <button
+              className="p-1 text-muted-foreground hover:text-destructive transition-colors text-lg leading-none"
+              onClick={() => onRemoveItem(item.productId)}
+              title="Remove item"
+              aria-label={`Remove ${item.productName}`}
+            >
+              ×
+            </button>
             <QuantityControl
               quantity={item.quantity}
               onChange={(q) => {

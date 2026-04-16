@@ -288,8 +288,9 @@ export function BillingWorkspace({
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-full gap-4 relative">
-      <Card className="flex-1 flex flex-col min-h-0 bg-transparent border-0 shadow-none">
+    <div className="flex flex-col md:flex-row lg:flex-row h-full gap-3 md:gap-4 relative">
+      {/* Search Section - Full width on mobile, flex-1 on tablet+, max height on mobile */}
+      <Card className="flex-1 flex flex-col min-h-0 bg-transparent border-0 shadow-none max-h-[40vh] md:max-h-[50vh] lg:max-h-none">
         <BillingSearch
           products={products}
           onSelectProduct={handleSelectProduct}
@@ -298,7 +299,8 @@ export function BillingWorkspace({
         />
       </Card>
 
-      <Card className="w-full md:w-[400px] flex flex-col shadow-sm border overflow-hidden shrink-0 min-h-[500px]">
+      {/* Cart & Summary Section - Bottom sheet on mobile, floating on tablet, sidebar on desktop */}
+      <Card className="w-full md:w-80 lg:w-[400px] flex flex-col shadow-sm border overflow-hidden shrink-0 min-h-[auto] md:min-h-[500px] lg:min-h-[500px] max-h-[calc(100vh-16rem)] md:max-h-[calc(100vh-10rem)] lg:max-h-none sticky bottom-0 md:sticky md:top-4 lg:static bg-background z-10 rounded-t-lg md:rounded-lg">
         <BillingCart
           items={cart}
           onUpdateQuantity={handleUpdateQuantity}

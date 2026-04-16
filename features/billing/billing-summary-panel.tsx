@@ -55,13 +55,13 @@ export function BillingSummaryPanel({
       </div>
 
       <div className="p-4 pt-0 gap-2 flex flex-col">
-        <div className="flex gap-2 mb-2">
+        <div className="flex gap-2 mb-2 flex-wrap">
           {PAYMENT_METHODS.map((method) => (
             <Button
               key={method}
               variant={paymentMethod === method ? "default" : "outline"}
               size="sm"
-              className="flex-1 text-xs h-8"
+              className="flex-1 min-w-[80px] text-xs h-9 sm:h-8"
               onClick={() => onPaymentMethodChange(method)}
             >
               {method}
@@ -70,7 +70,7 @@ export function BillingSummaryPanel({
         </div>
         <Button
           size="lg"
-          className="w-full font-bold"
+          className="w-full font-bold h-12 text-base sm:h-auto sm:text-base"
           disabled={!isEnabled || isFinalizing}
           onClick={onFinalize}
           aria-busy={isFinalizing}
@@ -87,7 +87,7 @@ export function BillingSummaryPanel({
         {isEnabled && (
           <Button
             variant="ghost"
-            className="w-full text-muted-foreground mt-1 h-8 text-xs"
+            className="w-full text-muted-foreground mt-1 h-9 sm:h-8 text-xs sm:text-sm"
             onClick={onClear}
           >
             Clear Bill

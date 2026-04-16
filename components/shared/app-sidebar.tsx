@@ -66,6 +66,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 export function AppSidebar() {
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // Handle Escape key to close sidebar
@@ -133,9 +134,42 @@ export function AppSidebar() {
         <SidebarContent onNavigate={() => setMobileOpen(false)} />
       </aside>
 
-      {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-10 w-64 border-r bg-background hidden md:flex flex-col">
-        <SidebarContent />
+      {/* Desktop/Tablet sidebar */}
+      <aside className="fixed inset-y-0 left-0 z-10 border-r bg-background hidden md:flex flex-col transition-all duration-300 w-64 lg:w-64 md:w-20">
+        {/* Desktop full sidebar */}
+        <div className="hidden lg:block">
+          <SidebarContent />
+        </div>
+
+        {/* Tablet icon-only sidebar */}
+        <div className="hidden md:block lg:hidden flex-1 overflow-auto py-4 px-2 space-y-1">
+          <div className="flex flex-col items-center justify-center h-16 border-b mb-4">
+            <Package2 className="h-6 w-6 text-primary" />
+          </div>
+          <nav className="flex flex-col gap-2" role="menubar">
+            {NAV_ITEMS.map((item) => {
+              const isActive =
+                pathname === item.href ||
+                (item.href !== "/" && pathname.startsWith(item.href));
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  role="menuitem"
+                  title={item.label}
+                  className={cn(
+                    "flex items-center justify-center rounded-md p-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
       </aside>
     </>
   );

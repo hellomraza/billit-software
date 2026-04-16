@@ -1,5 +1,6 @@
 "use client";
 
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -8,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import React from "react";
 
@@ -63,7 +63,11 @@ export function DataTable<T>({
           </TableHeader>
           <TableBody>
             {[1, 2, 3, 4, 5].map((rowNum) => (
-              <TableRow key={`skeleton-${rowNum}`} className="animate-in fade-in duration-300" style={{ animationDelay: `${rowNum * 50}ms` }}>
+              <TableRow
+                key={`skeleton-${rowNum}`}
+                className="animate-in fade-in duration-300"
+                style={{ animationDelay: `${rowNum * 50}ms` }}
+              >
                 {columns.map((col) => (
                   <TableCell
                     key={`${rowNum}-${col.id}`}
@@ -85,69 +89,71 @@ export function DataTable<T>({
 
   return (
     <div
-      className="border rounded-md bg-card overflow-hidden"
+      className="border rounded-md bg-card overflow-x-auto"
       aria-busy="false"
     >
-      <Table>
-        <TableHeader className="bg-muted/30">
-          <TableRow>
-            {columns.map((col) => (
-              <TableHead
-                key={col.id}
-                className={cn(
-                  col.align === "right" && "text-right",
-                  col.align === "center" && "text-center",
-                  col.className,
-                )}
-              >
-                {col.header}
-              </TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.length === 0 ? (
+      <div className="min-w-full">
+        <Table>
+          <TableHeader className="bg-muted/30">
             <TableRow>
-              <TableCell
-                colSpan={columns.length}
-                className="h-24 text-center text-muted-foreground"
-              >
-                No results found.
-              </TableCell>
+              {columns.map((col) => (
+                <TableHead
+                  key={col.id}
+                  className={cn(
+                    col.align === "right" && "text-right",
+                    col.align === "center" && "text-center",
+                    col.className,
+                  )}
+                >
+                  {col.header}
+                </TableHead>
+              ))}
             </TableRow>
-          ) : (
-            data.map((row, rowIndex) => (
-              <TableRow
-                key={rowIndex}
-                onClick={() => onRowClick && onRowClick(row)}
-                className={cn(
-                  "animate-in fade-in duration-300 transition-colors",
-                  onRowClick &&
-                    "cursor-pointer hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
-                  rowClassName?.(row),
-                )}
-                style={{ animationDelay: `${rowIndex * 30}ms` }}
-              >
-                {columns.map((col) => (
-                  <TableCell
-                    key={`${rowIndex}-${col.id}`}
-                    className={cn(
-                      col.align === "right" && "text-right",
-                      col.align === "center" && "text-center",
-                    )}
-                  >
-                    {col.cell
-                      ? col.cell(row)
-                      : col.accessorKey
-                        ? String(row[col.accessorKey])
-                        : null}
-                  </TableCell>
-                ))}
+          </TableHeader>
+          <TableBody>
+            {data.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center text-muted-foreground"
+                >
+                  No results found.
+                </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : (
+              data.map((row, rowIndex) => (
+                <TableRow
+                  key={rowIndex}
+                  onClick={() => onRowClick && onRowClick(row)}
+                  className={cn(
+                    "animate-in fade-in duration-300 transition-colors",
+                    onRowClick &&
+                      "cursor-pointer hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+                    rowClassName?.(row),
+                  )}
+                  style={{ animationDelay: `${rowIndex * 30}ms` }}
+                >
+                  {columns.map((col) => (
+                    <TableCell
+                      key={`${rowIndex}-${col.id}`}
+                      className={cn(
+                        col.align === "right" && "text-right",
+                        col.align === "center" && "text-center",
+                      )}
+                    >
+                      {col.cell
+                        ? col.cell(row)
+                        : col.accessorKey
+                          ? String(row[col.accessorKey])
+                          : null}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
