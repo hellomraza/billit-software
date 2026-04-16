@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/routes";
-import { UploadCloud, CheckCircle2, FileWarning, File } from "lucide-react";
+import { CheckCircle2, File, FileWarning, UploadCloud } from "lucide-react";
+import { useRouter } from "next/navigation";
+import React, { useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface ParsedRow {
@@ -23,11 +23,13 @@ interface ParseError {
 }
 
 function parseCSV(text: string): { headers: string[]; rows: string[][] } {
-  const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
+  const lines = text.split(/\r?\n/).filter((line) => line.trim() !== "");
   if (lines.length === 0) return { headers: [], rows: [] };
-  
-  const headers = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, ""));
-  const rows = lines.slice(1).map(line => {
+
+  const headers = lines[0]
+    .split(",")
+    .map((h) => h.trim().replace(/^"|"$/g, ""));
+  const rows = lines.slice(1).map((line) => {
     // Simple CSV split — handles basic quoted fields
     const cells: string[] = [];
     let current = "";
@@ -49,11 +51,21 @@ function parseCSV(text: string): { headers: string[]; rows: string[][] } {
   return { headers, rows };
 }
 
-function validateRows(headers: string[], rows: string[][]): { valid: ParsedRow[]; errors: ParseError[] } {
-  const nameIdx = headers.findIndex(h => h.toLowerCase() === "name");
-  const priceIdx = headers.findIndex(h => h.toLowerCase() === "baseprice" || h.toLowerCase() === "base price" || h.toLowerCase() === "price");
-  const stockIdx = headers.findIndex(h => h.toLowerCase() === "stock" || h.toLowerCase() === "quantity");
-  const unitIdx = headers.findIndex(h => h.toLowerCase() === "unit");
+function validateRows(
+  headers: string[],
+  rows: string[][],
+): { valid: ParsedRow[]; errors: ParseError[] } {
+  const nameIdx = headers.findIndex((h) => h.toLowerCase() === "name");
+  const priceIdx = headers.findIndex(
+    (h) =>
+      h.toLowerCase() === "baseprice" ||
+      h.toLowerCase() === "base price" ||
+      h.toLowerCase() === "price",
+  );
+  const stockIdx = headers.findIndex(
+    (h) => h.toLowerCase() === "stock" || h.toLowerCase() === "quantity",
+  );
+  const unitIdx = headers.findIndex((h) => h.toLowerCase() === "unit");
 
   const errors: ParseError[] = [];
   const valid: ParsedRow[] = [];
@@ -63,7 +75,10 @@ function validateRows(headers: string[], rows: string[][]): { valid: ParsedRow[]
     return { valid, errors };
   }
   if (priceIdx === -1) {
-    errors.push({ row: 0, message: "Missing required column: 'Base Price' or 'Price'" });
+    errors.push({
+      row: 0,
+      message: "Missing required column: 'Base Price' or 'Price'",
+    });
     return { valid, errors };
   }
 
@@ -79,7 +94,10 @@ function validateRows(headers: string[], rows: string[][]): { valid: ParsedRow[]
 
     const price = parseFloat(priceStr);
     if (isNaN(price) || price < 0) {
-      errors.push({ row: rowNum, message: `Row ${rowNum}: Invalid Base Price "${priceStr}"` });
+      errors.push({
+        row: rowNum,
+        message: `Row ${rowNum}: Invalid Base Price "${priceStr}"`,
+      });
       return;
     }
 
@@ -88,7 +106,10 @@ function validateRows(headers: string[], rows: string[][]): { valid: ParsedRow[]
     if (stockStr) {
       stock = parseInt(stockStr);
       if (isNaN(stock)) {
-        errors.push({ row: rowNum, message: `Row ${rowNum}: Invalid stock value "${stockStr}"` });
+        errors.push({
+          row: rowNum,
+          message: `Row ${rowNum}: Invalid stock value "${stockStr}"`,
+        });
         return;
       }
     }
@@ -107,7 +128,9 @@ function validateRows(headers: string[], rows: string[][]): { valid: ParsedRow[]
 export default function ImportProductsPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [status, setStatus] = useState<"idle" | "preview" | "importing" | "success" | "error">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "preview" | "importing" | "success" | "error"
+  >("idle");
   const [fileName, setFileName] = useState("");
   const [previewRows, setPreviewRows] = useState<ParsedRow[]>([]);
   const [parseErrors, setParseErrors] = useState<ParseError[]>([]);
@@ -117,12 +140,16 @@ export default function ImportProductsPage() {
     if (!file) return;
 
     if (!file.name.endsWith(".csv")) {
-      toast.error("Invalid file type", { description: "Please upload a .csv file." });
+      toast.error("Invalid file type", {
+        description: "Please upload a .csv file.",
+      });
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("File too large", { description: "Maximum file size is 5MB." });
+      toast.error("File too large", {
+        description: "Maximum file size is 5MB.",
+      });
       return;
     }
 
@@ -134,13 +161,20 @@ export default function ImportProductsPage() {
       const { headers, rows } = parseCSV(text);
 
       if (rows.length === 0) {
-        setParseErrors([{ row: 0, message: "CSV file is empty or has no data rows." }]);
+        setParseErrors([
+          { row: 0, message: "CSV file is empty or has no data rows." },
+        ]);
         setStatus("error");
         return;
       }
 
       if (rows.length > 2000) {
-        setParseErrors([{ row: 0, message: `Too many rows (${rows.length}). Maximum is 2,000 per upload.` }]);
+        setParseErrors([
+          {
+            row: 0,
+            message: `Too many rows (${rows.length}). Maximum is 2,000 per upload.`,
+          },
+        ]);
         setStatus("error");
         return;
       }
@@ -165,10 +199,48 @@ export default function ImportProductsPage() {
 
   const handleImport = async () => {
     setStatus("importing");
-    // Simulate API import
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    toast.success(`${previewRows.length} products imported successfully`);
-    setStatus("success");
+    try {
+      // Simulate network delay
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+
+      // Generate IDs for new products
+      const importedProducts = previewRows.map((row, idx) => ({
+        id: `imported-${Date.now()}-${idx}`,
+        name: row.name,
+        basePrice: row.basePrice,
+        currentStock: row.stock ?? 0,
+        unit: row.unit ?? "pcs",
+        gstRate: 18,
+        isDeleted: false,
+        createdAt: new Date().toISOString(),
+        source: "csv-import" as const,
+      }));
+
+      // Persist imported products to localStorage
+      const existingImports = localStorage.getItem("billit_imported_products");
+      const allImports = existingImports ? JSON.parse(existingImports) : [];
+      const updated = [...allImports, ...importedProducts];
+      localStorage.setItem("billit_imported_products", JSON.stringify(updated));
+
+      // Show success
+      toast.success(`${previewRows.length} products imported successfully`, {
+        description: "Products have been added to your catalog.",
+      });
+      setStatus("success");
+    } catch (error) {
+      toast.error("Import failed", {
+        description:
+          "An error occurred while importing products. Please try again.",
+      });
+      setStatus("error");
+      setParseErrors([
+        {
+          row: 0,
+          message:
+            "Import operation failed. Please check the file and try again.",
+        },
+      ]);
+    }
   };
 
   const handleReset = () => {
@@ -180,7 +252,8 @@ export default function ImportProductsPage() {
   };
 
   const handleDownloadTemplate = () => {
-    const csv = "Name,Base Price,Stock,Unit\nSample Product,100,50,pcs\nAnother Item,250,30,kg\n";
+    const csv =
+      "Name,Base Price,Stock,Unit\nSample Product,100,50,pcs\nAnother Item,250,30,kg\n";
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -196,7 +269,7 @@ export default function ImportProductsPage() {
         title="Import Products via CSV"
         breadcrumbs={[
           { label: "Products", href: ROUTES.PRODUCTS },
-          { label: "Import" }
+          { label: "Import" },
         ]}
       />
 
@@ -209,7 +282,10 @@ export default function ImportProductsPage() {
       />
 
       <div className="grid gap-6 md:grid-cols-[1fr_300px]">
-        <SectionCard title="Upload CSV File" description="Drag and drop your file here, or click to browse.">
+        <SectionCard
+          title="Upload CSV File"
+          description="Drag and drop your file here, or click to browse."
+        >
           {status === "idle" && (
             <div
               className="border-2 border-dashed rounded-lg p-12 text-center hover:bg-muted/50 transition-colors cursor-pointer"
@@ -217,7 +293,9 @@ export default function ImportProductsPage() {
             >
               <UploadCloud className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
               <h3 className="font-semibold text-lg mb-1">Click to Upload</h3>
-              <p className="text-sm text-muted-foreground">Supported format: .csv up to 5MB</p>
+              <p className="text-sm text-muted-foreground">
+                Supported format: .csv up to 5MB
+              </p>
             </div>
           )}
 
@@ -226,7 +304,9 @@ export default function ImportProductsPage() {
               <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md">
                 <File className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium">{fileName}</span>
-                <span className="text-xs text-muted-foreground ml-auto">{previewRows.length} products ready</span>
+                <span className="text-xs text-muted-foreground ml-auto">
+                  {previewRows.length} products ready
+                </span>
               </div>
               <div className="max-h-64 overflow-auto border rounded-md">
                 <table className="w-full text-sm">
@@ -243,7 +323,9 @@ export default function ImportProductsPage() {
                       <tr key={i} className="border-t">
                         <td className="p-2 text-muted-foreground">{i + 1}</td>
                         <td className="p-2">{row.name}</td>
-                        <td className="p-2 text-right">₹{row.basePrice.toFixed(2)}</td>
+                        <td className="p-2 text-right">
+                          ₹{row.basePrice.toFixed(2)}
+                        </td>
                         <td className="p-2 text-right">{row.stock ?? "—"}</td>
                       </tr>
                     ))}
@@ -256,8 +338,12 @@ export default function ImportProductsPage() {
                 )}
               </div>
               <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={handleReset}>Cancel</Button>
-                <Button onClick={handleImport}>Import {previewRows.length} Products</Button>
+                <Button variant="outline" onClick={handleReset}>
+                  Cancel
+                </Button>
+                <Button onClick={handleImport}>
+                  Import {previewRows.length} Products
+                </Button>
               </div>
             </div>
           )}
@@ -265,39 +351,59 @@ export default function ImportProductsPage() {
           {status === "importing" && (
             <div className="border-2 border-dashed rounded-lg p-12 text-center flex flex-col items-center justify-center">
               <div className="h-8 w-8 rounded-full border-t-2 border-primary animate-spin mb-4" />
-              <h3 className="font-medium animate-pulse">Importing {previewRows.length} products...</h3>
+              <h3 className="font-medium animate-pulse">
+                Importing {previewRows.length} products...
+              </h3>
             </div>
           )}
 
           {status === "success" && (
             <div className="border border-success/30 bg-success/10 rounded-lg p-8 text-center flex flex-col items-center">
               <CheckCircle2 className="h-12 w-12 text-success mb-3" />
-              <h3 className="font-semibold text-xl mb-1 text-success">Import Successful</h3>
-              <p className="text-sm text-muted-foreground mb-6">Added {previewRows.length} products to your catalog.</p>
-              <Button onClick={() => router.push(ROUTES.PRODUCTS)}>Return to Catalog</Button>
+              <h3 className="font-semibold text-xl mb-1 text-success">
+                Import Successful
+              </h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                Added {previewRows.length} products to your catalog.
+              </p>
+              <Button onClick={() => router.push(ROUTES.PRODUCTS)}>
+                Return to Catalog
+              </Button>
             </div>
           )}
 
           {status === "error" && (
             <div className="border border-destructive/30 bg-destructive/10 rounded-lg p-8 text-center flex flex-col items-center">
               <FileWarning className="h-12 w-12 text-destructive mb-3" />
-              <h3 className="font-semibold text-xl mb-1 text-destructive">Validation Errors Found</h3>
+              <h3 className="font-semibold text-xl mb-1 text-destructive">
+                Validation Errors Found
+              </h3>
               <div className="text-sm text-muted-foreground mb-4 max-w-md mx-auto text-left space-y-1">
                 {parseErrors.slice(0, 10).map((err, i) => (
                   <p key={i}>• {err.message}</p>
                 ))}
                 {parseErrors.length > 10 && (
-                  <p className="text-xs">...and {parseErrors.length - 10} more errors</p>
+                  <p className="text-xs">
+                    ...and {parseErrors.length - 10} more errors
+                  </p>
                 )}
               </div>
               {previewRows.length > 0 && (
                 <p className="text-xs text-muted-foreground mb-4">
-                  {previewRows.length} valid rows found. Fix errors and re-upload to import all.
+                  {previewRows.length} valid rows found. Fix errors and
+                  re-upload to import all.
                 </p>
               )}
               <div className="flex gap-2">
-                <Button variant="outline" onClick={handleReset}>Try Again</Button>
-                <Button variant="ghost" onClick={() => router.push(ROUTES.PRODUCTS)}>Cancel</Button>
+                <Button variant="outline" onClick={handleReset}>
+                  Try Again
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => router.push(ROUTES.PRODUCTS)}
+                >
+                  Cancel
+                </Button>
               </div>
             </div>
           )}
@@ -305,10 +411,20 @@ export default function ImportProductsPage() {
 
         <SectionCard title="Instructions" padding="md" className="h-fit">
           <div className="text-sm text-muted-foreground space-y-4">
-            <p>1. Download the template CSV file to ensure correct formatting.</p>
-            <p>2. The <strong>Name</strong> and <strong>Base Price</strong> columns are strictly required.</p>
+            <p>
+              1. Download the template CSV file to ensure correct formatting.
+            </p>
+            <p>
+              2. The <strong>Name</strong> and <strong>Base Price</strong>{" "}
+              columns are strictly required.
+            </p>
             <p>3. Row limit is set to 2,000 maximum per upload phase.</p>
-            <Button variant="outline" size="sm" className="w-full mt-2" onClick={handleDownloadTemplate}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full mt-2"
+              onClick={handleDownloadTemplate}
+            >
               Download Template .csv
             </Button>
           </div>

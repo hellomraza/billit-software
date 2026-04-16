@@ -1,16 +1,16 @@
 "use client";
 
-import React from "react";
 import { FilterBar, FilterDefinition } from "@/components/shared/filter-bar";
-import { PAYMENT_METHODS } from "@/lib/constants/defaults";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PAYMENT_METHODS } from "@/lib/constants/defaults";
 
 export interface InvoiceFiltersState {
   paymentMethod?: string;
   isGst?: boolean | string;
   startDate?: string;
   endDate?: string;
+  productName?: string;
 }
 
 interface InvoiceFiltersProps {
@@ -24,7 +24,7 @@ const FILTER_DEF: FilterDefinition[] = [
     id: "paymentMethod",
     label: "Payment Method",
     type: "select",
-    options: PAYMENT_METHODS.map(m => ({ label: m, value: m }))
+    options: PAYMENT_METHODS.map((m) => ({ label: m, value: m })),
   },
   {
     id: "isGst",
@@ -32,12 +32,16 @@ const FILTER_DEF: FilterDefinition[] = [
     type: "select",
     options: [
       { label: "GST Invoices", value: "true" },
-      { label: "Non-GST Invoices", value: "false" }
-    ]
-  }
+      { label: "Non-GST Invoices", value: "false" },
+    ],
+  },
 ];
 
-export function InvoiceFilters({ filters, onFilterChange, onReset }: InvoiceFiltersProps) {
+export function InvoiceFilters({
+  filters,
+  onFilterChange,
+  onReset,
+}: InvoiceFiltersProps) {
   const handleFilterChange = (newFilters: Record<string, string | boolean>) => {
     onFilterChange({ ...filters, ...newFilters } as InvoiceFiltersState);
   };
@@ -46,33 +50,47 @@ export function InvoiceFilters({ filters, onFilterChange, onReset }: InvoiceFilt
     onFilterChange({ ...filters, [field]: value });
   };
 
+  const handleProductChange = (value: string) => {
+    onFilterChange({ ...filters, productName: value });
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-4 p-3 bg-muted/40 border rounded-lg">
         <div className="flex items-center gap-2">
           <Label className="text-xs text-muted-foreground">From</Label>
-          <Input 
-            type="date" 
-            className="h-8 text-xs w-auto" 
-            value={filters.startDate || ""} 
-            onChange={(e) => handleDateChange("startDate", e.target.value)} 
+          <Input
+            type="date"
+            className="h-8 text-xs w-auto"
+            value={filters.startDate || ""}
+            onChange={(e) => handleDateChange("startDate", e.target.value)}
           />
         </div>
         <div className="flex items-center gap-2">
           <Label className="text-xs text-muted-foreground">To</Label>
-          <Input 
-            type="date" 
-            className="h-8 text-xs w-auto" 
-            value={filters.endDate || ""} 
-            onChange={(e) => handleDateChange("endDate", e.target.value)} 
+          <Input
+            type="date"
+            className="h-8 text-xs w-auto"
+            value={filters.endDate || ""}
+            onChange={(e) => handleDateChange("endDate", e.target.value)}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Label className="text-xs text-muted-foreground">Product</Label>
+          <Input
+            type="text"
+            placeholder="Search products..."
+            className="h-8 text-xs w-40"
+            value={filters.productName || ""}
+            onChange={(e) => handleProductChange(e.target.value)}
           />
         </div>
       </div>
-      <FilterBar 
+      <FilterBar
         filters={FILTER_DEF}
         activeFilters={{
           paymentMethod: filters.paymentMethod || "",
-          isGst: filters.isGst || "" // FilterBar expects simple strings/booleans
+          isGst: filters.isGst || "", // FilterBar expects simple strings/booleans
         }}
         onFilterChange={handleFilterChange}
         onReset={onReset}

@@ -8,7 +8,7 @@ import {
 } from "@/components/shared/insufficient-stock-modal";
 import { Card } from "@/components/ui/card";
 import { InvoiceItem, Product } from "@/types";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BillingCart } from "./billing-cart";
 import { BillingSearch } from "./billing-search";
@@ -31,6 +31,19 @@ export function BillingWorkspace({
   const [searchQuery, setSearchQuery] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
+  const [products, setProducts] = useState<Product[]>(initialProducts);
+
+  // Load imported products and merge with initial products
+  useEffect(() => {
+    const importedStr = localStorage.getItem("billit_imported_products");
+    if (importedStr) {
+      const importedProducts = JSON.parse(importedStr);
+      // Merge: imported products first, then initial (mock) products
+      setProducts([...importedProducts, ...initialProducts]);
+    } else {
+      setProducts(initialProducts);
+    }
+  }, [initialProducts]);
 
   // Stock Validation State
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
@@ -74,7 +87,7 @@ export function BillingWorkspace({
   };
 
   const handleUpdateQuantity = (productId: string, quantity: number) => {
-    const product = initialProducts.find((p) => p.id === productId);
+    const product = products.find((p) => p.id === productId);
     if (product && quantity > product.currentStock) {
       toast.warning(`Insufficient stock for ${product.name}`);
     }
@@ -110,7 +123,7 @@ export function BillingWorkspace({
   const handleFinalizeInit = () => {
     const conflicts = cart
       .map((item) => {
-        const product = initialProducts.find((p) => p.id === item.productId)!;
+        const product = products.find((p) => p.id === item.productId)!;
         return {
           product,
           requested: item.quantity,
@@ -142,7 +155,7 @@ export function BillingWorkspace({
         newCart = newCart.filter((i) => i.productId !== res.productId);
       } else if (res.action === "use-available") {
         const item = newCart.find((i) => i.productId === res.productId);
-        const product = initialProducts.find((p) => p.id === res.productId);
+        const product = products.find((p) => p.id === res.productId);
         if (item && product) {
           item.quantity = product.currentStock;
           item.subtotal = item.quantity * item.unitPrice;
@@ -192,7 +205,7 @@ export function BillingWorkspace({
     <div className="flex flex-col md:flex-row h-full gap-4 relative">
       <Card className="flex-1 flex flex-col min-h-0 bg-transparent border-0 shadow-none">
         <BillingSearch
-          products={initialProducts}
+          products={products}
           onSelectProduct={handleSelectProduct}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}

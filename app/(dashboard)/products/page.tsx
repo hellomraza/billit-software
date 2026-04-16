@@ -19,7 +19,15 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
 
   useEffect(() => {
-    getProducts().then(setProducts);
+    getProducts().then((mockProducts) => {
+      // Load imported products from localStorage
+      const importedStr = localStorage.getItem("billit_imported_products");
+      const importedProducts = importedStr ? JSON.parse(importedStr) : [];
+
+      // Merge: imported products first, then mock products
+      const allProducts = [...importedProducts, ...mockProducts];
+      setProducts(allProducts);
+    });
   }, []);
   const [searchQuery, setSearchQuery] = useState("");
   const [showDeleted, setShowDeleted] = useState(false);
@@ -32,19 +40,41 @@ export default function ProductsPage() {
   const handleDeleteInitial = (product: any) => setDeleteCandidate(product);
 
   const handleConfirmDelete = () => {
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === deleteCandidate.id ? { ...p, isDeleted: true } : p,
-      ),
+    const updatedProducts = products.map((p) =>
+      p.id === deleteCandidate.id ? { ...p, isDeleted: true } : p,
     );
+    setProducts(updatedProducts);
+
+    // Persist changes to localStorage for imported products
+    const importedStr = localStorage.getItem("billit_imported_products");
+    if (importedStr) {
+      const imported = JSON.parse(importedStr);
+      const updated = imported.map((p: any) =>
+        p.id === deleteCandidate.id ? { ...p, isDeleted: true } : p,
+      );
+      localStorage.setItem("billit_imported_products", JSON.stringify(updated));
+    }
+
     toast.success("Product marked as deleted");
     setDeleteCandidate(null);
   };
 
   const handleRestore = (product: any) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === product.id ? { ...p, isDeleted: false } : p)),
+    const updatedProducts = products.map((p) =>
+      p.id === product.id ? { ...p, isDeleted: false } : p,
     );
+    setProducts(updatedProducts);
+
+    // Persist changes to localStorage for imported products
+    const importedStr = localStorage.getItem("billit_imported_products");
+    if (importedStr) {
+      const imported = JSON.parse(importedStr);
+      const updated = imported.map((p: any) =>
+        p.id === product.id ? { ...p, isDeleted: false } : p,
+      );
+      localStorage.setItem("billit_imported_products", JSON.stringify(updated));
+    }
+
     toast.success("Product restored");
   };
 
