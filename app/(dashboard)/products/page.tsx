@@ -54,9 +54,13 @@ export default function ProductsPage() {
   const [deleteCandidate, setDeleteCandidate] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const filteredProducts = products.filter((p) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      p.name.toLowerCase().includes(query) ||
+      (p.productCode?.toLowerCase().includes(query) ?? false)
+    );
+  });
 
   const handleDeleteInitial = (product: any) => setDeleteCandidate(product);
 
@@ -162,7 +166,6 @@ export default function ProductsPage() {
             onDelete={handleDeleteInitial}
             onRestore={handleRestore}
             isLoading={isLoading}
-            onRestore={handleRestore}
           />
         )}
       </div>

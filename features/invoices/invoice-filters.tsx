@@ -4,6 +4,8 @@ import { FilterBar, FilterDefinition } from "@/components/shared/filter-bar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PAYMENT_METHODS } from "@/lib/constants/defaults";
+import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
+import { useEffect, useState } from "react";
 
 export interface InvoiceFiltersState {
   paymentMethod?: string;
@@ -42,6 +44,16 @@ export function InvoiceFilters({
   onFilterChange,
   onReset,
 }: InvoiceFiltersProps) {
+  const [productSearchInput, setProductSearchInput] = useState(
+    filters.productName || "",
+  );
+  const debouncedProductSearch = useDebouncedValue(productSearchInput, 300);
+
+  // Sync debounced product search to filters
+  useEffect(() => {
+    onFilterChange({ ...filters, productName: debouncedProductSearch });
+  }, [debouncedProductSearch]);
+
   const handleFilterChange = (newFilters: Record<string, string | boolean>) => {
     onFilterChange({ ...filters, ...newFilters } as InvoiceFiltersState);
   };
@@ -51,7 +63,7 @@ export function InvoiceFilters({
   };
 
   const handleProductChange = (value: string) => {
-    onFilterChange({ ...filters, productName: value });
+    setProductSearchInput(value);
   };
 
   return (
@@ -81,8 +93,9 @@ export function InvoiceFilters({
             type="text"
             placeholder="Search products..."
             className="h-8 text-xs w-40"
-            value={filters.productName || ""}
+            value={productSearchInput}
             onChange={(e) => handleProductChange(e.target.value)}
+            aria-label="Search products by name"
           />
         </div>
       </div>

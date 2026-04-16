@@ -4,6 +4,7 @@ import { DataTable } from "@/components/shared/data-table";
 import { MoneyText } from "@/components/shared/money-text";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
+import { formatDate } from "@/lib/formatters/date";
 import { formatStock } from "@/lib/formatters/quantity";
 import { ROUTES } from "@/lib/routes";
 import { Product } from "@/types";
@@ -42,6 +43,15 @@ export function ProductTable({
           cell: (row) => <span className="font-medium">{row.name}</span>,
         },
         {
+          id: "code",
+          header: "Code",
+          cell: (row) => (
+            <span className="text-sm text-muted-foreground">
+              {row.productCode || "—"}
+            </span>
+          ),
+        },
+        {
           id: "price",
           header: "Base Price",
           cell: (row) => <MoneyText amount={row.basePrice} />,
@@ -63,6 +73,24 @@ export function ProductTable({
           id: "gst",
           header: "GST",
           cell: (row) => `${row.gstRate}%`,
+        },
+        {
+          id: "createdAt",
+          header: "Created",
+          cell: (row) => (
+            <span className="text-sm text-muted-foreground">
+              {formatDate(row.createdAt)}
+            </span>
+          ),
+        },
+        {
+          id: "updatedAt",
+          header: "Updated",
+          cell: (row) => (
+            <span className="text-sm text-muted-foreground">
+              {formatDate(row.updatedAt)}
+            </span>
+          ),
         },
         {
           id: "status",

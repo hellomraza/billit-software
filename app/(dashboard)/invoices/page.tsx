@@ -43,6 +43,7 @@ export default function InvoicesPage() {
     }
   }, []);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
   const [filters, setFilters] = useState<InvoiceFiltersState>({
     paymentMethod: "",
     isGst: "",
@@ -50,6 +51,17 @@ export default function InvoicesPage() {
     endDate: "",
     productName: "",
   });
+
+  // Simulate search loading for 150ms after search query changes
+  useEffect(() => {
+    if (searchQuery) {
+      setIsSearching(true);
+      const timer = setTimeout(() => setIsSearching(false), 150);
+      return () => clearTimeout(timer);
+    } else {
+      setIsSearching(false);
+    }
+  }, [searchQuery]);
 
   const filteredInvoices = useMemo(() => {
     return invoices.filter((inv) => {
@@ -109,6 +121,7 @@ export default function InvoicesPage() {
           onSearch={setSearchQuery}
           placeholder="Search invoice number or customer..."
           className="w-full max-w-sm"
+          loading={isSearching}
         />
         <InvoiceFilters
           filters={filters}

@@ -3,10 +3,16 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { validateProductForm } from "@/lib/validators/product";
+import { formatDateTime } from "@/lib/formatters/date";
+import {
+  validateGstRate,
+  validatePrice,
+  validateProductForm,
+  validateProductName,
+} from "@/lib/validators/product";
 import { Product } from "@/types";
 import { Loader2 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { SectionCard } from "./section-card";
 
 interface ProductFormProps {
@@ -24,6 +30,7 @@ export function ProductForm({
 }: ProductFormProps) {
   const [formData, setFormData] = useState<Partial<Product>>({
     name: initialData.name || "",
+    productCode: initialData.productCode || "",
     basePrice: initialData.basePrice || 0,
     gstRate: initialData.gstRate || 0,
     currentStock: initialData.currentStock || 0,
@@ -32,27 +39,53 @@ export function ProductForm({
 
   const [errors, setErrors] = useState<Record<string, string | null>>({});
 
+  // Real-time validation: validate form on every change
+  const isFormValid = useMemo(() => {
+    const validationErrors = validateProductForm(formData);
+    return Object.values(validationErrors).every((error) => error === null);
+  }, [formData]);
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
+
+    const newValue = [
+      "basePrice",
+      "gstRate",
+      "currentStock",
+      "deficitThreshold",
+    ].includes(name)
+      ? parseFloat(value) || 0
+      : value;
+
     setFormData((prev) => ({
       ...prev,
-      [name]: [
-        "basePrice",
-        "gstRate",
-        "currentStock",
-        "deficitThreshold",
-      ].includes(name)
-        ? parseFloat(value) || 0
-        : value,
+      [name]: newValue,
+    }));
+
+    // Validate field in real-time
+    let fieldError: string | null = null;
+    if (name === "name") {
+      fieldError = validateProductName(newValue as string);
+    } else if (name === "basePrice") {
+      fieldError = validatePrice(newValue as number);
+    } else if (name === "gstRate") {
+      fieldError = validateGstRate(newValue as number);
+    }
+
+    // Update errors state for this field
+    setErrors((prev) => ({
+      ...prev,
+      [name]: fieldError,
     }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const validationErrors = validateProductForm(formData);
 
+    // Double-check form validity before submission
+    const validationErrors = validateProductForm(formData);
     if (Object.values(validationErrors).some((v) => v !== null)) {
       setErrors(validationErrors);
       return;
@@ -84,10 +117,31 @@ export function ProductForm({
               value={formData.name || ""}
               onChange={handleChange}
               autoFocus
+              aria-invalid={errors.name ? "true" : "false"}
+              className={
+                errors.name
+                  ? "border-destructive focus-visible:ring-destructive/20"
+                  : ""
+              }
             />
             {errors.name && (
-              <p className="text-destructive text-sm">{errors.name}</p>
+              <p className="text-destructive text-sm font-medium" role="alert">
+                {errors.name}
+              </p>
             )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="productCode">Product Code/SKU (Optional)</Label>
+            <Input
+              id="productCode"
+              name="productCode"
+              value={formData.productCode || ""}
+              onChange={handleChange}
+              placeholder="e.g., SKU-001, PROD-A1"
+            />
+            <p className="text-xs text-muted-foreground">
+              Unique identifier for searching and inventory tracking
+            </p>
           </div>
         </div>
       </SectionCard>
@@ -105,9 +159,20 @@ export function ProductForm({
                 step="0.01"
                 value={formData.basePrice || ""}
                 onChange={handleChange}
+                aria-invalid={errors.basePrice ? "true" : "false"}
+                className={
+                  errors.basePrice
+                    ? "border-destructive focus-visible:ring-destructive/20"
+                    : ""
+                }
               />
               {errors.basePrice && (
-                <p className="text-destructive text-sm">{errors.basePrice}</p>
+                <p
+                  className="text-destructive text-sm font-medium"
+                  role="alert"
+                >
+                  {errors.basePrice}
+                </p>
               )}
             </div>
             <div className="space-y-2">
@@ -115,9 +180,14 @@ export function ProductForm({
               <select
                 id="gstRate"
                 name="gstRate"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className={`flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+                  errors.gstRate
+                    ? "border-destructive focus-visible:ring-destructive/20"
+                    : "border-input"
+                }`}
                 value={formData.gstRate || 0}
                 onChange={handleChange}
+                aria-invalid={errors.gstRate ? "true" : "false"}
               >
                 {[0, 5, 12, 18, 28].map((rate) => (
                   <option key={rate} value={rate}>
@@ -125,6 +195,14 @@ export function ProductForm({
                   </option>
                 ))}
               </select>
+              {errors.gstRate && (
+                <p
+                  className="text-destructive text-sm font-medium"
+                  role="alert"
+                >
+                  {errors.gstRate}
+                </p>
+              )}
             </div>
           </div>
         </SectionCard>
@@ -174,7 +252,7 @@ export function ProductForm({
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={isLoading}>
+        <Button type="submit" disabled={isLoading || !isFormValid}>
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -185,6 +263,17 @@ export function ProductForm({
           )}
         </Button>
       </div>
+
+      {isEditMode && initialData.createdAt && (
+        <div className="border-t pt-4 mt-4">
+          <p className="text-xs text-muted-foreground space-y-1">
+            <div>Created: {formatDateTime(initialData.createdAt)}</div>
+            {initialData.updatedAt && (
+              <div>Last Updated: {formatDateTime(initialData.updatedAt)}</div>
+            )}
+          </p>
+        </div>
+      )}
     </form>
   );
 }
