@@ -89,7 +89,7 @@ export function DataTable<T>({
 
   return (
     <div
-      className="border rounded-md bg-card overflow-x-auto"
+      className="border rounded-md bg-card overflow-x-auto animate-in fade-in duration-500"
       aria-busy="false"
     >
       <div className="min-w-full">

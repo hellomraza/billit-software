@@ -1,12 +1,11 @@
 "use client";
 
-import React from "react";
-import { Invoice } from "@/types";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { MoneyText } from "@/components/shared/money-text";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { InvoiceItemsTable } from "@/features/billing/invoice-items-table";
 import { formatDateTime } from "@/lib/formatters/date";
-import { MoneyText } from "@/components/shared/money-text";
-import { Separator } from "@/components/ui/separator";
+import { Invoice } from "@/types";
 
 interface InvoiceDetailPanelProps {
   invoice: Invoice;
@@ -16,18 +15,24 @@ export function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
+        <Card className="animate-in fade-in slide-in-from-left duration-500">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm text-muted-foreground uppercase tracking-wider">Invoice Details</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground uppercase tracking-wider">
+              Invoice Details
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="flex justify-between">
               <span className="text-sm font-medium">Invoice Number</span>
-              <span className="text-sm font-mono text-primary font-bold">{invoice.invoiceNumber}</span>
+              <span className="text-sm font-mono text-primary font-bold">
+                {invoice.invoiceNumber}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm font-medium">Date & Time</span>
-              <span className="text-sm text-muted-foreground">{formatDateTime(invoice.createdAt)}</span>
+              <span className="text-sm text-muted-foreground">
+                {formatDateTime(invoice.createdAt)}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm font-medium">Payment Method</span>
@@ -35,14 +40,18 @@ export function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps) {
             </div>
             <div className="flex justify-between">
               <span className="text-sm font-medium">Tax Type</span>
-              <span className="text-sm">{invoice.isGstInvoice ? "GST Registered" : "Non-GST"}</span>
+              <span className="text-sm">
+                {invoice.isGstInvoice ? "GST Registered" : "Non-GST"}
+              </span>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="animate-in fade-in slide-in-from-right duration-500">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm text-muted-foreground uppercase tracking-wider">Customer Details</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground uppercase tracking-wider">
+              Customer Details
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {invoice.customerName ? (
@@ -67,16 +76,21 @@ export function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps) {
         </Card>
       </div>
 
-      <Card>
+      <Card className="animate-in fade-in slide-in-from-top duration-500 delay-100">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm text-muted-foreground uppercase tracking-wider">Itemized Breakdown</CardTitle>
+          <CardTitle className="text-sm text-muted-foreground uppercase tracking-wider">
+            Itemized Breakdown
+          </CardTitle>
         </CardHeader>
         <CardContent className="p-0 sm:p-6 sm:pt-0">
-          <InvoiceItemsTable items={invoice.items} showGst={invoice.isGstInvoice} />
+          <InvoiceItemsTable
+            items={invoice.items}
+            showGst={invoice.isGstInvoice}
+          />
         </CardContent>
       </Card>
 
-      <Card className="bg-muted/10 border-dashed">
+      <Card className="bg-muted/10 border-dashed animate-in fade-in slide-in-from-bottom duration-500 delay-150">
         <CardContent className="p-6">
           <div className="space-y-2 max-w-sm ml-auto">
             <div className="flex justify-between text-sm">
@@ -92,7 +106,10 @@ export function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps) {
             <Separator className="my-2" />
             <div className="flex justify-between items-center">
               <span className="font-semibold text-lg">Grand Total</span>
-              <MoneyText amount={invoice.grandTotal} className="text-2xl font-bold text-primary" />
+              <MoneyText
+                amount={invoice.grandTotal}
+                className="text-2xl font-bold text-primary"
+              />
             </div>
           </div>
         </CardContent>

@@ -32,25 +32,29 @@ export default function InvoiceDetailPage() {
   if (!invoice) return null;
 
   return (
-    <div className="p-4 sm:p-8 space-y-6 max-w-5xl mx-auto">
-      <PageHeader
-        title={`Invoice ${invoice.invoiceNumber}`}
-        breadcrumbs={[
-          { label: "Invoices", href: ROUTES.INVOICES },
-          { label: invoice.invoiceNumber },
-        ]}
-        actions={[
-          <Button
-            key="print"
-            variant="outline"
-            size="sm"
-            onClick={() => window.print()}
-          >
-            <Printer className="mr-2 h-4 w-4" /> Print Document
-          </Button>,
-        ]}
-      />
-      <InvoiceDetailPanel invoice={invoice} />
+    <div className="p-4 sm:p-8 space-y-6 max-w-5xl mx-auto animate-in fade-in slide-in-from-top-8 duration-500">
+      <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+        <PageHeader
+          title={`Invoice ${invoice.invoiceNumber}`}
+          breadcrumbs={[
+            { label: "Invoices", href: ROUTES.INVOICES },
+            { label: invoice.invoiceNumber },
+          ]}
+          actions={[
+            <Button
+              key="print"
+              variant="outline"
+              size="sm"
+              onClick={() => window.print()}
+            >
+              <Printer className="mr-2 h-4 w-4" /> Print Document
+            </Button>,
+          ]}
+        />
+      </div>
+      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
+        <InvoiceDetailPanel invoice={invoice} />
+      </div>
     </div>
   );
 }

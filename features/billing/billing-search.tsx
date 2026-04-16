@@ -6,13 +6,41 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { formatStock } from "@/lib/formatters/quantity";
 import { Product } from "@/types";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface BillingSearchProps {
   products: Product[];
   onSelectProduct: (product: Product) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+}
+
+function HighlightedText({
+  text,
+  highlight,
+}: {
+  text: string;
+  highlight: string;
+}) {
+  if (!highlight) return <>{text}</>;
+
+  const parts = text.split(new RegExp(`(${highlight})`, "gi"));
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === highlight.toLowerCase() ? (
+          <mark
+            key={i}
+            className="bg-yellow-200/70 dark:bg-yellow-700/70 font-medium"
+          >
+            {part}
+          </mark>
+        ) : (
+          <span key={i}>{part}</span>
+        ),
+      )}
+    </>
+  );
 }
 
 export function BillingSearch({
@@ -22,6 +50,20 @@ export function BillingSearch({
   onSearchChange,
 }: BillingSearchProps) {
   const [isSearching, setIsSearching] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Keyboard shortcut: Alt+S to focus search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.altKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // Simulate search loading for 150ms after search query changes
   useEffect(() => {
@@ -48,6 +90,7 @@ export function BillingSearch({
   return (
     <div className="flex flex-col space-y-4 h-full">
       <SearchBar
+        ref={searchInputRef}
         onSearch={onSearchChange}
         placeholder="Search products by name or code (Alt+S)"
         className="max-w-full h-12 text-md"
@@ -65,11 +108,18 @@ export function BillingSearch({
               <div className="flex justify-between items-start gap-2">
                 <div className="flex-1">
                   <div className="font-medium line-clamp-2 text-sm leading-tight">
-                    {product.name}
+                    <HighlightedText
+                      text={product.name}
+                      highlight={searchQuery}
+                    />
                   </div>
                   {product.productCode && (
                     <div className="text-xs text-muted-foreground">
-                      Code: {product.productCode}
+                      Code:{" "}
+                      <HighlightedText
+                        text={product.productCode}
+                        highlight={searchQuery}
+                      />
                     </div>
                   )}
                 </div>

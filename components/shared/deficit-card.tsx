@@ -2,7 +2,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Product } from "@/types";
-import { PackageMinus } from "lucide-react";
+import { ChevronDown, PackageMinus } from "lucide-react";
 
 export interface DeficitGroup {
   productId: string;
@@ -75,9 +75,14 @@ export function DeficitCard({
               <Button
                 variant="link"
                 size="sm"
-                className="h-auto p-0 text-xs transition-colors duration-200"
+                className="h-auto p-0 text-xs transition-transform duration-300"
                 onClick={onToggleExpand}
               >
+                <ChevronDown
+                  className={`h-4 w-4 mr-1 inline-block transition-transform duration-300 ${
+                    isExpanded ? "rotate-180" : ""
+                  }`}
+                />
                 {isExpanded ? "Hide details" : "View source invoices"}
               </Button>
             )}
