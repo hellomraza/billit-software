@@ -27,7 +27,7 @@ export default function SettingsPage() {
   const [gstin, setGstin] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
-  const { logout } = useAuth();
+  const { logout, updateTenantSettings } = useAuth();
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -49,6 +49,7 @@ export default function SettingsPage() {
   const handleSaveTax = async () => {
     setIsSaving(true);
     await new Promise((resolve) => setTimeout(resolve, 800));
+    updateTenantSettings({ gstNumber: gstin });
     setIsSaving(false);
     toast.success("Tax Config Saved", { description: "GST Details updated." });
   };

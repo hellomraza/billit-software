@@ -134,6 +134,7 @@ export default function ImportProductsPage() {
   const [fileName, setFileName] = useState("");
   const [previewRows, setPreviewRows] = useState<ParsedRow[]>([]);
   const [parseErrors, setParseErrors] = useState<ParseError[]>([]);
+  const [importProgress, setImportProgress] = useState(0);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -199,10 +200,8 @@ export default function ImportProductsPage() {
 
   const handleImport = async () => {
     setStatus("importing");
+    setImportProgress(0);
     try {
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-
       // Generate IDs for new products
       const importedProducts = previewRows.map((row, idx) => ({
         id: `imported-${Date.now()}-${idx}`,
@@ -216,7 +215,20 @@ export default function ImportProductsPage() {
         source: "csv-import" as const,
       }));
 
-      // Persist imported products to localStorage
+      // Simulate progressive import with real progress tracking
+      const totalItems = importedProducts.length;
+      const batchSize = Math.max(1, Math.ceil(totalItems / 10));
+
+      for (let i = 0; i < totalItems; i += batchSize) {
+        await new Promise((resolve) => setTimeout(resolve, 120));
+        const progressPercent = Math.min(
+          100,
+          Math.round(((i + batchSize) / totalItems) * 100),
+        );
+        setImportProgress(progressPercent);
+      }
+
+      // Get existing imports and add new ones
       const existingImports = localStorage.getItem("billit_imported_products");
       const allImports = existingImports ? JSON.parse(existingImports) : [];
       const updated = [...allImports, ...importedProducts];
@@ -226,6 +238,7 @@ export default function ImportProductsPage() {
       toast.success(`${previewRows.length} products imported successfully`, {
         description: "Products have been added to your catalog.",
       });
+      setImportProgress(100);
       setStatus("success");
     } catch (error) {
       toast.error("Import failed", {
@@ -233,6 +246,7 @@ export default function ImportProductsPage() {
           "An error occurred while importing products. Please try again.",
       });
       setStatus("error");
+      setImportProgress(0);
       setParseErrors([
         {
           row: 0,
@@ -248,6 +262,7 @@ export default function ImportProductsPage() {
     setFileName("");
     setPreviewRows([]);
     setParseErrors([]);
+    setImportProgress(0);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -349,11 +364,22 @@ export default function ImportProductsPage() {
           )}
 
           {status === "importing" && (
-            <div className="border-2 border-dashed rounded-lg p-12 text-center flex flex-col items-center justify-center">
-              <div className="h-8 w-8 rounded-full border-t-2 border-primary animate-spin mb-4" />
-              <h3 className="font-medium animate-pulse">
+            <div className="border-2 border-dashed rounded-lg p-12 text-center flex flex-col items-center justify-center space-y-4">
+              <div className="h-8 w-8 rounded-full border-t-2 border-primary animate-spin" />
+              <h3 className="font-medium">
                 Importing {previewRows.length} products...
               </h3>
+              <div className="w-full max-w-xs">
+                <div className="bg-muted rounded-full h-2 overflow-hidden">
+                  <div
+                    className="bg-primary h-full transition-all duration-300"
+                    style={{ width: `${importProgress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {importProgress}% complete
+                </p>
+              </div>
             </div>
           )}
 

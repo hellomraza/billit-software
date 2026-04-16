@@ -13,13 +13,34 @@ import { ROUTES } from "@/lib/routes";
 import { Receipt } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 export default function InvoicesPage() {
   const router = useRouter();
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    getInvoices().then(setInvoices);
+    try {
+      setIsLoading(true);
+      getInvoices()
+        .then(setInvoices)
+        .catch((error) => {
+          toast.error("Failed to load invoices", {
+            description: "Please try refreshing the page.",
+          });
+          console.error("Error loading invoices:", error);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    } catch (error) {
+      toast.error("Error loading invoices", {
+        description: "An unexpected error occurred.",
+      });
+      console.error("Error:", error);
+      setIsLoading(false);
+    }
   }, []);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<InvoiceFiltersState>({
@@ -79,9 +100,11 @@ export default function InvoicesPage() {
   }, [invoices, filters, searchQuery]);
 
   return (
-    <div className="p-4 sm:p-8 space-y-6 h-full flex flex-col max-w-[1400px] mx-auto">
-      <PageHeader title="Invoices" />
-      <div className="flex flex-col gap-4">
+    <div className="p-4 sm:p-8 space-y-6 h-full flex flex-col max-w-[1400px] mx-auto animate-in fade-in duration-500">
+      <div className="animate-in slide-in-from-top duration-500 delay-100">
+        <PageHeader title="Invoices" />
+      </div>
+      <div className="flex flex-col gap-4 animate-in slide-in-from-top duration-500 delay-150">
         <SearchBar
           onSearch={setSearchQuery}
           placeholder="Search invoice number or customer..."
@@ -100,7 +123,7 @@ export default function InvoicesPage() {
           }
         />
       </div>
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto animate-in fade-in duration-500 delay-200">
         {filteredInvoices.length === 0 ? (
           <EmptyState
             icon={Receipt}

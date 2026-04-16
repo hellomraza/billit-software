@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
 import { InvoiceDetailPanel } from "@/features/invoices/invoice-detail-panel";
 import { getInvoiceById } from "@/lib/mock-data/invoice";
-import { Invoice } from "@/types";
 import { ROUTES } from "@/lib/routes";
-import { Button } from "@/components/ui/button";
+import { Invoice } from "@/types";
 import { Printer } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function InvoiceDetailPage() {
   const params = useParams();
@@ -20,6 +21,9 @@ export default function InvoiceDetailPage() {
       if (inv) {
         setInvoice(inv);
       } else {
+        toast.error("Invoice not found", {
+          description: "The invoice you're looking for does not exist.",
+        });
         router.push(ROUTES.INVOICES);
       }
     });
@@ -29,16 +33,21 @@ export default function InvoiceDetailPage() {
 
   return (
     <div className="p-4 sm:p-8 space-y-6 max-w-5xl mx-auto">
-      <PageHeader 
-        title={`Invoice ${invoice.invoiceNumber}`} 
+      <PageHeader
+        title={`Invoice ${invoice.invoiceNumber}`}
         breadcrumbs={[
           { label: "Invoices", href: ROUTES.INVOICES },
-          { label: invoice.invoiceNumber }
+          { label: invoice.invoiceNumber },
         ]}
         actions={[
-          <Button key="print" variant="outline" size="sm" onClick={() => window.print()}>
+          <Button
+            key="print"
+            variant="outline"
+            size="sm"
+            onClick={() => window.print()}
+          >
             <Printer className="mr-2 h-4 w-4" /> Print Document
-          </Button>
+          </Button>,
         ]}
       />
       <InvoiceDetailPanel invoice={invoice} />
