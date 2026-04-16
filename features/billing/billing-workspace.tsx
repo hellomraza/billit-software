@@ -7,10 +7,14 @@ import {
   InsufficientStockModal,
 } from "@/components/shared/insufficient-stock-modal";
 import { Card } from "@/components/ui/card";
-import { InvoiceItem, Product } from "@/types";
+import { MOCK_DEFICITS, persistDeficits } from "@/lib/mock-data/deficit";
+import { saveInvoice } from "@/lib/mock-data/invoice";
+import { updateProductStock } from "@/lib/mock-data/product";
+import { Invoice, InvoiceItem, Product } from "@/types";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BillingCart } from "./billing-cart";
+import { BillingCustomerDetails } from "./billing-customer-details";
 import { BillingSearch } from "./billing-search";
 import { BillingSummaryPanel } from "./billing-summary-panel";
 
@@ -30,6 +34,8 @@ export function BillingWorkspace({
   const [cart, setCart] = useState<InvoiceItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>(initialProducts);
 
@@ -169,10 +175,7 @@ export function BillingWorkspace({
 
     // Only continue if cart is not empty after resolution
     if (newCart.length > 0) {
-      const deficitsLogged = resolutions.filter(
-        (r) => r.action === "sell-anyway",
-      );
-      finalizeSuccess(deficitsLogged);
+      finalizeSuccess(resolutions);
 
       // Show toast about removed items if any
       if (removedItems.length > 0) {
@@ -191,14 +194,88 @@ export function BillingWorkspace({
     }
   };
 
-  const finalizeSuccess = (deficitsLogged: any[] = []) => {
-    toast.success("Invoice #INV-2049 Finalized", {
+  const finalizeSuccess = (
+    resolutions: { productId: string; action: DeficitResolutionAction }[] = [],
+  ) => {
+    // Generate next invoice number
+    const nextInvoiceNum = parseInt(
+      localStorage.getItem("billit_next_invoice_num") || "1",
+    );
+    const invoiceNumber = `INV-${String(nextInvoiceNum).padStart(3, "0")}`;
+
+    // Save to localStorage for next invoice
+    localStorage.setItem("billit_next_invoice_num", String(nextInvoiceNum + 1));
+
+    // Decrement stock for all items sold
+    cart.forEach((item) => {
+      updateProductStock(item.productId, item.quantity);
+    });
+
+    // Log deficits for items sold at zero stock
+    const deficitsCreated = resolutions.filter(
+      (r) => r.action === "sell-anyway",
+    );
+
+    if (deficitsCreated.length > 0) {
+      const persistedStr = localStorage.getItem("billit_deficits");
+      const allDeficits = persistedStr
+        ? JSON.parse(persistedStr)
+        : [...MOCK_DEFICITS];
+
+      // Create new deficit records for sold-anyway items
+      deficitsCreated.forEach((res) => {
+        const cartItem = cart.find((i) => i.productId === res.productId);
+        if (cartItem) {
+          allDeficits.push({
+            id: `def_${Date.now()}_${res.productId}`,
+            productId: res.productId,
+            invoiceId: `inv_${Date.now()}`, // Placeholder, will be updated below
+            missingQuantity: cartItem.quantity,
+            status: "PENDING" as const,
+            createdAt: new Date().toISOString(),
+          });
+        }
+      });
+
+      persistDeficits(allDeficits);
+    }
+
+    // Create invoice object
+    const newInvoice: Invoice = {
+      id: `inv_${Date.now()}`,
+      invoiceNumber,
+      createdAt: new Date().toISOString(),
+      customerName: customerName || undefined,
+      customerPhone: customerPhone || undefined,
+      isGstInvoice: tenantSettings.isGstEnabled,
+      paymentMethod: paymentMethod as any,
+      items: cart,
+      subtotal,
+      totalGst: gstAmount,
+      grandTotal,
+    };
+
+    // Save invoice
+    saveInvoice(newInvoice);
+
+    toast.success(`Invoice #${invoiceNumber} Finalized`, {
       description: `Total ${tenantSettings.currency} ${grandTotal.toFixed(2)} via ${paymentMethod}`,
     });
-    if (deficitsLogged.length > 0)
-      toast.error(`${deficitsLogged.length} inventory defects logged.`);
+
+    if (deficitsCreated.length > 0) {
+      toast.warning(
+        `${deficitsCreated.length} inventory deficit${deficitsCreated.length > 1 ? "s" : ""} logged`,
+        {
+          description: `Review and resolve in Inventory Deficits section.`,
+        },
+      );
+    }
+
+    // Reset form
     setCart([]);
     setPaymentMethod("CASH");
+    setCustomerName("");
+    setCustomerPhone("");
   };
 
   return (
@@ -217,6 +294,12 @@ export function BillingWorkspace({
           items={cart}
           onUpdateQuantity={handleUpdateQuantity}
           onRemoveItem={handleRemoveItem}
+        />
+        <BillingCustomerDetails
+          customerName={customerName}
+          customerPhone={customerPhone}
+          onCustomerNameChange={setCustomerName}
+          onCustomerPhoneChange={setCustomerPhone}
         />
         <BillingSummaryPanel
           subtotal={subtotal}

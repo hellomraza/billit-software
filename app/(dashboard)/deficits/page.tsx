@@ -3,7 +3,7 @@
 import { DeficitGroup } from "@/components/shared/deficit-card";
 import { PageHeader } from "@/components/shared/page-header";
 import { DeficitList } from "@/features/deficits/deficit-list";
-import { getDeficits } from "@/lib/mock-data/deficit";
+import { getDeficits, resolveDeficitGroup } from "@/lib/mock-data/deficit";
 import { getProducts } from "@/lib/mock-data/product";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -49,31 +49,57 @@ export default function DeficitsPage() {
   }, [allDeficits]);
 
   const deficitGroups = useMemo<DeficitGroup[]>(() => {
-    return Object.entries(recordsByGroup).map(([productId, records]) => {
-      const product = products.find((p) => p.id === productId);
-      const totalMissing = records.reduce(
-        (sum, r) => sum + r.missingQuantity,
-        0,
-      );
-      const status = records.some((r) => r.status === "PENDING")
-        ? "PENDING"
-        : "RESOLVED";
+    return (
+      Object.entries(recordsByGroup)
+        .map(([productId, records]) => {
+          const product = products.find((p) => p.id === productId);
+          const totalMissing = records.reduce(
+            (sum, r) => sum + r.missingQuantity,
+            0,
+          );
+          const status: "PENDING" | "RESOLVED" = records.some(
+            (r) => r.status === "PENDING",
+          )
+            ? "PENDING"
+            : "RESOLVED";
 
-      return {
-        productId,
-        product,
-        totalMissing,
-        status,
-        recordsCount: records.length,
-        lastUpdated: records[records.length - 1].createdAt,
-      };
-    });
+          return {
+            productId,
+            product,
+            totalMissing,
+            status,
+            recordsCount: records.length,
+            lastUpdated: records[records.length - 1].createdAt,
+          };
+        })
+        // Filter out RESOLVED deficits from primary view (optional)
+        .filter((g) => g.status === "PENDING")
+    );
   }, [recordsByGroup, products]);
 
-  const handleResolve = (productId: string) => {
-    toast.success("Deficit Acknowledged", {
-      description: "Inventory restock required to satisfy debt",
-    });
+  const handleResolve = (productId: string, totalMissing: number) => {
+    try {
+      // Resolve deficit and replenish stock
+      resolveDeficitGroup(productId, totalMissing);
+
+      // Update state to reflect changes
+      const product = products.find((p) => p.id === productId);
+      const productName = product?.name || "Product";
+
+      toast.success("Deficit Resolved", {
+        description: `${totalMissing} units of ${productName} restocked to cover shortage.`,
+      });
+
+      // Reload deficits from localStorage
+      getDeficits().then((deficits) => {
+        setAllDeficits(deficits);
+      });
+    } catch (error) {
+      toast.error("Failed to resolve deficit", {
+        description: "Please try again.",
+      });
+      console.error("Error resolving deficit:", error);
+    }
   };
 
   return (
