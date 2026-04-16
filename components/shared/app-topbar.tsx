@@ -1,5 +1,4 @@
-import React from "react";
-import { User, Bell } from "lucide-react";
+import { Bell, User } from "lucide-react";
 import { Button } from "../ui/button";
 
 export function AppTopbar() {
@@ -7,12 +6,22 @@ export function AppTopbar() {
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6 md:px-8">
       <div className="flex-1 flex items-center">
         {/* Responsive Mobile Trigger can go here */}
-        <h2 className="text-lg font-semibold md:hidden text-primary">BillIt MVP</h2>
+        <h2 className="text-lg font-semibold md:hidden text-primary">
+          BillIt MVP
+        </h2>
       </div>
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="relative text-muted-foreground">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative text-muted-foreground"
+          aria-label="View notifications"
+        >
           <Bell className="h-5 w-5" />
-          <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-destructive"></span>
+          <span
+            className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-destructive"
+            aria-hidden="true"
+          ></span>
         </Button>
         <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-medium">
           <User className="h-4 w-4" />

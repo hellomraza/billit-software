@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
-import { Product } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SectionCard } from "./section-card";
 import { validateProductForm } from "@/lib/validators/product";
+import { Product } from "@/types";
+import React, { useState } from "react";
+import { SectionCard } from "./section-card";
 
 interface ProductFormProps {
   initialData?: Partial<Product>;
@@ -15,7 +15,12 @@ interface ProductFormProps {
   isLoading?: boolean;
 }
 
-export function ProductForm({ initialData = {}, onSubmit, onCancel, isLoading }: ProductFormProps) {
+export function ProductForm({
+  initialData = {},
+  onSubmit,
+  onCancel,
+  isLoading,
+}: ProductFormProps) {
   const [formData, setFormData] = useState<Partial<Product>>({
     name: initialData.name || "",
     basePrice: initialData.basePrice || 0,
@@ -26,44 +31,62 @@ export function ProductForm({ initialData = {}, onSubmit, onCancel, isLoading }:
 
   const [errors, setErrors] = useState<Record<string, string | null>>({});
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: ["basePrice", "gstRate", "currentStock", "deficitThreshold"].includes(name) 
-        ? parseFloat(value) || 0 
-        : value 
+    setFormData((prev) => ({
+      ...prev,
+      [name]: [
+        "basePrice",
+        "gstRate",
+        "currentStock",
+        "deficitThreshold",
+      ].includes(name)
+        ? parseFloat(value) || 0
+        : value,
     }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const validationErrors = validateProductForm(formData);
-    
-    if (Object.values(validationErrors).some(v => v !== null)) {
+
+    if (Object.values(validationErrors).some((v) => v !== null)) {
       setErrors(validationErrors);
       return;
     }
-    
+
     onSubmit(formData);
   };
 
   const isEditMode = !!initialData.id;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
-      <SectionCard title="Product Identity" description="Identify the product in your catalog." padding="md">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-6 max-w-4xl"
+      aria-busy={isLoading}
+      aria-label={isLoading ? "Form is submitting" : undefined}
+    >
+      <SectionCard
+        title="Product Identity"
+        description="Identify the product in your catalog."
+        padding="md"
+      >
         <div className="space-y-4 max-w-lg">
           <div className="space-y-2">
             <Label htmlFor="name">Product Name</Label>
-            <Input 
-              id="name" 
-              name="name" 
-              value={formData.name || ""} 
-              onChange={handleChange} 
-              autoFocus 
+            <Input
+              id="name"
+              name="name"
+              value={formData.name || ""}
+              onChange={handleChange}
+              autoFocus
             />
-            {errors.name && <p className="text-destructive text-sm">{errors.name}</p>}
+            {errors.name && (
+              <p className="text-destructive text-sm">{errors.name}</p>
+            )}
           </div>
         </div>
       </SectionCard>
@@ -73,16 +96,18 @@ export function ProductForm({ initialData = {}, onSubmit, onCancel, isLoading }:
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="basePrice">Base Price</Label>
-              <Input 
-                id="basePrice" 
-                name="basePrice" 
-                type="number" 
+              <Input
+                id="basePrice"
+                name="basePrice"
+                type="number"
                 min="0"
-                step="0.01" 
-                value={formData.basePrice || ""} 
-                onChange={handleChange} 
+                step="0.01"
+                value={formData.basePrice || ""}
+                onChange={handleChange}
               />
-              {errors.basePrice && <p className="text-destructive text-sm">{errors.basePrice}</p>}
+              {errors.basePrice && (
+                <p className="text-destructive text-sm">{errors.basePrice}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="gstRate">GST Rate (%)</Label>
@@ -93,8 +118,10 @@ export function ProductForm({ initialData = {}, onSubmit, onCancel, isLoading }:
                 value={formData.gstRate || 0}
                 onChange={handleChange}
               >
-                {[0, 5, 12, 18, 28].map(rate => (
-                  <option key={rate} value={rate}>{rate}%</option>
+                {[0, 5, 12, 18, 28].map((rate) => (
+                  <option key={rate} value={rate}>
+                    {rate}%
+                  </option>
                 ))}
               </select>
             </div>
@@ -105,26 +132,32 @@ export function ProductForm({ initialData = {}, onSubmit, onCancel, isLoading }:
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="currentStock">Opening Stock</Label>
-              <Input 
-                id="currentStock" 
-                name="currentStock" 
-                type="number" 
-                min="0" 
-                value={formData.currentStock || ""} 
-                onChange={handleChange} 
+              <Input
+                id="currentStock"
+                name="currentStock"
+                type="number"
+                min="0"
+                value={formData.currentStock || ""}
+                onChange={handleChange}
                 disabled={isEditMode}
               />
-              {isEditMode && <p className="text-xs text-muted-foreground">Adjust stock through inventory management tools.</p>}
+              {isEditMode && (
+                <p className="text-xs text-muted-foreground">
+                  Adjust stock through inventory management tools.
+                </p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="deficitThreshold">Low Stock Alert Threshold</Label>
-              <Input 
-                id="deficitThreshold" 
-                name="deficitThreshold" 
-                type="number" 
-                min="0" 
-                value={formData.deficitThreshold || ""} 
-                onChange={handleChange} 
+              <Label htmlFor="deficitThreshold">
+                Low Stock Alert Threshold
+              </Label>
+              <Input
+                id="deficitThreshold"
+                name="deficitThreshold"
+                type="number"
+                min="0"
+                value={formData.deficitThreshold || ""}
+                onChange={handleChange}
               />
             </div>
           </div>
@@ -132,7 +165,9 @@ export function ProductForm({ initialData = {}, onSubmit, onCancel, isLoading }:
       </div>
 
       <div className="flex justify-end gap-3 pt-2">
-        <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
+        <Button type="button" variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
         <Button type="submit" disabled={isLoading}>
           {isLoading ? "Saving..." : "Save Product"}
         </Button>

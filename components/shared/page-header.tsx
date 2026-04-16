@@ -1,6 +1,6 @@
-import React, { ReactNode } from "react";
-import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import Link from "next/link";
+import React, { ReactNode } from "react";
 
 interface PageHeaderProps {
   title: string;
@@ -9,7 +9,12 @@ interface PageHeaderProps {
   breadcrumbs?: { label: string; href?: string }[];
 }
 
-export function PageHeader({ title, description, actions, breadcrumbs }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  description,
+  actions,
+  breadcrumbs,
+}: PageHeaderProps) {
   return (
     <div className="flex flex-col space-y-4 md:flex-row md:items-start md:justify-between mb-6">
       <div className="flex flex-col space-y-1.5">
@@ -18,19 +23,30 @@ export function PageHeader({ title, description, actions, breadcrumbs }: PageHea
             {breadcrumbs.map((crumb, index) => (
               <React.Fragment key={index}>
                 {crumb.href ? (
-                  <Link href={crumb.href} className="hover:text-foreground hover:underline">
+                  <Link
+                    href={crumb.href}
+                    className="hover:text-foreground hover:underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded px-1 py-0.5"
+                  >
                     {crumb.label}
                   </Link>
                 ) : (
-                  <span className="text-foreground font-medium">{crumb.label}</span>
+                  <span className="text-foreground font-medium">
+                    {crumb.label}
+                  </span>
                 )}
-                {index < breadcrumbs.length - 1 && <ChevronRight className="h-3.5 w-3.5" />}
+                {index < breadcrumbs.length - 1 && (
+                  <ChevronRight className="h-3.5 w-3.5" />
+                )}
               </React.Fragment>
             ))}
           </nav>
         )}
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
-        {description && <p className="text-muted-foreground text-sm">{description}</p>}
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          {title}
+        </h1>
+        {description && (
+          <p className="text-muted-foreground text-sm">{description}</p>
+        )}
       </div>
 
       {actions && actions.length > 0 && (

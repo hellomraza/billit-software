@@ -97,6 +97,7 @@ export function ProductTable({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                aria-label={`Edit ${row.name}`}
               >
                 <Link href={ROUTES.PRODUCTS_EDIT(row.id)}>
                   <Edit2 className="h-4 w-4" />
@@ -108,6 +109,7 @@ export function ProductTable({
                   size="icon"
                   onClick={() => onRestore(row)}
                   className="h-8 w-8 text-success hover:text-success hover:bg-success/10"
+                  aria-label={`Restore ${row.name}`}
                 >
                   <RefreshCw className="h-4 w-4" />
                 </Button>
@@ -117,6 +119,7 @@ export function ProductTable({
                   size="icon"
                   onClick={() => onDelete(row)}
                   className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  aria-label={`Delete ${row.name}`}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

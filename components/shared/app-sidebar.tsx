@@ -1,11 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import {
+  AlertTriangle,
+  FileText,
+  Menu,
+  Package2,
+  Settings,
+  ShoppingCart,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Settings, FileText, ShoppingCart, AlertTriangle, Package2, Menu, X } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
 
 const NAV_ITEMS = [
   { href: "/", label: "Billing", icon: ShoppingCart },
@@ -26,19 +34,22 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <span>BillIt MVP</span>
         </div>
       </div>
-      <nav className="flex-1 overflow-auto py-4 px-3 space-y-1">
+      <nav className="flex-1 overflow-auto py-4 px-3 space-y-1" role="menubar">
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+          const isActive =
+            pathname === item.href ||
+            (item.href !== "/" && pathname.startsWith(item.href));
           return (
             <Link
               key={item.href}
               href={item.href}
               onClick={onNavigate}
+              role="menuitem"
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 isActive
                   ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
               <item.icon className="h-4 w-4" />
@@ -57,6 +68,26 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 export function AppSidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // Handle Escape key to close sidebar
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && mobileOpen) {
+        setMobileOpen(false);
+      }
+    };
+
+    if (mobileOpen) {
+      document.addEventListener("keydown", handleEscape);
+      // Prevent body scroll when sidebar is open
+      document.body.style.overflow = "hidden";
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "auto";
+    };
+  }, [mobileOpen]);
+
   return (
     <>
       {/* Mobile hamburger button */}
@@ -73,17 +104,22 @@ export function AppSidebar() {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
+          role="presentation"
           className="fixed inset-0 z-40 bg-black/50 md:hidden transition-opacity"
           onClick={() => setMobileOpen(false)}
+          aria-label="Close navigation menu"
         />
       )}
 
       {/* Mobile slide-in sidebar */}
       <aside
+        role="navigation"
+        aria-label="Main navigation"
         className={cn(
           "fixed inset-y-0 left-0 z-50 w-64 border-r bg-background flex flex-col transition-transform duration-200 md:hidden",
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
+        aria-hidden={!mobileOpen}
       >
         <Button
           variant="ghost"
@@ -104,4 +140,3 @@ export function AppSidebar() {
     </>
   );
 }
-

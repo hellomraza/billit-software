@@ -1,6 +1,5 @@
-import React from "react";
-import { Button } from "../ui/button";
 import { Minus, Plus } from "lucide-react";
+import { Button } from "../ui/button";
 
 interface QuantityControlProps {
   quantity: number;
@@ -10,7 +9,13 @@ interface QuantityControlProps {
   disabled?: boolean;
 }
 
-export function QuantityControl({ quantity, onChange, min = 1, max, disabled }: QuantityControlProps) {
+export function QuantityControl({
+  quantity,
+  onChange,
+  min = 1,
+  max,
+  disabled,
+}: QuantityControlProps) {
   return (
     <div className="flex items-center space-x-2">
       <Button
@@ -19,6 +24,7 @@ export function QuantityControl({ quantity, onChange, min = 1, max, disabled }: 
         className="h-8 w-8 rounded-full"
         onClick={() => onChange(quantity - 1)}
         disabled={disabled || quantity <= min}
+        aria-label="Decrease quantity"
       >
         <Minus className="h-4 w-4" />
       </Button>
@@ -31,6 +37,7 @@ export function QuantityControl({ quantity, onChange, min = 1, max, disabled }: 
         className="h-8 w-8 rounded-full"
         onClick={() => onChange(quantity + 1)}
         disabled={disabled || (max !== undefined && quantity >= max)}
+        aria-label="Increase quantity"
       >
         <Plus className="h-4 w-4" />
       </Button>

@@ -37,7 +37,12 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   if (isLoading) {
     return (
-      <div className="border rounded-md animate-pulse">
+      <div
+        className="border rounded-md animate-pulse"
+        aria-busy="true"
+        role="status"
+        aria-label="Loading table data"
+      >
         <div className="h-12 border-b bg-muted/40" />
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="h-16 border-b" />
@@ -47,7 +52,10 @@ export function DataTable<T>({
   }
 
   return (
-    <div className="border rounded-md bg-card overflow-hidden">
+    <div
+      className="border rounded-md bg-card overflow-hidden"
+      aria-busy="false"
+    >
       <Table>
         <TableHeader className="bg-muted/30">
           <TableRow>
@@ -82,7 +90,8 @@ export function DataTable<T>({
                 onClick={() => onRowClick && onRowClick(row)}
                 className={cn(
                   "animate-in fade-in duration-300 transition-colors",
-                  onRowClick && "cursor-pointer hover:bg-muted/50",
+                  onRowClick &&
+                    "cursor-pointer hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
                   rowClassName?.(row),
                 )}
                 style={{ animationDelay: `${rowIndex * 30}ms` }}

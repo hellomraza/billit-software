@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { Button } from "@/components/ui/button";
 import { SlidersHorizontal, Trash2 } from "lucide-react";
 
@@ -23,7 +22,12 @@ interface FilterBarProps {
   onReset: () => void;
 }
 
-export function FilterBar({ filters, activeFilters, onFilterChange, onReset }: FilterBarProps) {
+export function FilterBar({
+  filters,
+  activeFilters,
+  onFilterChange,
+  onReset,
+}: FilterBarProps) {
   const handleSelectChange = (id: string, value: string) => {
     onFilterChange({ ...activeFilters, [id]: value });
   };
@@ -42,7 +46,7 @@ export function FilterBar({ filters, activeFilters, onFilterChange, onReset }: F
         Filters
       </div>
 
-      {filters.map(filter => {
+      {filters.map((filter) => {
         if (filter.type === "toggle") {
           const isActive = !!activeFilters[filter.id];
           return (
@@ -62,13 +66,15 @@ export function FilterBar({ filters, activeFilters, onFilterChange, onReset }: F
           return (
             <select
               key={filter.id}
-              className="h-8 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="h-8 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
               value={(activeFilters[filter.id] as string) || ""}
               onChange={(e) => handleSelectChange(filter.id, e.target.value)}
             >
               <option value="">{filter.label} (All)</option>
-              {filter.options.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              {filter.options.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
               ))}
             </select>
           );
@@ -78,7 +84,12 @@ export function FilterBar({ filters, activeFilters, onFilterChange, onReset }: F
       })}
 
       {activeCount > 0 && (
-        <Button variant="ghost" size="sm" onClick={onReset} className="ml-auto h-8 text-xs text-muted-foreground hover:text-foreground">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onReset}
+          className="ml-auto h-8 text-xs text-muted-foreground hover:text-foreground"
+        >
           <Trash2 className="h-3.5 w-3.5 mr-1" />
           Reset
         </Button>

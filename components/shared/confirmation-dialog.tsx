@@ -1,8 +1,14 @@
 "use client";
 
-import React from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface ConfirmationDialogProps {
   isOpen: boolean;
@@ -29,20 +35,18 @@ export function ConfirmationDialog({
 }: ConfirmationDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent>
+      <DialogContent aria-busy={isLoading}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription className="py-2">
-            {description}
-          </DialogDescription>
+          <DialogDescription className="py-2">{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter className="mt-4">
           <Button variant="ghost" onClick={onCancel} disabled={isLoading}>
             {cancelText}
           </Button>
-          <Button 
-            variant={isDangerous ? "destructive" : "default"} 
-            onClick={onConfirm} 
+          <Button
+            variant={isDangerous ? "destructive" : "default"}
+            onClick={onConfirm}
             disabled={isLoading}
           >
             {isLoading ? "Processing..." : confirmText}
