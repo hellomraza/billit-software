@@ -1,14 +1,21 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { useAuth } from "@/components/providers/auth-provider";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { useAuth } from "@/components/providers/auth-provider";
-import { toast } from "sonner";
 import { validateEmail } from "@/lib/validators/auth";
+import Link from "next/link";
+import React, { useState } from "react";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -20,7 +27,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     const emailError = validateEmail(email);
     if (emailError) {
       setError(emailError);
@@ -34,8 +41,8 @@ export default function LoginPage() {
 
     setIsLoading(true);
     // Mock network authentication request
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
     if (email === "shop@example.com" && password === "password") {
       toast.success("Successfully logged in");
       login(); // Updates state and redirects to /
@@ -52,23 +59,48 @@ export default function LoginPage() {
           BillIt
         </h3>
         <CardTitle className="text-2xl">Welcome back</CardTitle>
-        <CardDescription>Enter your credentials to access your store</CardDescription>
+        <CardDescription>
+          Enter your credentials to access your store
+        </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
-          {error && <div className="text-sm font-medium text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
+          {error && (
+            <div className="text-sm font-medium text-destructive bg-destructive/10 p-3 rounded-md">
+              {error}
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="shop@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} disabled={isLoading}/>
+            <Input
+              id="email"
+              type="email"
+              placeholder="shop@example.com"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading}
+            />
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="password">Password</Label>
-              <Link href="/forgot-password" className="text-sm font-medium text-primary hover:underline" tabIndex={-1}>
+              <Link
+                href="/forgot-password"
+                className="text-sm font-medium text-primary hover:underline"
+                tabIndex={-1}
+              >
                 Forgot password?
               </Link>
             </div>
-            <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading}/>
+            <Input
+              id="password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
+            />
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
@@ -77,7 +109,10 @@ export default function LoginPage() {
           </Button>
           <div className="text-sm text-center text-muted-foreground">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-primary font-medium hover:underline">
+            <Link
+              href="/signup"
+              className="text-primary font-medium hover:underline"
+            >
               Sign up
             </Link>
           </div>

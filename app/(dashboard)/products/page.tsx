@@ -1,17 +1,16 @@
 "use client";
 
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
+import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { SearchBar } from "@/components/shared/search-bar";
 import { Button } from "@/components/ui/button";
 import { ProductTable } from "@/features/products/product-table";
 import { getProducts } from "@/lib/mock-data/product";
 import { ROUTES } from "@/lib/routes";
-import { EmptyState } from "@/components/shared/empty-state";
-import { PackageSearch } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { Download, Plus } from "lucide-react";
+import { Download, PackageSearch, Plus } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -54,12 +53,12 @@ export default function ProductsPage() {
       <PageHeader
         title="Products"
         actions={[
-          <Button key="import" variant="outline" asChild>
+          <Button key="import" variant="outline">
             <Link href={ROUTES.PRODUCTS_IMPORT}>
               <Download className="mr-2 h-4 w-4" /> Import CSV
             </Link>
           </Button>,
-          <Button key="new" asChild>
+          <Button key="new">
             <Link href={ROUTES.PRODUCTS_NEW}>
               <Plus className="mr-2 h-4 w-4" /> Add Product
             </Link>

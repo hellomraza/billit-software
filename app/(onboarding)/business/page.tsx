@@ -1,13 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { useAuth } from "@/components/providers/auth-provider";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { useAuth } from "@/components/providers/auth-provider";
 import { ROUTES } from "@/lib/routes";
+import { useRouter } from "next/navigation";
+import React, { useState } from "react";
 
 export default function BusinessSetupPage() {
   const router = useRouter();
@@ -44,12 +51,20 @@ export default function BusinessSetupPage() {
   return (
     <Card className="w-full shadow-sm border-0 sm:border">
       <CardHeader>
-        <div className="text-sm text-muted-foreground font-medium mb-1">Step 1 of 3</div>
+        <div className="text-sm text-muted-foreground font-medium mb-1">
+          Step 1 of 3
+        </div>
         <CardTitle className="text-xl">Business Identity</CardTitle>
-        <CardDescription>What is the legal name of your business?</CardDescription>
+        <CardDescription>
+          What is the legal name of your business?
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {error && <div className="text-sm font-medium text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
+        {error && (
+          <div className="text-sm font-medium text-destructive bg-destructive/10 p-3 rounded-md">
+            {error}
+          </div>
+        )}
         <div className="space-y-2">
           <Label htmlFor="businessName">Business Name</Label>
           <Input
@@ -76,7 +91,9 @@ export default function BusinessSetupPage() {
         </div>
       </CardContent>
       <CardFooter className="flex justify-between">
-        <Button variant="ghost" onClick={() => router.push(ROUTES.AUTH_LOGIN)}>Cancel</Button>
+        <Button variant="ghost" onClick={() => router.push(ROUTES.AUTH_LOGIN)}>
+          Cancel
+        </Button>
         <Button onClick={handleContinue}>Continue</Button>
       </CardFooter>
     </Card>
