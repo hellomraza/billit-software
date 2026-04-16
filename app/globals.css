@@ -157,3 +157,178 @@
     transform: translateX(100%);
   }
 }
+
+/* Print Styles for Invoice */
+@media print {
+  /* Hide navigation and UI elements */
+  .app-sidebar,
+  .app-topbar,
+  [data-no-print],
+  button,
+  .print-hidden {
+    display: none !important;
+  }
+
+  /* Body and page layout */
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+
+  /* Main content */
+  main,
+  .main-content {
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Page header styling */
+  .page-header,
+  .breadcrumb-nav {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #000;
+  }
+
+  /* Invoice section */
+  .invoice-details {
+    margin: 1rem 0;
+    padding: 1rem 0;
+  }
+
+  /* Cards should display as boxes with borders */
+  .card,
+  [class*="Card"] {
+    border: 1px solid #000;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    page-break-inside: avoid;
+  }
+
+  /* Ensure items table is complete */
+  .invoice-items-table,
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+  }
+
+  table th,
+  table td {
+    border: 1px solid #999;
+    padding: 0.5rem;
+    text-align: left;
+  }
+
+  table th {
+    background-color: #f0f0f0;
+    font-weight: bold;
+  }
+
+  /* Summary section */
+  .invoice-summary,
+  .grand-total-section {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 2px solid #000;
+  }
+
+  .grand-total {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: right;
+  }
+
+  /* Footer section */
+  .print-footer {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #000;
+    font-size: 0.85rem;
+    text-align: center;
+    color: #666;
+  }
+
+  /* Optimize for A4 page */
+  @page {
+    size: A4;
+    margin: 0.5in;
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Remove animations for print */
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Typography */
+  p {
+    margin: 0.5rem 0;
+  }
+
+  h1,
+  h2,
+  h3 {
+    page-break-after: avoid;
+  }
+
+  /* Separators */
+  hr,
+  .separator {
+    border: 1px solid #000;
+    margin: 1rem 0;
+  }
+
+  /* Money text display */
+  .money-text {
+    font-family: "Courier New", monospace;
+  }
+
+  /* Hide scrollbars and overflow */
+  body {
+    overflow: visible;
+  }
+}
+
+/* Print Preview Styles (for on-screen preview) */
+.print-preview-mode {
+  background-color: #f3f4f6;
+  padding: 2rem 1rem;
+  min-height: 100vh;
+}
+
+.print-preview-container {
+  border: 3px solid #d1d5db;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  page-break-after: always;
+  color: #000;
+}
+
+.print-preview-container * {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Make print elements visible in preview */
+.print-footer {
+  background-color: #f9fafb;
+  border-top: 1px solid #d1d5db;
+  margin-top: 2rem;
+  padding: 1.5rem;
+  font-size: 0.875rem;
+  text-align: center;
+  color: #4b5563;
+}
+
+.print-footer p {
+  margin: 0.25rem 0;
+}
+
+/* Hide print-hidden elements */
+.print-hidden {
+  display: none;
+}

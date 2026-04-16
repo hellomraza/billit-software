@@ -13,7 +13,7 @@ interface InvoiceDetailPanelProps {
 
 export function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 invoice-details">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="animate-in fade-in slide-in-from-left duration-500">
           <CardHeader className="pb-3">
@@ -82,7 +82,7 @@ export function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps) {
             Itemized Breakdown
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-0 sm:p-6 sm:pt-0">
+        <CardContent className="p-0 sm:p-6 sm:pt-0 invoice-items-table">
           <InvoiceItemsTable
             items={invoice.items}
             showGst={invoice.isGstInvoice}
@@ -90,7 +90,7 @@ export function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps) {
         </CardContent>
       </Card>
 
-      <Card className="bg-muted/10 border-dashed animate-in fade-in slide-in-from-bottom duration-500 delay-150">
+      <Card className="bg-muted/10 border-dashed animate-in fade-in slide-in-from-bottom duration-500 delay-150 grand-total-section invoice-summary">
         <CardContent className="p-6">
           <div className="space-y-2 max-w-sm ml-auto">
             <div className="flex justify-between text-sm">
@@ -104,7 +104,7 @@ export function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps) {
               </div>
             )}
             <Separator className="my-2" />
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center grand-total">
               <span className="font-semibold text-lg">Grand Total</span>
               <MoneyText
                 amount={invoice.grandTotal}

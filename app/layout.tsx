@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { ThemeInitializer } from "@/components/providers/theme-initializer";
 import { Toaster } from "sonner"; // Assuming sonner is installed
 
 const geistSans = Geist({
@@ -28,11 +29,14 @@ export default function RootLayout({
     <html
       lang="en"
       className={`h-full antialiased ${geistSans.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <ThemeInitializer>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </ThemeInitializer>
         <Toaster />
       </body>
     </html>
