@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { PAYMENT_METHODS } from "@/lib/constants/defaults";
 import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import { X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface InvoiceFiltersState {
   paymentMethod?: string;
@@ -93,7 +93,14 @@ export function InvoiceFilters({
   );
   const [selectedQuickFilter, setSelectedQuickFilter] =
     useState<QuickFilterPill>(null);
+  const announcementRef = useRef<HTMLDivElement>(null);
   const debouncedProductSearch = useDebouncedValue(productSearchInput, 300);
+
+  const announceFilterChange = (message: string) => {
+    if (announcementRef.current) {
+      announcementRef.current.textContent = message;
+    }
+  };
 
   // Load filters from localStorage on mount
   useEffect(() => {
@@ -155,14 +162,21 @@ export function InvoiceFilters({
     if (selectedQuickFilter === pill) {
       setSelectedQuickFilter(null);
       onFilterChange({ ...filters, startDate: "", endDate: "" });
+      announceFilterChange("Quick filter cleared");
     } else {
       const range = getDateRange(pill);
       setSelectedQuickFilter(pill);
+      const pillLabels: Record<Exclude<QuickFilterPill, null>, string> = {
+        today: "Today",
+        thisWeek: "This Week",
+        thisMonth: "This Month",
+      };
       onFilterChange({
         ...filters,
         startDate: range.start,
         endDate: range.end,
       });
+      announceFilterChange(`Filter applied: ${pillLabels[pill as Exclude<QuickFilterPill, null>] || ""}`);
     }
   };
 
@@ -180,6 +194,7 @@ export function InvoiceFilters({
     setSelectedQuickFilter(null);
     localStorage.removeItem("billit_invoice_filters");
     onReset();
+    announceFilterChange("All filters cleared");
   };
 
   return (
@@ -214,7 +229,6 @@ export function InvoiceFilters({
           This Month
         </Button>
       </div>
-
       {/* Advanced Filters */}
       <div className="flex flex-wrap items-center gap-4 p-3 bg-muted/40 border rounded-lg">
         <div className="flex items-center gap-2">
@@ -275,7 +289,15 @@ export function InvoiceFilters({
         }}
         onFilterChange={handleFilterChange}
         onReset={onReset}
-      />
+      />{" "}
+      {/* Hidden live region for screen reader announcements */}
+      <div
+        ref={announcementRef}
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+        role="status"
+      />{" "}
     </div>
   );
 }

@@ -5,12 +5,19 @@ import { PageHeader } from "@/components/shared/page-header";
 import { DeficitList } from "@/features/deficits/deficit-list";
 import { getDeficits, resolveDeficitGroup } from "@/lib/mock-data/deficit";
 import { getProducts } from "@/lib/mock-data/product";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 export default function DeficitsPage() {
   const [allDeficits, setAllDeficits] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const announcementRef = useRef<HTMLDivElement>(null);
+
+  const announceDeficitResolution = (message: string) => {
+    if (announcementRef.current) {
+      announcementRef.current.textContent = message;
+    }
+  };
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -89,6 +96,9 @@ export default function DeficitsPage() {
       toast.success("Deficit Resolved", {
         description: `${totalMissing} units of ${productName} restocked to cover shortage.`,
       });
+      announceDeficitResolution(
+        `Deficit resolved. ${totalMissing} units of ${productName} restocked.`,
+      );
 
       // Reload deficits from localStorage
       getDeficits().then((deficits) => {
@@ -119,6 +129,15 @@ export default function DeficitsPage() {
           isLoading={isLoading}
         />
       </div>
+
+      {/* Hidden live region for screen reader announcements */}
+      <div
+        ref={announcementRef}
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+        role="status"
+      />
     </div>
   );
 }

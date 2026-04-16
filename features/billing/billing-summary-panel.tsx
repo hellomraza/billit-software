@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PAYMENT_METHODS } from "@/lib/constants/defaults";
 import { Loader2 } from "lucide-react";
+import { useRef } from "react";
 
 interface BillingSummaryPanelProps {
   subtotal: number;
@@ -31,6 +32,40 @@ export function BillingSummaryPanel({
   isEnabled,
   isFinalizing = false,
 }: BillingSummaryPanelProps) {
+  const paymentButtonsRef = useRef<HTMLDivElement>(null);
+  const announcementRef = useRef<HTMLDivElement>(null);
+
+  const handlePaymentKeyDown = (e: React.KeyboardEvent, method: string) => {
+    const buttons = Array.from(
+      paymentButtonsRef.current?.querySelectorAll("button") || [],
+    );
+    const currentIndex = buttons.findIndex((btn) =>
+      btn.textContent?.includes(method),
+    );
+
+    let nextIndex = currentIndex;
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      nextIndex = (currentIndex + 1) % buttons.length;
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      nextIndex = (currentIndex - 1 + buttons.length) % buttons.length;
+    } else {
+      return;
+    }
+
+    const nextButton = buttons[nextIndex] as HTMLButtonElement;
+    nextButton?.focus();
+    const nextMethod = nextButton?.textContent || "";
+    onPaymentMethodChange(nextMethod.trim());
+  };
+
+  const announceAction = (message: string) => {
+    if (announcementRef.current) {
+      announcementRef.current.textContent = message;
+    }
+  };
+
   return (
     <div className="border-t bg-muted/30 shrink-0">
       <div className="p-4 space-y-3 text-sm">
@@ -55,14 +90,25 @@ export function BillingSummaryPanel({
       </div>
 
       <div className="p-4 pt-0 gap-2 flex flex-col">
-        <div className="flex gap-2 mb-2 flex-wrap">
+        <div
+          className="flex gap-2 mb-2 flex-wrap"
+          ref={paymentButtonsRef}
+          role="group"
+          aria-label="Payment method selection"
+        >
           {PAYMENT_METHODS.map((method) => (
             <Button
               key={method}
               variant={paymentMethod === method ? "default" : "outline"}
               size="sm"
               className="flex-1 min-w-[80px] text-xs h-9 sm:h-8"
-              onClick={() => onPaymentMethodChange(method)}
+              onClick={() => {
+                onPaymentMethodChange(method);
+                announceAction(`Payment method changed to ${method}`);
+              }}
+              onKeyDown={(e) => handlePaymentKeyDown(e, method)}
+              aria-pressed={paymentMethod === method}
+              aria-label={`${method} payment method`}
             >
               {method}
             </Button>
@@ -72,7 +118,10 @@ export function BillingSummaryPanel({
           size="lg"
           className="w-full font-bold h-12 text-base sm:h-auto sm:text-base"
           disabled={!isEnabled || isFinalizing}
-          onClick={onFinalize}
+          onClick={() => {
+            onFinalize();
+            announceAction("Invoice finalized successfully");
+          }}
           aria-busy={isFinalizing}
         >
           {isFinalizing ? (
@@ -94,6 +143,14 @@ export function BillingSummaryPanel({
           </Button>
         )}
       </div>
+      {/* Hidden live region for screen reader announcements */}
+      <div
+        ref={announcementRef}
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+        role="status"
+      />
     </div>
   );
 }
