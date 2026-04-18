@@ -13,7 +13,6 @@ export function SignupForm() {
     error: "",
     success: "",
   });
-  console.log("SignupForm state:", state);
 
   useEffect(() => {
     if (state.success) {
