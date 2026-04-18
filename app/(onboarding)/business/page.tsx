@@ -22,7 +22,7 @@ import React, { useState } from "react";
 
 export default function BusinessSetupPage() {
   const router = useRouter();
-  const { completeOnboardingStep, isAuthenticated } = useAuth();
+  const { completeOnboardingStep } = useAuth();
   const [name, setName] = useState("");
   const [abbrev, setAbbrev] = useState("");
   const [error, setError] = useState<string | null>(null);

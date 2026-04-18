@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export function OnboardingGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isOnboardingComplete, isInitialized } = useAuth();
+  const { isOnboardingComplete, isInitialized } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
@@ -18,12 +18,6 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Wait for initialization before checking auth
     if (!mounted || !isInitialized) {
-      return;
-    }
-
-    // If not authenticated, redirect to login
-    if (!isAuthenticated) {
-      router.push(ROUTES.AUTH_LOGIN);
       return;
     }
 
@@ -56,29 +50,13 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
       router.push(ROUTES.ONBOARDING_OUTLET);
       return;
     }
-  }, [
-    isAuthenticated,
-    isOnboardingComplete,
-    router,
-    pathname,
-    mounted,
-    isInitialized,
-  ]);
+  }, [isOnboardingComplete, router, pathname, mounted, isInitialized]);
 
   // Show loading state while initializing
   if (!mounted || !isInitialized) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/20 p-4">
         <div className="text-muted-foreground">Loading...</div>
-      </div>
-    );
-  }
-
-  // Show redirecting state while redirecting
-  if (!isAuthenticated) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/20 p-4">
-        <div className="text-muted-foreground">Redirecting to login...</div>
       </div>
     );
   }

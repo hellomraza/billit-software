@@ -21,12 +21,9 @@ interface TenantSettings {
 }
 
 interface AuthContextType {
-  isAuthenticated: boolean;
   isOnboardingComplete: boolean;
   isInitialized: boolean;
   tenantSettings: TenantSettings;
-  login: () => void;
-  logout: () => void;
   completeOnboardingStep: (
     step: "business" | "outlet" | "gst",
     data: Record<string, string>,
@@ -49,7 +46,6 @@ const DEFAULT_TENANT: TenantSettings = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isOnboardingComplete, setIsOnboardingComplete] =
     useState<boolean>(false);
   const [tenantSettings, setTenantSettings] =
@@ -58,13 +54,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    const stored = localStorage.getItem("billit_auth");
     const onboarded = localStorage.getItem("billit_onboarding_complete");
     const savedSettings = localStorage.getItem("billit_tenant_settings");
 
-    if (stored === "true") {
-      setIsAuthenticated(true);
-    }
     if (onboarded === "true") {
       setIsOnboardingComplete(true);
     }
@@ -76,22 +68,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
     setIsInitialized(true);
-  }, []);
-
-  const login = useCallback(() => {
-    localStorage.setItem("billit_auth", "true");
-    // Set auth cookie with proper attributes
-    document.cookie = "billit_auth=true; path=/; max-age=2592000; SameSite=Lax";
-    setIsAuthenticated(true);
-    // Layout will handle redirect based on isAuthenticated state change
-  }, []);
-
-  const logout = useCallback(() => {
-    localStorage.removeItem("billit_auth");
-    // Clear auth cookie with proper attributes
-    document.cookie = "billit_auth=; path=/; max-age=0; SameSite=Lax";
-    setIsAuthenticated(false);
-    // Proxy and layout will handle redirect based on isAuthenticated state change
   }, []);
 
   const completeOnboardingStep = useCallback(
@@ -145,12 +121,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        isAuthenticated,
         isOnboardingComplete,
         isInitialized,
         tenantSettings,
-        login,
-        logout,
         completeOnboardingStep,
         finishOnboarding,
         updateTenantSettings,
