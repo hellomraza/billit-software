@@ -14,8 +14,6 @@ export function ForgotPasswordForm() {
     success: "",
   });
 
-  console.log("ForgotPasswordForm state:", state);
-
   // Dev: If resetToken is present, redirect to reset password page
   useEffect(() => {
     if ("resetToken" in state && state.resetToken) {
