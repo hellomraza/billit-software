@@ -45,3 +45,54 @@ export const changePasswordAction = validatedAction(
     }
   },
 );
+
+// C.2 Update Business Settings Schema
+const updateBusinessSettingsSchema = z.object({
+  businessName: z
+    .string()
+    .min(1, "Business name is required")
+    .max(100, "Business name must be at most 100 characters"),
+});
+
+// C.2 Update Business Settings Action
+export const updateBusinessSettingsAction = validatedAction(
+  updateBusinessSettingsSchema,
+  async (data) => {
+    try {
+      const api = await createServerAxios();
+      await api.patch("/settings/business", {
+        businessName: data.businessName,
+      });
+      revalidatePath("/settings");
+      return { success: "Business settings updated successfully." };
+    } catch (err: any) {
+      return { error: err.message };
+    }
+  },
+);
+
+// C.3 Update GST Settings Schema
+const updateGstSettingsSchema = z.object({
+  gstNumber: z.string().optional(),
+  gstEnabled: z.coerce.boolean(),
+});
+
+// C.3 Update GST Settings Action
+export const updateGstSettingsAction = validatedAction(
+  updateGstSettingsSchema,
+  async (data) => {
+    try {
+      const api = await createServerAxios();
+      await api.patch("/settings/gst", {
+        gstNumber: data.gstNumber || "",
+        gstEnabled: data.gstEnabled,
+      });
+      // Revalidate both settings and billing pages
+      revalidatePath("/settings");
+      revalidatePath("/");
+      return { success: "GST settings updated successfully." };
+    } catch (err: any) {
+      return { error: err.message };
+    }
+  },
+);
