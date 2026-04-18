@@ -15,10 +15,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { ChangePasswordForm } from "@/features/settings/change-password-form";
 import { clearAuthSession } from "@/lib/auth-tokens";
 import { useDarkMode } from "@/lib/hooks/use-dark-mode";
 import { getGSTSettings, getOutlet, getTenant } from "@/lib/mock-data/tenant";
-import { validatePassword } from "@/lib/validators/auth";
 import { KeyRound, Laptop, LogOut, Moon, Sun } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -34,12 +34,6 @@ export default function SettingsPage() {
   const [showLogout, setShowLogout] = useState(false);
   const { updateTenantSettings } = useAuth();
   const { theme, setTheme, mounted } = useDarkMode();
-
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isSavingPassword, setIsSavingPassword] = useState(false);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([getTenant(), getOutlet(), getGSTSettings()]).then(
@@ -58,37 +52,6 @@ export default function SettingsPage() {
     updateTenantSettings({ gstNumber: gstin });
     setIsSaving(false);
     toast.success("Tax Config Saved", { description: "GST Details updated." });
-  };
-
-  const handleSavePassword = async () => {
-    setPasswordError(null);
-    if (!currentPassword) {
-      setPasswordError("Current password is required.");
-      return;
-    }
-
-    const { valid, errors } = validatePassword(newPassword);
-    if (!valid) {
-      setPasswordError(errors.join(" "));
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setPasswordError("New passwords do not match.");
-      return;
-    }
-
-    setIsSavingPassword(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsSavingPassword(false);
-
-    // Simulate successful change
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    toast.success("Password Updated", {
-      description: "Your account password has been changed.",
-    });
   };
 
   const handleLogoutConfirm = async () => {
@@ -206,53 +169,10 @@ export default function SettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="max-w-md space-y-4">
-              {passwordError && (
-                <div className="text-sm font-medium text-destructive bg-destructive/10 p-3 rounded-md">
-                  {passwordError}
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label>Current Password</Label>
-                <Input
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  disabled={isSavingPassword}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>New Password</Label>
-                <Input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  disabled={isSavingPassword}
-                />
-                <p className="text-[10px] text-muted-foreground">
-                  Must be at least 8 characters long.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label>Confirm New Password</Label>
-                <Input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  disabled={isSavingPassword}
-                />
-              </div>
+            <div className="max-w-md">
+              <ChangePasswordForm />
             </div>
           </CardContent>
-          <CardFooter>
-            <Button
-              onClick={handleSavePassword}
-              disabled={isSavingPassword}
-              variant="default"
-            >
-              {isSavingPassword ? "Updating..." : "Update Password"}
-            </Button>
-          </CardFooter>
         </Card>
 
         <Card>
