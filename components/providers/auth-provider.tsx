@@ -104,7 +104,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     document.cookie =
       "billit_onboarding_complete=true; path=/; max-age=2592000; SameSite=Lax";
     setIsOnboardingComplete(true);
-    // OnboardingGuard or auth-layout will handle redirect based on state changes
   }, []);
 
   const updateTenantSettings = useCallback(
