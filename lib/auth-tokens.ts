@@ -13,10 +13,25 @@ export function saveAuthSession(accessToken: string, tenant: Tenant) {
 }
 
 export function clearAuthSession() {
+  // Clear auth tokens
   localStorage.removeItem("access_token");
   localStorage.removeItem("tenant");
   document.cookie = "access_token=; path=/; max-age=0";
   document.cookie = "tenant_id=; path=/; max-age=0";
+
+  // Clear onboarding data
+  localStorage.removeItem("billit_onboarding_complete");
+  localStorage.removeItem("billit_tenant_settings");
+  localStorage.removeItem("billit_onboarding_business");
+  localStorage.removeItem("billit_onboarding_outlet");
+  localStorage.removeItem("billit_onboarding_gst");
+  document.cookie = "billit_onboarding_complete=; path=/; max-age=0";
+  document.cookie = "billit_onboarding_business=; path=/; max-age=0";
+  document.cookie = "billit_onboarding_outlet=; path=/; max-age=0";
+  document.cookie = "billit_onboarding_gst=; path=/; max-age=0";
+
+  // Clear UI state filters and preferences
+  localStorage.removeItem("billit_invoice_filters");
 }
 
 export function getStoredTenant(): Tenant | null {
