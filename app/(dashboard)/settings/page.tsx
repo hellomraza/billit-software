@@ -1,5 +1,6 @@
 "use client";
 
+import { logoutAction } from "@/actions/auth";
 import { useAuth } from "@/components/providers/auth-provider";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { Button } from "@/components/ui/button";
@@ -14,21 +15,24 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { getGSTSettings, getOutlet, getTenant } from "@/lib/mock-data/tenant";
+import { clearAuthSession } from "@/lib/auth-tokens";
 import { useDarkMode } from "@/lib/hooks/use-dark-mode";
+import { getGSTSettings, getOutlet, getTenant } from "@/lib/mock-data/tenant";
 import { validatePassword } from "@/lib/validators/auth";
-import { KeyRound, LogOut, Moon, Sun, Laptop } from "lucide-react";
+import { KeyRound, Laptop, LogOut, Moon, Sun } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [tenant, setTenant] = useState<any>(null);
   const [outlet, setOutlet] = useState<any>(null);
   const [gst, setGst] = useState<any>(null);
   const [gstin, setGstin] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
-  const { logout, updateTenantSettings } = useAuth();
+  const { updateTenantSettings } = useAuth();
   const { theme, setTheme, mounted } = useDarkMode();
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -87,19 +91,17 @@ export default function SettingsPage() {
     });
   };
 
-  const handleLogoutConfirm = () => {
+  const handleLogoutConfirm = async () => {
     setShowLogout(false);
-    logout();
+    await logoutAction();
+    clearAuthSession();
+    router.push("/login");
   };
 
   const handleThemeChange = (newTheme: "light" | "dark" | "system") => {
     setTheme(newTheme);
     const themeLabel =
-      newTheme === "light"
-        ? "Light"
-        : newTheme === "dark"
-          ? "Dark"
-          : "System";
+      newTheme === "light" ? "Light" : newTheme === "dark" ? "Dark" : "System";
     toast.success("Theme Updated", {
       description: `Switched to ${themeLabel} mode.`,
     });

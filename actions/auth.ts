@@ -63,3 +63,15 @@ export const loginAction = validatedAction(loginSchema, async (data) => {
     return { error: err.message };
   }
 });
+
+// A.3 Logout Action
+export const logoutAction = async () => {
+  try {
+    const api = await createServerAxios();
+    await api.post("/auth/logout");
+    return { success: "Logged out successfully" };
+  } catch (err: any) {
+    // Even if logout fails on server, we still want to clear client-side state
+    return { success: "Logged out successfully" };
+  }
+};
