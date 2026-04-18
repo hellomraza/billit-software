@@ -13,6 +13,10 @@ export function proxy(request: NextRequest) {
   const token = request.cookies.get("access_token")?.value;
   const onboardingComplete =
     request.cookies.get("billit_onboarding_complete")?.value === "true";
+  const businessCompleted =
+    request.cookies.get("billit_onboarding_business")?.value === "true";
+  const outletCompleted =
+    request.cookies.get("billit_onboarding_outlet")?.value === "true";
   const pathname = request.nextUrl.pathname;
 
   const isPublicRoute = PUBLIC_ROUTES.some((r) => pathname.startsWith(r));
@@ -39,6 +43,19 @@ export function proxy(request: NextRequest) {
   // On onboarding route but onboarding already complete: redirect to dashboard
   if (isOnboardingRoute && onboardingComplete) {
     return NextResponse.redirect(new URL(ROUTES.BILLING, request.url));
+  }
+
+  // Enforce onboarding step progression via cookies
+  if (pathname === ROUTES.ONBOARDING_OUTLET && !businessCompleted) {
+    return NextResponse.redirect(
+      new URL(ROUTES.ONBOARDING_BUSINESS, request.url),
+    );
+  }
+
+  if (pathname === ROUTES.ONBOARDING_GST && !outletCompleted) {
+    return NextResponse.redirect(
+      new URL(ROUTES.ONBOARDING_OUTLET, request.url),
+    );
   }
 
   // Authenticated but trying to access dashboard without completing onboarding
