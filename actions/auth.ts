@@ -97,7 +97,6 @@ export const forgotPasswordAction = validatedAction(
         data,
       );
       // In dev, API returns resetToken directly. In prod, it's undefined.
-      console.log("Forgot Password API response:", res);
       return {
         success:
           "If an account with that email exists, you'll receive a reset link.",
