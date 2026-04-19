@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Product } from "@/lib/types/api";
 import { Loader2, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 interface EditProductFormProps {
@@ -24,20 +24,11 @@ const initialState = {
 export function EditProductForm({ product }: EditProductFormProps) {
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(
-    async (prevState: any, formData: FormData) => {
-      const result = await updateProductAction(prevState, formData);
-      return result as { error: string; success: string };
-    },
+    updateProductAction,
     initialState,
   );
 
-  const [deleteState, deleteFormAction, isDeleting] = useActionState(
-    async (prevState: any, formData: FormData) => {
-      const result = await deleteProductAction(prevState, formData);
-      return result as { error: string; success: string };
-    },
-    initialState,
-  );
+  const [isDeleting, startTransition] = useTransition();
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -51,15 +42,6 @@ export function EditProductForm({ product }: EditProductFormProps) {
     }
   }, [state?.success, router]);
 
-  useEffect(() => {
-    if (deleteState?.success) {
-      toast.success(deleteState.success);
-      setTimeout(() => {
-        router.push("/products");
-      }, 500);
-    }
-  }, [deleteState?.success, router]);
-
   return (
     <>
       <form action={formAction} className="space-y-6 max-w-2xl">
@@ -69,23 +51,13 @@ export function EditProductForm({ product }: EditProductFormProps) {
           </div>
         )}
 
-        {deleteState?.error && (
-          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md">
-            {deleteState.error}
-          </div>
-        )}
-
         <SectionCard
           title="Product Information"
           description="Update the details of your product."
           padding="md"
         >
           <div className="space-y-4 max-w-lg">
-            <input
-              type="hidden"
-              name="productId"
-              value={product._id}
-            />
+            <input type="hidden" name="productId" value={product._id} />
 
             <div className="space-y-2">
               <Label htmlFor="name">Product Name *</Label>
@@ -186,7 +158,7 @@ export function EditProductForm({ product }: EditProductFormProps) {
           <Button
             type="button"
             variant="destructive"
-            disabled={isPending || isDeleting}
+            disabled={isDeleting}
             onClick={() => setShowDeleteDialog(true)}
             className="ml-auto gap-2"
           >
@@ -204,10 +176,9 @@ export function EditProductForm({ product }: EditProductFormProps) {
         isDangerous
         isLoading={isDeleting}
         onConfirm={() => {
-          const formData = new FormData();
-          formData.append("productId", product._id);
-          deleteFormAction(formData);
-          setShowDeleteDialog(false);
+          startTransition(async () => {
+            deleteProductAction({ productId: product._id });
+          });
         }}
         onCancel={() => {
           setShowDeleteDialog(false);
@@ -215,3 +186,4 @@ export function EditProductForm({ product }: EditProductFormProps) {
       />
     </>
   );
+}

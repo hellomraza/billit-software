@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { deleteProductAction } from "@/actions/products";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
@@ -30,7 +31,6 @@ export function ProductsScreen({ products, pagination }: ProductsScreenProps) {
   const [showDeleted, setShowDeleted] = useState(false);
   const [deleteCandidate, setDeleteCandidate] =
     useState<ProductWithStock | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const filteredProducts = products.filter((p) => {
     const query = searchQuery.toLowerCase();
@@ -40,23 +40,13 @@ export function ProductsScreen({ products, pagination }: ProductsScreenProps) {
   const handleDeleteInitial = (product: ProductWithStock) =>
     setDeleteCandidate(product);
 
+  const [isDeleting, startTransition] = useTransition();
+
   const handleConfirmDelete = async () => {
     if (!deleteCandidate) return;
-
-    try {
-      setIsDeleting(true);
-      // TODO: Call deleteProductAction when D.6 is implemented
-      // await deleteProductAction({ productId: deleteCandidate._id });
-
-      toast.success("Product marked as deleted");
-      setDeleteCandidate(null);
-    } catch (error: any) {
-      toast.error("Failed to delete product", {
-        description: error.message,
-      });
-    } finally {
-      setIsDeleting(false);
-    }
+    startTransition(async () => {
+      await deleteProductAction({ productId: deleteCandidate._id });
+    });
   };
 
   const handleRestore = async (product: ProductWithStock) => {

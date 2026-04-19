@@ -58,9 +58,11 @@ export const createProductAction = validatedAction(
           await createStock(product._id, outletId, data.openingStock);
         }
       }
-    } catch (err: any) {
-      console.error("Error creating product:", JSON.stringify(err.response));
-      return { error: err.message || "Failed to create product" };
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        return { error: err.message || "Failed to create product" };
+      }
+      return { error: "Failed to create product" };
     }
     revalidatePath("/products");
     redirect("/products");
@@ -97,9 +99,10 @@ export const updateProductAction = validatedAction(
       const api = await createServerAxios();
 
       // Only send provided fields to API
-      const updatePayload: any = {};
+      const updatePayload: Partial<UpdateProductInput> = {};
       if (data.name !== undefined) updatePayload.name = data.name;
-      if (data.basePrice !== undefined) updatePayload.basePrice = data.basePrice;
+      if (data.basePrice !== undefined)
+        updatePayload.basePrice = data.basePrice;
       if (data.gstRate !== undefined) updatePayload.gstRate = data.gstRate;
       if (data.deficitThreshold !== undefined)
         updatePayload.deficitThreshold = data.deficitThreshold;
@@ -114,9 +117,11 @@ export const updateProductAction = validatedAction(
       revalidatePath("/products");
 
       return { success: "Product updated successfully" };
-    } catch (err: any) {
-      console.error("Error updating product:", JSON.stringify(err.response));
-      return { error: err.message || "Failed to update product" };
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        return { error: err.message || "Failed to update product" };
+      }
+      return { error: "Failed to update product" };
     }
   },
 );
@@ -128,38 +133,24 @@ const deleteProductSchema = z.object({
 
 type DeleteProductInput = z.infer<typeof deleteProductSchema>;
 
-export const deleteProductAction = validatedAction(
-  deleteProductSchema,
-  async (data: DeleteProductInput) => {
-    try {
-      const tenantId = await getTenantId();
-      const api = await createServerAxios();
+export const deleteProductAction = async (data: DeleteProductInput) => {
+  try {
+    const validatedData = deleteProductSchema.parse(data);
+    const tenantId = await getTenantId();
+    const api = await createServerAxios();
 
-      await api.delete(`/tenants/${tenantId}/products/${data.productId}`);
+    await api.delete(
+      `/tenants/${tenantId}/products/${validatedData.productId}`,
+    );
 
-      revalidatePath("/products");
-
-      return { success: "Product deleted successfully" };
-    } catch (err: any) {
-      // Handle specific error: unresolved deficits
-      if (err.response?.status === 400) {
-        const errorMessage =
-          err.response?.data?.message ||
-          err.message ||
-          "Cannot delete this product";
-        if (
-          errorMessage.toLowerCase().includes("deficit") ||
-          errorMessage.toLowerCase().includes("pending")
-        ) {
-          return {
-            error:
-              "This product has unresolved deficits. Resolve them before deleting.",
-          };
-        }
-        return { error: errorMessage };
-      }
-      console.error("Error deleting product:", JSON.stringify(err.response));
+    revalidatePath("/products");
+  } catch (err: unknown) {
+    // Handle specific error: unresolved deficits
+    if (err instanceof Error) {
       return { error: err.message || "Failed to delete product" };
     }
-  },
-);
+    return { error: "Failed to delete product" };
+  }
+
+  redirect("/products");
+};
