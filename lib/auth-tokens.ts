@@ -18,6 +18,7 @@ export function clearAuthSession() {
   localStorage.removeItem("tenant");
   document.cookie = "access_token=; path=/; max-age=0";
   document.cookie = "tenant_id=; path=/; max-age=0";
+  document.cookie = "outlet_id=; path=/; max-age=0";
 
   // Clear onboarding data
   localStorage.removeItem("billit_onboarding_complete");

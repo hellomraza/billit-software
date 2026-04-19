@@ -27,9 +27,27 @@ export const updateOnboardingBusinessAction = validatedAction(
   async (data) => {
     try {
       const api = await createServerAxios();
-      await api.patch("/onboarding/business", {
+      const { data: businessData } = await api.patch("/onboarding/business", {
         businessName: data.businessName,
         businessAbbr: data.businessAbbr,
+      });
+
+      // Store tenant_id in cookie
+      const cookieStore = await cookies();
+      if (businessData?.tenantId || businessData?._id) {
+        const tenantId = businessData.tenantId || businessData._id;
+        cookieStore.set("tenant_id", tenantId, {
+          maxAge: 7 * 24 * 60 * 60, // 7 days
+          sameSite: "lax",
+          path: "/",
+        });
+      }
+
+      // Mark business step as completed
+      cookieStore.set("billit_onboarding_business", "true", {
+        maxAge: 7 * 24 * 60 * 60, // 7 days
+        sameSite: "lax",
+        path: "/",
       });
     } catch (err: unknown) {
       // Check for 409 conflict (abbreviation already taken)
@@ -44,15 +62,6 @@ export const updateOnboardingBusinessAction = validatedAction(
       }
       return { error: "An unexpected error occurred" };
     }
-
-    // Only reached if API call succeeded
-    // Set cookie to mark business step as completed
-    const cookieStore = await cookies();
-    cookieStore.set("billit_onboarding_business", "true", {
-      maxAge: 7 * 24 * 60 * 60, // 7 days
-      sameSite: "lax",
-      path: "/",
-    });
 
     redirect(ROUTES.ONBOARDING_OUTLET);
   },
@@ -78,9 +87,27 @@ export const updateOnboardingOutletAction = validatedAction(
   async (data) => {
     try {
       const api = await createServerAxios();
-      await api.patch("/onboarding/outlet", {
+      const { data: outletData } = await api.patch("/onboarding/outlet", {
         name: data.outletName,
         abbr: data.outletAbbr,
+      });
+
+      // Store outlet_id in cookie
+      const cookieStore = await cookies();
+      if (outletData?.outletId || outletData?._id) {
+        const outletId = outletData.outletId || outletData._id;
+        cookieStore.set("outlet_id", outletId, {
+          maxAge: 7 * 24 * 60 * 60, // 7 days
+          sameSite: "lax",
+          path: "/",
+        });
+      }
+
+      // Mark outlet step as completed
+      cookieStore.set("billit_onboarding_outlet", "true", {
+        maxAge: 7 * 24 * 60 * 60, // 7 days
+        sameSite: "lax",
+        path: "/",
       });
     } catch (err: unknown) {
       // Check for 409 conflict (abbreviation already taken)
@@ -95,15 +122,6 @@ export const updateOnboardingOutletAction = validatedAction(
       }
       return { error: "An unexpected error occurred" };
     }
-
-    // Only reached if API call succeeded
-    // Set cookie to mark outlet step as completed
-    const cookieStore = await cookies();
-    cookieStore.set("billit_onboarding_outlet", "true", {
-      maxAge: 7 * 24 * 60 * 60, // 7 days
-      sameSite: "lax",
-      path: "/",
-    });
 
     redirect(ROUTES.ONBOARDING_GST);
   },
@@ -173,15 +191,13 @@ export const completeOnboardingStepAction = async () => {
   } else if (!outletCompleted) {
     redirect(ROUTES.ONBOARDING_OUTLET);
   }
-  console.log("All onboarding steps completed, marking onboarding as complete");
 
   // call /onboarding/complete to mark onboarding as complete in backend
   try {
     const api = await createServerAxios();
     await api.post("/onboarding/complete");
-  } catch (err) {
-    console.log("Error marking onboarding complete:", err);
-    // Even if this fails, we still want to set the cookie and redirect
+  } catch (err: unknown) {
+    console.error("Error marking onboarding complete:", err);
   }
 
   // If all steps completed, mark onboarding as complete
@@ -190,8 +206,6 @@ export const completeOnboardingStepAction = async () => {
     sameSite: "lax",
     path: "/",
   });
-
-  console.log("Onboarding complete, redirecting to dashboard");
 
   redirect("/");
 };
