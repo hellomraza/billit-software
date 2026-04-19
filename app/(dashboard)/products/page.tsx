@@ -8,14 +8,14 @@ export default async function ProductsPage(props: {
 }) {
   const searchParams = await props.searchParams;
   const cookieStore = await cookies();
-  const outletId = cookieStore.get("outlet_id")?.value || "default-outlet";
+  const outletId = cookieStore.get("outlet_id")?.value;
 
   const includeDeleted = searchParams.includeDeleted === "true";
 
   // Fetch products and stock in parallel
   const [productsResponse, stockRecords] = await Promise.all([
     getProducts({ includeDeleted }),
-    getOutletStock(outletId),
+    getOutletStock(outletId!),
   ]);
 
   // Merge stock into products
@@ -27,6 +27,7 @@ export default async function ProductsPage(props: {
   return (
     <ProductsScreen
       products={productsWithStock}
+      outletId={outletId!}
       pagination={{
         page: productsResponse.page,
         limit: productsResponse.limit,

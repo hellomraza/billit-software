@@ -182,3 +182,40 @@ export const restoreProductAction = async (data: RestoreProductInput) => {
     return { error: "Failed to restore product" };
   }
 };
+
+// D.8: Update Stock (Manual)
+const updateStockSchema = z.object({
+  productId: z.string().min(1, "Product ID is required"),
+  outletId: z.string().min(1, "Outlet ID is required"),
+  quantity: z.coerce
+    .number({ invalid_type_error: "Quantity must be a number" })
+    .int("Quantity must be a whole number")
+    .min(0, "Quantity cannot be negative"),
+});
+
+type UpdateStockInput = z.infer<typeof updateStockSchema>;
+
+export const updateStockAction = validatedAction(
+  updateStockSchema,
+  async (data: UpdateStockInput) => {
+    try {
+      const tenantId = await getTenantId();
+      const api = await createServerAxios();
+
+      await api.patch(
+        `/tenants/${tenantId}/products/${data.productId}/stock`,
+        { quantity: data.quantity },
+        { params: { outletId: data.outletId } },
+      );
+
+      revalidatePath("/products");
+
+      return { success: "Stock updated successfully" };
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        return { error: err.message || "Failed to update stock" };
+      }
+      return { error: "Failed to update stock" };
+    }
+  },
+);

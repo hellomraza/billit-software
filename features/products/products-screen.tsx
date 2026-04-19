@@ -10,14 +10,23 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { SearchBar } from "@/components/shared/search-bar";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ProductTable } from "@/features/products/product-table";
 import { ROUTES } from "@/lib/routes";
 import { ProductWithStock } from "@/lib/utils/products";
 import { Download, PackageSearch, Plus } from "lucide-react";
 import Link from "next/link";
+import StockUpdateForm from "./stock-update-form";
 
 interface ProductsScreenProps {
   products: ProductWithStock[];
+  outletId: string;
   pagination?: {
     page: number;
     limit: number;
@@ -25,13 +34,20 @@ interface ProductsScreenProps {
   };
 }
 
-export function ProductsScreen({ products, pagination }: ProductsScreenProps) {
+export function ProductsScreen({
+  products,
+  outletId,
+  pagination,
+}: ProductsScreenProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const includeDeleted = searchParams.get("includeDeleted") === "true";
   const [deleteCandidate, setDeleteCandidate] =
     useState<ProductWithStock | null>(null);
+  const [stockCandidate, setStockCandidate] = useState<ProductWithStock | null>(
+    null,
+  );
 
   const [isDeleting, startTransition] = useTransition();
   const [isRestoring, startRestoringTransition] = useTransition();
@@ -67,6 +83,10 @@ export function ProductsScreen({ products, pagination }: ProductsScreenProps) {
         toast.success("Product restored successfully");
       }
     });
+  };
+
+  const handleUpdateStockInitial = (product: ProductWithStock) => {
+    setStockCandidate(product);
   };
 
   return (
@@ -136,6 +156,7 @@ export function ProductsScreen({ products, pagination }: ProductsScreenProps) {
             showDeleted={includeDeleted}
             onDelete={handleDeleteInitial}
             onRestore={handleRestore}
+            onUpdateStock={handleUpdateStockInitial}
             isLoading={false}
             isRestoring={isRestoring}
           />
@@ -152,6 +173,33 @@ export function ProductsScreen({ products, pagination }: ProductsScreenProps) {
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeleteCandidate(null)}
       />
+
+      <Dialog
+        open={!!stockCandidate}
+        onOpenChange={(open) => {
+          if (!open) {
+            setStockCandidate(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Stock</DialogTitle>
+            <DialogDescription>
+              Update stock for{" "}
+              <span className="font-semibold">{stockCandidate?.name}</span>
+            </DialogDescription>
+          </DialogHeader>
+          <StockUpdateForm
+            outletId={outletId}
+            productId={stockCandidate?._id ?? ""}
+            currentStock={stockCandidate?.stock ?? 0}
+            onClose={() => {
+              setStockCandidate(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

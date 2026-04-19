@@ -8,7 +8,7 @@ import { formatDate } from "@/lib/formatters/date";
 import { formatStock } from "@/lib/formatters/quantity";
 import { ROUTES } from "@/lib/routes";
 import { ProductWithStock } from "@/lib/utils/products";
-import { Edit2, RefreshCw, Trash2 } from "lucide-react";
+import { Edit2, Package, RefreshCw, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 
@@ -17,8 +17,10 @@ interface ProductTableProps {
   showDeleted: boolean;
   onDelete: (product: ProductWithStock) => void;
   onRestore: (product: ProductWithStock) => void;
+  onUpdateStock: (product: ProductWithStock) => void;
   isLoading?: boolean;
   isRestoring?: boolean;
+  isUpdatingStock?: boolean;
 }
 
 export function ProductTable({
@@ -26,8 +28,10 @@ export function ProductTable({
   showDeleted,
   onDelete,
   onRestore,
+  onUpdateStock,
   isLoading,
   isRestoring,
+  isUpdatingStock,
 }: ProductTableProps) {
   const visibleProducts = useMemo(() => {
     return showDeleted ? products : products.filter((p) => !p.isDeleted);
@@ -127,6 +131,18 @@ export function ProductTable({
                   <Edit2 className="h-4 w-4" />
                 </Link>
               </Button>
+              {!row.isDeleted && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onUpdateStock(row)}
+                  disabled={isUpdatingStock}
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground disabled:opacity-50"
+                  aria-label={`Update stock for ${row.name}`}
+                >
+                  <Package className="h-4 w-4" />
+                </Button>
+              )}
               {row.isDeleted ? (
                 <Button
                   variant="ghost"
