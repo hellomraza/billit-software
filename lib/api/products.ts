@@ -7,7 +7,7 @@ import { PaginatedResponse, Product } from "@/lib/types/api";
 export interface ProductFilters {
   page?: number;
   limit?: number;
-  showDeleted?: boolean;
+  includeDeleted?: boolean;
 }
 
 export async function getProducts(
@@ -16,13 +16,13 @@ export async function getProducts(
   const tenantId = await getTenantId();
   const api = await createServerAxios();
 
-  const { page = 1, limit = 50, showDeleted = false } = filters;
+  const { page = 1, limit = 50, includeDeleted = false } = filters;
 
   const { data } = await api.get(`/tenants/${tenantId}/products`, {
     params: {
       page,
       limit,
-      showDeleted,
+      includeDeleted,
     },
   });
 

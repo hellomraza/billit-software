@@ -18,6 +18,7 @@ interface ProductTableProps {
   onDelete: (product: ProductWithStock) => void;
   onRestore: (product: ProductWithStock) => void;
   isLoading?: boolean;
+  isRestoring?: boolean;
 }
 
 export function ProductTable({
@@ -26,6 +27,7 @@ export function ProductTable({
   onDelete,
   onRestore,
   isLoading,
+  isRestoring,
 }: ProductTableProps) {
   const visibleProducts = useMemo(() => {
     return showDeleted ? products : products.filter((p) => !p.isDeleted);
@@ -130,7 +132,8 @@ export function ProductTable({
                   variant="ghost"
                   size="icon"
                   onClick={() => onRestore(row)}
-                  className="h-8 w-8 text-success hover:text-success hover:bg-success/10"
+                  disabled={isRestoring}
+                  className="h-8 w-8 text-success hover:text-success hover:bg-success/10 disabled:opacity-50"
                   aria-label={`Restore ${row.name}`}
                 >
                   <RefreshCw className="h-4 w-4" />

@@ -1,10 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import { deleteProductAction } from "@/actions/products";
+import { deleteProductAction, restoreProductAction } from "@/actions/products";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
@@ -27,20 +27,24 @@ interface ProductsScreenProps {
 
 export function ProductsScreen({ products, pagination }: ProductsScreenProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
-  const [showDeleted, setShowDeleted] = useState(false);
+  const includeDeleted = searchParams.get("includeDeleted") === "true";
   const [deleteCandidate, setDeleteCandidate] =
     useState<ProductWithStock | null>(null);
 
+  const [isDeleting, startTransition] = useTransition();
+  const [isRestoring, startRestoringTransition] = useTransition();
+
   const filteredProducts = products.filter((p) => {
     const query = searchQuery.toLowerCase();
-    return p.name.toLowerCase().includes(query);
+    const matchesSearch = p.name.toLowerCase().includes(query);
+    const matchesDeletedFilter = includeDeleted ? true : !p.isDeleted;
+    return matchesSearch && matchesDeletedFilter;
   });
 
   const handleDeleteInitial = (product: ProductWithStock) =>
     setDeleteCandidate(product);
-
-  const [isDeleting, startTransition] = useTransition();
 
   const handleConfirmDelete = async () => {
     if (!deleteCandidate) return;
@@ -50,16 +54,19 @@ export function ProductsScreen({ products, pagination }: ProductsScreenProps) {
   };
 
   const handleRestore = async (product: ProductWithStock) => {
-    try {
-      // TODO: Call restoreProductAction when D.7 is implemented
-      // await restoreProductAction({ productId: product._id });
-
-      toast.success("Product restored");
-    } catch (error: any) {
-      toast.error("Failed to restore product", {
-        description: error.message,
+    startRestoringTransition(async () => {
+      const result = await restoreProductAction({
+        productId: product._id,
       });
-    }
+
+      if (result?.error) {
+        toast.error("Failed to restore product", {
+          description: result.error,
+        });
+      } else {
+        toast.success("Product restored successfully");
+      }
+    });
   };
 
   return (
@@ -90,10 +97,18 @@ export function ProductsScreen({ products, pagination }: ProductsScreenProps) {
         />
         <Button
           variant="ghost"
-          onClick={() => setShowDeleted(!showDeleted)}
+          onClick={() => {
+            const params = new URLSearchParams(searchParams.toString());
+            if (includeDeleted) {
+              params.delete("includeDeleted");
+            } else {
+              params.set("includeDeleted", "true");
+            }
+            router.replace(`?${params.toString()}`);
+          }}
           className="text-muted-foreground transition-colors"
         >
-          {showDeleted ? "Hide Deleted" : "Show Deleted"}
+          {includeDeleted ? "Hide Deleted" : "Show Deleted"}
         </Button>
       </div>
 
@@ -118,10 +133,11 @@ export function ProductsScreen({ products, pagination }: ProductsScreenProps) {
         ) : (
           <ProductTable
             products={filteredProducts}
-            showDeleted={showDeleted}
+            showDeleted={includeDeleted}
             onDelete={handleDeleteInitial}
             onRestore={handleRestore}
             isLoading={false}
+            isRestoring={isRestoring}
           />
         )}
       </div>

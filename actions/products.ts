@@ -154,3 +154,31 @@ export const deleteProductAction = async (data: DeleteProductInput) => {
 
   redirect("/products");
 };
+
+// D.7: Restore Product (Soft Undelete)
+const restoreProductSchema = z.object({
+  productId: z.string().min(1, "Product ID is required"),
+});
+
+type RestoreProductInput = z.infer<typeof restoreProductSchema>;
+
+export const restoreProductAction = async (data: RestoreProductInput) => {
+  try {
+    const validatedData = restoreProductSchema.parse(data);
+    const tenantId = await getTenantId();
+    const api = await createServerAxios();
+
+    await api.post(
+      `/tenants/${tenantId}/products/${validatedData.productId}/restore`,
+    );
+
+    revalidatePath("/products");
+
+    return { success: "Product restored successfully" };
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      return { error: err.message || "Failed to restore product" };
+    }
+    return { error: "Failed to restore product" };
+  }
+};
