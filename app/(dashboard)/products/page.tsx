@@ -12,6 +12,8 @@ export default async function ProductsPage() {
     getProducts(),
     getOutletStock(outletId),
   ]);
+  console.log("Fetched products:", productsResponse.data);
+  console.log("Fetched stock records:", stockRecords);
 
   // Merge stock into products
   const productsWithStock = mergeStockIntoProducts(
