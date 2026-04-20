@@ -31,7 +31,7 @@ export function useProductSearch(tenantId: string) {
             `/tenants/${tenantId}/products/search`,
             { params: { q: query } },
           );
-          setResults(data);
+          setResults(data.data);
         } catch (error: any) {
           console.error("Product search error:", error);
           setResults([]);
