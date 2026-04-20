@@ -219,3 +219,68 @@ export const updateStockAction = validatedAction(
     }
   },
 );
+
+const importProductsSchema = z.object({
+  file: z
+    .instanceof(File, { message: "File is required" })
+    .refine(
+      (file) => file.name.endsWith(".csv"),
+      "Only .csv files are accepted",
+    )
+    .refine(
+      (file) => file.size <= 5 * 1024 * 1024,
+      "File size must be under 5 MB",
+    ),
+});
+
+type ImportProductsInput = z.infer<typeof importProductsSchema>;
+
+type ImportError = {
+  rowNumber: number;
+  reason: string;
+  data?: Record<string, string | number | boolean>;
+};
+type ImportProductsResponse = {
+  errors: Array<ImportError>;
+  total: number;
+  imported: number;
+  skipped: number;
+};
+export const importProductsAction = validatedAction(
+  importProductsSchema,
+  async ({ file }: ImportProductsInput) => {
+    try {
+      const api = await createServerAxios();
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const { data } = await api.post<ImportProductsResponse>(
+        "/products/import",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
+
+      revalidatePath("/products");
+
+      return {
+        success: `Imported ${data.imported} product${data.imported !== 1 ? "s" : ""}.${data.skipped > 0 ? ` Skipped ${data.skipped}.` : ""}`,
+        errors: data.errors || [],
+        total: data.total,
+        skipped: data.skipped,
+        imported: data.imported,
+        error: "",
+      };
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        return {
+          error: err.message || "Failed to import products",
+        };
+      }
+      return {
+        error: "Failed to import products",
+      };
+    }
+  },
+);
