@@ -11,6 +11,7 @@ import { MOCK_DEFICITS, persistDeficits } from "@/lib/mock-data/deficit";
 import { saveInvoice } from "@/lib/mock-data/invoice";
 import { updateProductStock } from "@/lib/mock-data/product";
 import { Invoice, InvoiceItem, Product } from "@/types";
+import { ProductWithStock } from "@/lib/utils/products";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BillingCart } from "./billing-cart";
@@ -39,7 +40,7 @@ export function BillingWorkspace({
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [products, setProducts] = useState<Product[]>(initialProducts);
-
+  console.log(products, "Products in BillingWorkspace");
   // Load imported products and merge with initial products
   useEffect(() => {
     const importedStr = localStorage.getItem("billit_imported_products");
@@ -56,21 +57,22 @@ export function BillingWorkspace({
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
   const [conflictItems, setConflictItems] = useState<InsufficientItem[]>([]);
 
-  const handleSelectProduct = (product: Product) => {
+  const handleSelectProduct = (product: ProductWithStock) => {
     setCart((prev) => {
-      const existing = prev.find((item) => item.productId === product.id);
+      const existing = prev.find((item) => item.productId === product._id);
 
       // Stock checking immediately on add
       const requestedQty = existing ? existing.quantity + 1 : 1;
-      if (requestedQty > product.currentStock) {
+      const availableStock = product.stock || 0;
+      if (requestedQty > availableStock) {
         toast.warning(`Insufficient inventory for ${product.name}`, {
-          description: `Only ${product.currentStock} remaining in stock.`,
+          description: `Only ${availableStock} remaining in stock.`,
         });
       }
 
       if (existing) {
         return prev.map((item) =>
-          item.productId === product.id
+          item.productId === product._id
             ? {
                 ...item,
                 quantity: item.quantity + 1,
@@ -82,7 +84,7 @@ export function BillingWorkspace({
       return [
         ...prev,
         {
-          productId: product.id,
+          productId: product._id,
           productName: product.name,
           quantity: 1,
           unitPrice: product.basePrice,
@@ -292,7 +294,6 @@ export function BillingWorkspace({
       {/* Search Section - Full width on mobile, flex-1 on tablet+, max height on mobile */}
       <Card className="flex-1 flex flex-col min-h-0 bg-transparent border-0 shadow-none max-h-[40vh] md:max-h-[50vh] lg:max-h-none">
         <BillingSearch
-          products={products}
           onSelectProduct={handleSelectProduct}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}

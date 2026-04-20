@@ -4,13 +4,14 @@ import { MoneyText } from "@/components/shared/money-text";
 import { SearchBar } from "@/components/shared/search-bar";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { useProductSearch } from "@/features/billing/use-product-search";
+import { getStoredTenant } from "@/lib/auth-tokens";
 import { formatStock } from "@/lib/formatters/quantity";
-import { Product } from "@/types";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ProductWithStock } from "@/lib/utils/products";
+import { useEffect, useRef, useState } from "react";
 
 interface BillingSearchProps {
-  products: Product[];
-  onSelectProduct: (product: Product) => void;
+  onSelectProduct: (product: ProductWithStock) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
 }
@@ -44,13 +45,29 @@ function HighlightedText({
 }
 
 export function BillingSearch({
-  products,
   onSelectProduct,
   searchQuery,
   onSearchChange,
 }: BillingSearchProps) {
-  const [isSearching, setIsSearching] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [tenantId] = useState(() => {
+    const tenant = getStoredTenant();
+    return tenant?._id || null;
+  });
+
+  // Initialize API search hook with tenantId
+  const {
+    results: apiResults,
+    loading: apiLoading,
+    search,
+  } = useProductSearch(tenantId || "");
+
+  // Trigger API search when search query changes
+  useEffect(() => {
+    if (tenantId && searchQuery) {
+      search(searchQuery);
+    }
+  }, [searchQuery, tenantId, search]);
 
   // Keyboard shortcut: Alt+S to focus search
   useEffect(() => {
@@ -65,28 +82,10 @@ export function BillingSearch({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Simulate search loading for 150ms after search query changes
-  useEffect(() => {
-    if (searchQuery) {
-      setIsSearching(true);
-      const timer = setTimeout(() => setIsSearching(false), 150);
-      return () => clearTimeout(timer);
-    } else {
-      setIsSearching(false);
-    }
-  }, [searchQuery]);
+  // Use API results for search
+  const displayedProducts = apiResults;
 
-  const filteredProducts = useMemo(() => {
-    // Clear results on empty query
-    if (!searchQuery) return [];
-    const query = searchQuery.toLowerCase();
-    return products.filter(
-      (p) =>
-        p.name.toLowerCase().includes(query) ||
-        (p.productCode?.toLowerCase().includes(query) ?? false),
-    );
-  }, [searchQuery, products]);
-
+  console.log(displayedProducts);
   return (
     <div className="flex flex-col space-y-4 h-full">
       <SearchBar
@@ -94,14 +93,14 @@ export function BillingSearch({
         onSearch={onSearchChange}
         placeholder="Search products by name or code (Alt+S)"
         className="max-w-full h-12 text-md"
-        loading={isSearching}
+        loading={apiLoading && searchQuery ? true : false}
       />
 
       <div className="flex-1 overflow-auto grid grid-cols-2 sm:grid-cols-3 gap-4 pb-4 content-start">
-        {filteredProducts.map((product) => (
+        {displayedProducts?.map((product) => (
           <Card
-            key={product.id}
-            className="cursor-pointer hover:border-primary/50 transition-colors flex flex-col h-[100px]"
+            key={product._id}
+            className="cursor-pointer hover:border-primary/50 transition-colors flex flex-col h-25"
             onClick={() => onSelectProduct(product)}
           >
             <CardHeader className="p-3 pb-1">
@@ -113,15 +112,6 @@ export function BillingSearch({
                       highlight={searchQuery}
                     />
                   </div>
-                  {product.productCode && (
-                    <div className="text-xs text-muted-foreground">
-                      Code:{" "}
-                      <HighlightedText
-                        text={product.productCode}
-                        highlight={searchQuery}
-                      />
-                    </div>
-                  )}
                 </div>
                 <MoneyText
                   amount={product.basePrice}
@@ -130,9 +120,9 @@ export function BillingSearch({
               </div>
             </CardHeader>
             <CardContent className="p-3 pt-0 mt-auto flex justify-between items-center text-xs">
-              {product.currentStock > 0 ? (
+              {product.stock && product.stock > 0 ? (
                 <span className="text-muted-foreground font-medium">
-                  {formatStock(product.currentStock, product.deficitThreshold)}
+                  {formatStock(product.stock, product.deficitThreshold)}
                 </span>
               ) : (
                 <StatusBadge
@@ -146,9 +136,18 @@ export function BillingSearch({
             </CardContent>
           </Card>
         ))}
-        {searchQuery && !isSearching && filteredProducts.length === 0 && (
+        {searchQuery &&
+          !apiLoading &&
+          displayedProducts.length === 0 &&
+          tenantId && (
+            <div className="col-span-full py-12 text-center text-muted-foreground">
+              No products found matching &quot;{searchQuery}&quot;
+            </div>
+          )}
+        {apiLoading && searchQuery && (
           <div className="col-span-full py-12 text-center text-muted-foreground">
-            No products found matching "{searchQuery}"
+            <div className="inline-block h-6 w-6 rounded-full border-t-2 border-primary animate-spin mb-2" />
+            <p>Searching products...</p>
           </div>
         )}
       </div>
