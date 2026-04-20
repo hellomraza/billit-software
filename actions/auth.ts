@@ -144,6 +144,7 @@ export const resetPasswordAction = validatedAction(
       return {
         success:
           "Password reset successfully. A confirmation email has been sent to your registered email address.",
+        error: "",
       };
     } catch (err: any) {
       // Check if token is invalid/expired
