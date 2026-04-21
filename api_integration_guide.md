@@ -1589,11 +1589,11 @@ export async function getInvoice(
 }
 ```
 
-- [ ] Create `getInvoice()` in `lib/api/invoices.ts`
-- [ ] Call in `app/(dashboard)/invoices/[id]/page.tsx`
-- [ ] Show full invoice detail: items, totals, customer info, GST breakdown
-- [ ] Show GST section only when `isGstInvoice === true`
-- [ ] Show "Back to invoices" navigation
+- [x] Create `getInvoice()` in `lib/api/invoices.ts`
+- [x] Call in `app/(dashboard)/invoices/[id]/page.tsx`
+- [x] Show full invoice detail: items, totals, customer info, GST breakdown
+- [x] Show GST section only when `isGstInvoice === true`
+- [x] Show "Back to invoices" navigation
 
 ---
 
@@ -2222,7 +2222,7 @@ The following endpoints exist in the swagger spec but are NOT used in MVP 1 fron
 ### Section E: Invoices
 
 - [x] E.1 Get Invoices with Filters — `GET /tenants/{tenantId}/invoices`
-- [ ] E.2 Get Invoice Detail — `GET /tenants/{tenantId}/invoices/{invoiceId}`
+- [x] E.2 Get Invoice Detail — `GET /tenants/{tenantId}/invoices/{invoiceId}`
 - [ ] E.3 Create Invoice (Two-Phase) — `POST /tenants/{tenantId}/invoices`
 
 ### Section F: Deficits
