@@ -1,28 +1,23 @@
 "use client";
 
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
-import {
-  DeficitResolutionAction,
-  InsufficientItem,
-  InsufficientStockModal,
-} from "@/components/shared/insufficient-stock-modal";
 import { Card } from "@/components/ui/card";
-import { MOCK_DEFICITS, persistDeficits } from "@/lib/mock-data/deficit";
-import { saveInvoice } from "@/lib/mock-data/invoice";
-import { updateProductStock } from "@/lib/mock-data/product";
-import { Invoice, InvoiceItem, Product } from "@/types";
+import { InvoiceStockConflictModal } from "@/features/invoices/invoice-stock-conflict-modal";
 import { ProductWithStock } from "@/lib/utils/products";
-import { useEffect, useMemo, useState } from "react";
+import { useIsGstEnabled } from "@/stores/get-store";
+import { InvoiceItem, Product } from "@/types";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BillingCart } from "./billing-cart";
 import { BillingCustomerDetails } from "./billing-customer-details";
 import { BillingSearch } from "./billing-search";
 import { BillingSummaryPanel } from "./billing-summary-panel";
+import { CartItem, useInvoiceCreation } from "./use-invoice-creation";
 
 interface BillingWorkspaceProps {
   initialProducts: Product[];
   tenantSettings: {
-    isGstEnabled: boolean;
     defaultGstRate: number;
     currency: string;
   };
@@ -32,30 +27,19 @@ export function BillingWorkspace({
   initialProducts,
   tenantSettings,
 }: BillingWorkspaceProps) {
+  const router = useRouter();
+  const gstEnabled = useIsGstEnabled();
   const [cart, setCart] = useState<InvoiceItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
-  const [isFinalizing, setIsFinalizing] = useState(false);
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-  console.log(products, "Products in BillingWorkspace");
-  // Load imported products and merge with initial products
-  useEffect(() => {
-    const importedStr = localStorage.getItem("billit_imported_products");
-    if (importedStr) {
-      const importedProducts = JSON.parse(importedStr);
-      // Merge: imported products first, then initial (mock) products
-      setProducts([...importedProducts, ...initialProducts]);
-    } else {
-      setProducts(initialProducts);
-    }
-  }, [initialProducts]);
+  const products = initialProducts;
 
-  // Stock Validation State
+  // Invoice creation hook
+  const invoiceCreation = useInvoiceCreation();
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
-  const [conflictItems, setConflictItems] = useState<InsufficientItem[]>([]);
 
   const handleSelectProduct = (product: ProductWithStock) => {
     setCart((prev) => {
@@ -120,72 +104,150 @@ export function BillingWorkspace({
   );
 
   const gstAmount = useMemo(() => {
-    if (!tenantSettings.isGstEnabled) return 0;
+    if (!gstEnabled) return 0;
     return cart.reduce(
       (sum, item) => sum + item.subtotal * (item.gstRate / 100),
       0,
     );
-  }, [cart, tenantSettings.isGstEnabled]);
+  }, [cart, gstEnabled]);
 
   const grandTotal = subtotal + gstAmount;
 
   const handleFinalizeInit = async () => {
-    setIsFinalizing(true);
-    try {
-      const conflicts = cart
-        .map((item) => {
-          const product = products.find((p) => p.id === item.productId)!;
-          return {
-            product,
-            requested: item.quantity,
-            available: product.currentStock,
-          };
-        })
-        .filter((i) => i.requested > i.available);
+    if (cart.length === 0) {
+      toast.error("Cart is empty");
+      return;
+    }
 
-      if (conflicts.length > 0) {
-        setConflictItems(conflicts);
-        setIsStockModalOpen(true);
-      } else {
-        await finalizeSuccess();
-      }
-    } finally {
-      setIsFinalizing(false);
+    // Convert invoice items to cart items for the hook
+    const cartItems: CartItem[] = cart.map((item) => ({
+      productId: item.productId,
+      productName: item.productName,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      gstRate: item.gstRate,
+    }));
+
+    const result = await invoiceCreation.submitInvoice(
+      cartItems,
+      paymentMethod,
+      customerName,
+      customerPhone,
+      gstEnabled,
+    );
+
+    if (result.success && invoiceCreation.phase === "success") {
+      // Clear cart and redirect
+      setCart([]);
+      setPaymentMethod("CASH");
+      setCustomerName("");
+      setCustomerPhone("");
+
+      toast.success(
+        `Invoice #${invoiceCreation.createdInvoice?.invoice.invoiceNumber} Created`,
+        {
+          description: `Total ${tenantSettings.currency} ${invoiceCreation.createdInvoice?.invoice.grandTotal.toFixed(2)} via ${paymentMethod}`,
+        },
+      );
+
+      // Navigate to invoice detail
+      setTimeout(() => {
+        router.push(`/invoices/${invoiceCreation.createdInvoice?.invoice.id}`);
+      }, 500);
+    } else if (invoiceCreation.phase === "stock_conflict") {
+      // Show modal for user to decide
+      setIsStockModalOpen(true);
+    } else if (invoiceCreation.phase === "error") {
+      toast.error("Failed to create invoice", {
+        description: invoiceCreation.error,
+      });
     }
   };
 
-  const handleResolveConflicts = async (
-    resolutions: { productId: string; action: DeficitResolutionAction }[],
+  const handleStockConflictDecision = async (
+    decisions: Record<string, "use-available" | "override" | "remove">,
   ) => {
-    let newCart = [...cart];
+    let updatedCart = [...cart];
     const removedItems: string[] = [];
 
-    resolutions.forEach((res) => {
-      if (res.action === "remove") {
-        const item = newCart.find((i) => i.productId === res.productId);
+    // Apply user decisions to cart
+    Object.entries(decisions).forEach(([productId, decision]) => {
+      if (decision === "remove") {
+        const item = updatedCart.find((i) => i.productId === productId);
         if (item) {
           removedItems.push(item.productName);
         }
-        newCart = newCart.filter((i) => i.productId !== res.productId);
-      } else if (res.action === "use-available") {
-        const item = newCart.find((i) => i.productId === res.productId);
-        const product = products.find((p) => p.id === res.productId);
+        updatedCart = updatedCart.filter((i) => i.productId !== productId);
+      } else if (decision === "use-available") {
+        const item = updatedCart.find((i) => i.productId === productId);
+        const product = products.find((p) => p.id === productId);
         if (item && product) {
           item.quantity = product.currentStock;
           item.subtotal = item.quantity * item.unitPrice;
         }
       }
-      // if "sell-anyway", do nothing to the cart quantities
+      // "override" means keep original quantity
     });
 
-    setCart(newCart);
-    setIsStockModalOpen(false);
+    if (updatedCart.length === 0) {
+      toast.error("All items were removed", {
+        description: "Your bill has been cleared. No invoice was created.",
+      });
+      setIsStockModalOpen(false);
+      return;
+    }
 
-    // Only continue if cart is not empty after resolution
-    if (newCart.length > 0) {
-      await finalizeSuccess(resolutions);
+    setCart(updatedCart);
 
-      // Show toast about removed items if any
+    // Create override map for items that user chose to sell anyway
+    const overrides: Record<string, { quantity: number; override: boolean }> =
+      {};
+    Object.entries(decisions).forEach(([productId, decision]) => {
+      if (decision === "override") {
+        const item = updatedCart.find((i) => i.productId === productId);
+        if (item) {
+          overrides[productId] = {
+            quantity: item.quantity,
+            override: true,
+          };
+        }
+      }
+    });
+
+    // Submit with overrides
+    const cartItems: CartItem[] = updatedCart.map((item) => ({
+      productId: item.productId,
+      productName: item.productName,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      gstRate: item.gstRate,
+    }));
+
+    const result = await invoiceCreation.submitInvoice(
+      cartItems,
+      paymentMethod,
+      customerName,
+      customerPhone,
+      gstEnabled,
+      overrides,
+    );
+
+    if (result.success && invoiceCreation.phase === "success") {
+      setIsStockModalOpen(false);
+
+      // Clear cart
+      setCart([]);
+      setPaymentMethod("CASH");
+      setCustomerName("");
+      setCustomerPhone("");
+
+      toast.success(
+        `Invoice #${invoiceCreation.createdInvoice?.invoice.invoiceNumber} Created`,
+        {
+          description: `Total ${tenantSettings.currency} ${invoiceCreation.createdInvoice?.invoice.grandTotal.toFixed(2)} via ${paymentMethod}`,
+        },
+      );
+
       if (removedItems.length > 0) {
         toast.info(
           `Removed ${removedItems.length} item${removedItems.length > 1 ? "s" : ""} from bill`,
@@ -194,99 +256,22 @@ export function BillingWorkspace({
           },
         );
       }
-    } else {
-      // Show warning that all items were removed
-      toast.error("All items were removed", {
-        description: "Your bill has been cleared. No invoice was created.",
+
+      // Navigate to invoice detail
+      setTimeout(() => {
+        router.push(`/invoices/${invoiceCreation.createdInvoice?.invoice.id}`);
+      }, 500);
+    } else if (invoiceCreation.phase === "stock_conflict") {
+      // Another conflict (shouldn't happen but handle it)
+      toast.warning("Stock conflict persists. Please review your selections.");
+    } else if (invoiceCreation.phase === "error") {
+      toast.error("Failed to create invoice", {
+        description: invoiceCreation.error,
       });
-      setIsFinalizing(false);
+      setIsStockModalOpen(false);
+      // Restore cart
+      setCart(updatedCart);
     }
-  };
-
-  const finalizeSuccess = async (
-    resolutions: { productId: string; action: DeficitResolutionAction }[] = [],
-  ) => {
-    // Simulate processing delay
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    // Generate next invoice number
-    const nextInvoiceNum = parseInt(
-      localStorage.getItem("billit_next_invoice_num") || "1",
-    );
-    const invoiceNumber = `INV-${String(nextInvoiceNum).padStart(3, "0")}`;
-
-    // Save to localStorage for next invoice
-    localStorage.setItem("billit_next_invoice_num", String(nextInvoiceNum + 1));
-
-    // Decrement stock for all items sold
-    cart.forEach((item) => {
-      updateProductStock(item.productId, item.quantity);
-    });
-
-    // Log deficits for items sold at zero stock
-    const deficitsCreated = resolutions.filter(
-      (r) => r.action === "sell-anyway",
-    );
-
-    if (deficitsCreated.length > 0) {
-      const persistedStr = localStorage.getItem("billit_deficits");
-      const allDeficits = persistedStr
-        ? JSON.parse(persistedStr)
-        : [...MOCK_DEFICITS];
-
-      // Create new deficit records for sold-anyway items
-      deficitsCreated.forEach((res) => {
-        const cartItem = cart.find((i) => i.productId === res.productId);
-        if (cartItem) {
-          allDeficits.push({
-            id: `def_${Date.now()}_${res.productId}`,
-            productId: res.productId,
-            invoiceId: `inv_${Date.now()}`, // Placeholder, will be updated below
-            missingQuantity: cartItem.quantity,
-            status: "PENDING" as const,
-            createdAt: new Date().toISOString(),
-          });
-        }
-      });
-
-      persistDeficits(allDeficits);
-    }
-
-    // Create invoice object
-    const newInvoice: Invoice = {
-      id: `inv_${Date.now()}`,
-      invoiceNumber,
-      createdAt: new Date().toISOString(),
-      customerName: customerName || undefined,
-      customerPhone: customerPhone || undefined,
-      isGstInvoice: tenantSettings.isGstEnabled,
-      paymentMethod: paymentMethod as any,
-      items: cart,
-      subtotal,
-      totalGst: gstAmount,
-      grandTotal,
-    };
-
-    // Save invoice
-    saveInvoice(newInvoice);
-
-    toast.success(`Invoice #${invoiceNumber} Finalized`, {
-      description: `Total ${tenantSettings.currency} ${grandTotal.toFixed(2)} via ${paymentMethod}`,
-    });
-
-    if (deficitsCreated.length > 0) {
-      toast.warning(
-        `${deficitsCreated.length} inventory deficit${deficitsCreated.length > 1 ? "s" : ""} logged`,
-        {
-          description: `Review and resolve in Inventory Deficits section.`,
-        },
-      );
-    }
-
-    // Reset form
-    setCart([]);
-    setPaymentMethod("CASH");
-    setCustomerName("");
-    setCustomerPhone("");
   };
 
   return (
@@ -317,13 +302,13 @@ export function BillingWorkspace({
           subtotal={subtotal}
           gstAmount={gstAmount}
           grandTotal={grandTotal}
-          isGstEnabled={tenantSettings.isGstEnabled}
+          isGstEnabled={gstEnabled}
           paymentMethod={paymentMethod}
           onPaymentMethodChange={setPaymentMethod}
           onFinalize={handleFinalizeInit}
           onClear={() => setIsClearDialogOpen(true)}
           isEnabled={cart.length > 0}
-          isFinalizing={isFinalizing}
+          isFinalizing={invoiceCreation.phase === "submitting"}
         />
       </Card>
 
@@ -340,11 +325,12 @@ export function BillingWorkspace({
         onCancel={() => setIsClearDialogOpen(false)}
       />
 
-      <InsufficientStockModal
+      <InvoiceStockConflictModal
         isOpen={isStockModalOpen}
-        items={conflictItems}
-        onResolve={handleResolveConflicts}
+        items={invoiceCreation.insufficientItems}
+        onConfirm={handleStockConflictDecision}
         onCancel={() => setIsStockModalOpen(false)}
+        isSubmitting={invoiceCreation.phase === "submitting"}
       />
     </div>
   );

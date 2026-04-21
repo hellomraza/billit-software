@@ -3,8 +3,8 @@
 import { DeficitGroup } from "@/components/shared/deficit-card";
 import { PageHeader } from "@/components/shared/page-header";
 import { DeficitList } from "@/features/deficits/deficit-list";
+import { getProducts } from "@/lib/api/products";
 import { getDeficits, resolveDeficitGroup } from "@/lib/mock-data/deficit";
-import { getProducts } from "@/lib/mock-data/product";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -24,7 +24,8 @@ export default function DeficitsPage() {
     try {
       setIsLoading(true);
       Promise.all([getDeficits(), getProducts()])
-        .then(([deficits, prods]) => {
+        .then(([deficits, response]) => {
+          const prods = response?.data || [];
           setAllDeficits(deficits);
           setProducts(prods);
         })

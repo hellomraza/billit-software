@@ -36,12 +36,15 @@ export const changePasswordAction = validatedAction(
       // Revalidate settings page to reflect changes
       revalidatePath("/settings");
       return { success: "Password changed successfully." };
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Check if current password is incorrect (400 error)
-      if (err.message && err.message.includes("400")) {
-        return { error: "Current password is incorrect." };
+      if (err instanceof Error) {
+        if (err.message.includes("400")) {
+          return { error: "Current password is incorrect." };
+        }
+        return { error: err.message };
       }
-      return { error: err.message };
+      return { error: "An unknown error occurred." };
     }
   },
 );
@@ -65,8 +68,11 @@ export const updateBusinessSettingsAction = validatedAction(
       });
       revalidatePath("/settings");
       return { success: "Business settings updated successfully." };
-    } catch (err: any) {
-      return { error: err.message };
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        return { error: err.message };
+      }
+      return { error: "An unknown error occurred." };
     }
   },
 );
@@ -74,7 +80,6 @@ export const updateBusinessSettingsAction = validatedAction(
 // C.3 Update GST Settings Schema
 const updateGstSettingsSchema = z.object({
   gstNumber: z.string().optional(),
-  gstEnabled: z.coerce.boolean(),
 });
 
 // C.3 Update GST Settings Action
@@ -85,14 +90,16 @@ export const updateGstSettingsAction = validatedAction(
       const api = await createServerAxios();
       await api.patch("/settings/gst", {
         gstNumber: data.gstNumber || "",
-        gstEnabled: data.gstEnabled,
       });
       // Revalidate both settings and billing pages
       revalidatePath("/settings");
       revalidatePath("/");
-      return { success: "GST settings updated successfully." };
-    } catch (err: any) {
-      return { error: err.message };
+      return { success: "GST settings updated successfully.", error: "" };
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        return { error: err.message };
+      }
+      return { error: "An unknown error occurred." };
     }
   },
 );

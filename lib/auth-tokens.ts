@@ -45,3 +45,9 @@ export function getStoredTenant(): Tenant | null {
     return null;
   }
 }
+
+export function getStoredOutletId(): string | null {
+  if (typeof window === "undefined") return null;
+  const match = document.cookie.match(/(?:^|; )outlet_id=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}

@@ -5,7 +5,7 @@ import { SearchBar } from "@/components/shared/search-bar";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useProductSearch } from "@/features/billing/use-product-search";
-import { getStoredTenant } from "@/lib/auth-tokens";
+import { getStoredOutletId, getStoredTenant } from "@/lib/auth-tokens";
 import { formatStock } from "@/lib/formatters/quantity";
 import { ProductWithStock } from "@/lib/utils/products";
 import { useEffect, useRef, useState } from "react";
@@ -55,12 +55,16 @@ export function BillingSearch({
     return tenant?._id || null;
   });
 
+  const [outletId] = useState(() => {
+    return getStoredOutletId();
+  });
+
   // Initialize API search hook with tenantId
   const {
     results: apiResults,
     loading: apiLoading,
     search,
-  } = useProductSearch(tenantId || "");
+  } = useProductSearch(tenantId || "", outletId || "");
 
   // Trigger API search when search query changes
   useEffect(() => {
@@ -84,8 +88,6 @@ export function BillingSearch({
 
   // Use API results for search
   const displayedProducts = apiResults;
-
-  console.log(displayedProducts);
   return (
     <div className="flex flex-col space-y-4 h-full">
       <SearchBar

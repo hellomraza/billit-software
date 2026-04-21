@@ -4,7 +4,7 @@ import clientAxios from "@/lib/axios/client";
 import { ProductWithStock } from "@/lib/utils/products";
 import { useCallback, useRef, useState } from "react";
 
-export function useProductSearch(tenantId: string) {
+export function useProductSearch(tenantId: string, outletId: string) {
   const [results, setResults] = useState<ProductWithStock[]>([]);
   const [loading, setLoading] = useState(false);
   const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
@@ -29,7 +29,7 @@ export function useProductSearch(tenantId: string) {
         try {
           const { data } = await clientAxios.get(
             `/tenants/${tenantId}/products/search`,
-            { params: { q: query } },
+            { params: { q: query, outletId } },
           );
           setResults(data.data);
         } catch (error: any) {
@@ -40,7 +40,7 @@ export function useProductSearch(tenantId: string) {
         }
       }, 300);
     },
-    [tenantId],
+    [tenantId, outletId],
   );
 
   return { results, loading, search };

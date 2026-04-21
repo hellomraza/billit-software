@@ -4,22 +4,21 @@ import { updateGstSettingsAction } from "@/actions/settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useGstActions, useIsGstEnabled } from "@/stores/get-store";
 import { useActionState } from "react";
 import { toast } from "sonner";
 
 interface GstSettingsFormProps {
   gstNumber: string;
-  gstEnabled: boolean;
 }
 
-export function GstSettingsForm({
-  gstNumber,
-  gstEnabled,
-}: GstSettingsFormProps) {
+export function GstSettingsForm({ gstNumber }: GstSettingsFormProps) {
   const [state, formAction, isPending] = useActionState(
     updateGstSettingsAction,
     { error: "", success: "" },
   );
+  const gstEnabled = useIsGstEnabled();
+  const { toggleGst } = useGstActions();
 
   // Show success toast when action succeeds
   if ("success" in state && state.success) {
@@ -49,10 +48,9 @@ export function GstSettingsForm({
         </div>
         <input
           id="gstEnabled"
-          name="gstEnabled"
           type="checkbox"
-          defaultChecked={gstEnabled}
-          disabled={isPending}
+          checked={gstEnabled}
+          onChange={toggleGst}
           className="w-5 h-5 cursor-pointer"
         />
       </div>
