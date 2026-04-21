@@ -328,7 +328,4 @@
   margin: 0.25rem 0;
 }
 
-/* Hide print-hidden elements */
-.print-hidden {
-  display: none;
-}
+/* `print-hidden` should only disappear in print media. */

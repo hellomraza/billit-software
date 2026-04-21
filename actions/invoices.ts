@@ -2,6 +2,7 @@
 
 import { createServerAxios } from "@/lib/axios/server";
 import { Invoice } from "@/types/invoice";
+import { AxiosError } from "axios";
 import { cookies } from "next/headers";
 
 export interface CreateInvoicePayload {
@@ -18,15 +19,26 @@ export interface CreateInvoicePayload {
 }
 
 export interface InvoiceCreatedResponse {
-  invoice: Invoice;
+  data: Invoice;
   abbreviationsLocked?: boolean;
+}
+
+export interface InsufficientStockDetail {
+  productId: string;
+  productName: string;
+  requestedQuantity: number;
+  currentStock: number;
+  deficitThreshold: number;
+  currentDeficit: number;
+  canOverride: boolean;
+  overrideBlockReason?: string;
 }
 
 export interface SubmitInvoiceResult {
   success: boolean;
   phase: "success" | "stock_conflict" | "error";
   invoice?: Invoice;
-  insufficientItems?: any[];
+  insufficientItems?: InsufficientStockDetail[];
   message?: string;
 }
 
@@ -67,36 +79,44 @@ export async function submitInvoiceAction(
     return {
       success: true,
       phase: "success",
-      invoice: data.invoice,
+      invoice: data.data,
     };
-  } catch (err: any) {
-    // 409 - stock conflict
-    if (err.response?.status === 409) {
-      return {
-        success: false,
-        phase: "stock_conflict",
-        insufficientItems: err.response.data.insufficientItems || [],
-      };
+  } catch (err: unknown) {
+    if (err instanceof AxiosError) {
+      // 409 - stock conflict
+      if (err.response?.status === 409) {
+        return {
+          success: false,
+          phase: "stock_conflict",
+          insufficientItems: err.response.data.insufficientItems || [],
+        };
+      }
+
+      // 403 - override blocked
+      if (err.response?.status === 403) {
+        return {
+          success: false,
+          phase: "error",
+          message:
+            err.response.data.message ||
+            "Override blocked by deficit threshold",
+        };
+      }
     }
 
-    // 403 - override blocked
-    if (err.response?.status === 403) {
+    if (err instanceof Error) {
+      // Other errors
       return {
         success: false,
         phase: "error",
-        message:
-          err.response.data.message || "Override blocked by deficit threshold",
+        message: err.message || "Failed to create invoice",
       };
     }
 
-    // Other errors
     return {
       success: false,
       phase: "error",
-      message:
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to create invoice",
+      message: "Failed to create invoice",
     };
   }
 }
@@ -138,36 +158,42 @@ export async function submitInvoiceWithOverridesAction(
     return {
       success: true,
       phase: "success",
-      invoice: data.invoice,
+      invoice: data.data,
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
     // 403 - override blocked
-    if (err.response?.status === 403) {
+    if (err instanceof AxiosError) {
+      if (err.response?.status === 403) {
+        return {
+          success: false,
+          phase: "error",
+          message:
+            err.response.data.message ||
+            "Override blocked by deficit threshold",
+        };
+      }
+
+      // 409 - should not happen on retry, but handle it
+      if (err.response?.status === 409) {
+        return {
+          success: false,
+          phase: "stock_conflict",
+          insufficientItems: err.response.data.insufficientItems || [],
+        };
+      }
+    }
+    if (err instanceof Error) {
       return {
         success: false,
         phase: "error",
-        message:
-          err.response.data.message || "Override blocked by deficit threshold",
+        message: err.message,
       };
     }
 
-    // 409 - should not happen on retry, but handle it
-    if (err.response?.status === 409) {
-      return {
-        success: false,
-        phase: "stock_conflict",
-        insufficientItems: err.response.data.insufficientItems || [],
-      };
-    }
-
-    // Other errors
     return {
       success: false,
       phase: "error",
-      message:
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to create invoice",
+      message: "Failed to create invoice",
     };
   }
 }

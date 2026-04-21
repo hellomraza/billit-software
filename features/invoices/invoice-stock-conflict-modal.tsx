@@ -1,5 +1,6 @@
 "use client";
 
+import { InsufficientStockDetail } from "@/actions/invoices";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { InsufficientStockItem } from "@/features/billing/use-invoice-creation";
 import { AlertCircle, CheckCircle2, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -17,7 +17,7 @@ type ItemDecision = "use-available" | "override" | "remove";
 
 interface InvoiceStockConflictModalProps {
   isOpen: boolean;
-  items: InsufficientStockItem[];
+  items: InsufficientStockDetail[];
   onConfirm: (decisions: Record<string, ItemDecision>) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
@@ -40,7 +40,7 @@ export function InvoiceStockConflictModal({
     const initial: Record<string, ItemDecision> = {};
     items.forEach((item) => {
       initial[item.productId] =
-        item.availableQuantity > 0 ? "use-available" : "remove";
+        item.currentStock > 0 ? "use-available" : "remove";
     });
     setDecisions(initial);
 
@@ -118,8 +118,11 @@ export function InvoiceStockConflictModal({
 
           <div className="flex-1 overflow-y-auto pr-2 space-y-4 my-3">
             {items.map((item) => {
+              const deficitThresholdExceeded =
+                item.requestedQuantity - item.currentStock >
+                item.deficitThreshold;
               const currentDecision = decisions[item.productId];
-              const deficit = item.requestedQuantity - item.availableQuantity;
+              const deficit = item.requestedQuantity - item.currentStock;
 
               return (
                 <div
@@ -142,7 +145,7 @@ export function InvoiceStockConflictModal({
                         </strong>{" "}
                         • Available:{" "}
                         <strong className="text-foreground">
-                          {item.availableQuantity}
+                          {item.currentStock}
                         </strong>
                       </p>
                     </div>
@@ -151,7 +154,7 @@ export function InvoiceStockConflictModal({
                         Deficit: {deficit}
                       </div>
                       {currentDecision === "use-available" &&
-                        item.availableQuantity > 0 && (
+                        item.currentStock > 0 && (
                           <CheckCircle2 className="h-4 w-4 text-green-600" />
                         )}
                     </div>
@@ -169,15 +172,15 @@ export function InvoiceStockConflictModal({
                       onClick={() =>
                         updateDecision(item.productId, "use-available")
                       }
-                      disabled={item.availableQuantity <= 0 || isSubmitting}
+                      disabled={item.currentStock <= 0 || isSubmitting}
                       title={
-                        item.availableQuantity <= 0
+                        item.currentStock <= 0
                           ? "No stock available"
                           : "Sell only available quantity"
                       }
                     >
                       {currentDecision === "use-available" ? "✓ " : ""}Sell
-                      Available ({item.availableQuantity})
+                      Available ({item.currentStock})
                     </Button>
                     <Button
                       variant={
@@ -186,9 +189,9 @@ export function InvoiceStockConflictModal({
                       size="sm"
                       className="text-xs h-9"
                       onClick={() => updateDecision(item.productId, "override")}
-                      disabled={item.deficitThresholdExceeded || isSubmitting}
+                      disabled={deficitThresholdExceeded || isSubmitting}
                       title={
-                        item.deficitThresholdExceeded
+                        deficitThresholdExceeded
                           ? "Override blocked by deficit threshold"
                           : "Sell full amount"
                       }

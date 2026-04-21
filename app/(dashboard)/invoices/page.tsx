@@ -6,7 +6,7 @@ import { getInvoices } from "@/lib/api/invoices";
 export default async function InvoicesPage({
   searchParams,
 }: {
-  searchParams: {
+  searchParams: Promise<{
     page?: string;
     dateFrom?: string;
     dateTo?: string;
@@ -14,26 +14,27 @@ export default async function InvoicesPage({
     paymentMethod?: string;
     gstEnabled?: string;
     productId?: string;
-  };
+  }>;
 }) {
+  const searchParamValues = await searchParams;
   const invoicesData = await getInvoices({
-    page: searchParams.page ? Number(searchParams.page) : 1,
+    page: searchParamValues.page ? Number(searchParamValues.page) : 1,
     limit: 20,
-    dateFrom: searchParams.dateFrom,
-    dateTo: searchParams.dateTo,
-    invoiceNumber: searchParams.invoiceNumber,
-    paymentMethod: searchParams.paymentMethod as
+    dateFrom: searchParamValues.dateFrom,
+    dateTo: searchParamValues.dateTo,
+    invoiceNumber: searchParamValues.invoiceNumber,
+    paymentMethod: searchParamValues.paymentMethod as
       | "CASH"
       | "CARD"
       | "UPI"
       | undefined,
     gstEnabled:
-      searchParams.gstEnabled === "true"
+      searchParamValues.gstEnabled === "true"
         ? true
-        : searchParams.gstEnabled === "false"
+        : searchParamValues.gstEnabled === "false"
           ? false
           : undefined,
-    productId: searchParams.productId,
+    productId: searchParamValues.productId,
   });
 
   return (

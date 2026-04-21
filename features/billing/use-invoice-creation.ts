@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  InsufficientStockDetail,
   submitInvoiceAction,
   submitInvoiceWithOverridesAction,
   type CreateInvoicePayload,
@@ -10,14 +11,6 @@ import { useCallback, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 type Phase = "idle" | "submitting" | "stock_conflict" | "success" | "error";
-
-export interface InsufficientStockItem {
-  productId: string;
-  productName: string;
-  requestedQuantity: number;
-  availableQuantity: number;
-  deficitThresholdExceeded?: boolean;
-}
 
 export interface CartItem {
   productId: string;
@@ -35,7 +28,7 @@ export interface InvoiceCreatedResponse {
 export function useInvoiceCreation() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [insufficientItems, setInsufficientItems] = useState<
-    InsufficientStockItem[]
+    InsufficientStockDetail[]
   >([]);
   const [createdInvoice, setCreatedInvoice] =
     useState<InvoiceCreatedResponse | null>(null);
@@ -66,6 +59,9 @@ export function useInvoiceCreation() {
           return {
             productId: item.productId,
             quantity: override?.quantity ?? item.quantity,
+            productName: item.productName,
+            unitPrice: item.unitPrice,
+            gstRate: item.gstRate,
             override: override?.override ?? false,
           };
         }),
@@ -94,9 +90,10 @@ export function useInvoiceCreation() {
           setError(result.message || "Failed to create invoice");
           return { success: false, phase: "error" };
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         setPhase("error");
-        const errorMessage = err.message || "An unexpected error occurred";
+        const errorMessage =
+          (err as Error).message || "An unexpected error occurred";
         setError(errorMessage);
         return { success: false, phase: "error" };
       }
