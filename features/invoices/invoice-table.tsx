@@ -47,6 +47,9 @@ export function InvoiceTable({
   const handleRowClick = (invoice: Invoice) => {
     if (onSelectInvoice) {
       onSelectInvoice(invoice);
+    } else {
+      // Default behavior: navigate to invoice detail page
+      router.push(`/invoices/${invoice.id}`);
     }
   };
 
@@ -79,7 +82,7 @@ export function InvoiceTable({
             id: "customer",
             header: "Customer",
             cell: (row) => (
-              <span className="truncate max-w-[150px] inline-block">
+              <span className="truncate max-w-37.5 inline-block">
                 {row.customerName || "Walk-in Customer"}
               </span>
             ),

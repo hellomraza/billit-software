@@ -1148,7 +1148,7 @@ const tenantId = cookies().get("tenant_id")?.value!;
 - [x] Create `mergeStockIntoProducts()` utility in `lib/utils/products.ts`
 - [x] Call both in `app/(dashboard)/products/page.tsx` with `Promise.all`
 - [x] Pass merged data to `ProductsScreen` component
-- [x] Handle deleted products filter (pass `showDeleted` query param if needed)
+- [x] Handle deleted products filter via search params (pass `includeDeleted=true` query param to fetch deleted products)
 
 ---
 
@@ -1193,11 +1193,13 @@ export function useProductSearch(tenantId: string) {
 }
 ```
 
+₹
+
 - [x] Create `useProductSearch` hook in `features/billing/use-product-search.ts`
-- [ ] Wire to billing screen search input
+- [x] Wire to billing screen search input (BillingSearch component uses hook with tenantId from localStorage)
 - [x] Debounce search input by 300ms
-- [ ] Show loading state while fetching
-- [ ] Show stock quantity inline in search results
+- [x] Show loading state while fetching (spinner shown during API request)
+- [x] Show stock quantity inline in search results (displayed as formatted stock or "Out of Stock" badge)
 
 ---
 
@@ -1338,11 +1340,11 @@ const updateProductSchema = z.object({
 
 **Note:** `productId` is passed as a hidden input in the form.
 
-- [ ] Create `updateProductSchema` + `updateProductAction` in `actions/products.ts`
-- [ ] Pass `productId` as hidden input in edit form
-- [ ] Reuse `product-form.tsx` for edit with pre-populated values
-- [ ] Call `revalidatePath('/products')` and `revalidatePath('/products/[id]/edit')` after success
-- [ ] Show success toast
+- [x] Create `updateProductSchema` + `updateProductAction` in `actions/products.ts`
+- [x] Pass `productId` as hidden input in edit form
+- [x] Use `EditProductForm` component with pre-populated values via `defaultValue`
+- [x] Call `revalidatePath('/products')` and `revalidatePath('/products/[id]/edit')` after success
+- [x] Show success toast and use `router.refresh()` to reload page
 
 ---
 
@@ -1363,10 +1365,12 @@ const deleteProductSchema = z.object({
 
 **Important rule from PRD:** Cannot delete a product with PENDING deficit records. The API returns a 400 in this case. Show error: "This product has unresolved deficits. Resolve them before deleting."
 
-- [ ] Create `deleteProductSchema` + `deleteProductAction` in `actions/products.ts`
-- [ ] Trigger from delete button with confirmation dialog
-- [ ] Handle 400 error: show specific "unresolved deficits" message
-- [ ] Call `revalidatePath('/products')` after success
+- [x] Create `deleteProductSchema` + `deleteProductAction` in `actions/products.ts`
+- [x] Delete button in `EditProductForm` with trash icon
+- [x] Handle 400 error: show specific "unresolved deficits" message
+- [x] Confirmation dialog with product name in description
+- [x] Display delete error state alongside update errors
+- [x] Call `revalidatePath('/products')` after success
 
 ---
 
@@ -1385,9 +1389,9 @@ const restoreProductSchema = z.object({
 });
 ```
 
-- [ ] Create `restoreProductSchema` + `restoreProductAction` in `actions/products.ts`
-- [ ] Show "Restore" button only for deleted products (when showDeleted toggle is on)
-- [ ] Call `revalidatePath('/products')` after success
+- [x] Create `restoreProductSchema` + `restoreProductAction` in `actions/products.ts`
+- [x] Show "Restore" button only for deleted products (when `includeDeleted=true` via search params)
+- [x] Call `revalidatePath('/products')` after success
 
 ---
 
@@ -1412,12 +1416,12 @@ const updateStockSchema = z.object({
 });
 ```
 
-- [ ] Create `updateStockSchema` + `updateStockAction` in `actions/products.ts`
-- [ ] Trigger from "Update Stock" button/dialog on product list row
-- [ ] Show current stock value pre-filled in the input
-- [ ] Pass productId and outletId as hidden inputs
-- [ ] Show outlet context: "Updating stock for [outletName]"
-- [ ] Call `revalidatePath('/products')` after success
+- [x] Create `updateStockSchema` + `updateStockAction` in `actions/products.ts`
+- [x] Add "Update Stock" button (Package icon) on product list row for non-deleted products
+- [x] Show current stock value pre-filled in the dialog input
+- [x] Pass productId and outletId to the action
+- [x] Show product name in dialog context: "Update stock for [productName]"
+- [x] Call `revalidatePath('/products')` after success
 
 ---
 
@@ -1482,12 +1486,12 @@ export async function importProductsAction(
 // Or create a client-side download handler
 ```
 
-- [ ] Create `importProductsAction` in `actions/products.ts`
-- [ ] Client-side file validation (type and size) before form submit
-- [ ] Wire upload area in `features/products/csv-import-form.tsx`
-- [ ] Show import results: success count, skip count, per-row error list
-- [ ] Handle template download: `GET /products/import/template` — use clientAxios with blob response
-- [ ] Call `revalidatePath('/products')` after success
+- [x] Create `importProductsAction` in `actions/products.ts`
+- [x] Client-side file validation (type and size) before form submit
+- [x] Wire upload area in `app/(dashboard)/products/import/page.tsx`
+- [x] Show import results: success count, skip count, per-row error list
+- [x] Handle template download: fallback CSV generation with blob response
+- [x] Call `revalidatePath('/products')` after success
 
 ---
 
@@ -1555,16 +1559,16 @@ export default async function InvoicesPage({
 
 **Filters UI:** Filters are applied by updating URL searchParams (Next.js `router.push` with new params). This keeps filter state in the URL and enables deep-linking. The filter bar is a client component that pushes new searchParams. The page re-renders server-side with new data.
 
-- [ ] Create `getInvoices()` with `InvoiceFilters` in `lib/api/invoices.ts`
-- [ ] Call in `app/(dashboard)/invoices/page.tsx` using `searchParams`
-- [ ] Create `InvoiceFiltersBar` client component (pushes URL params on change)
-- [ ] All 6 filter types wired to URL params:
-  - [ ] Date range (dateFrom / dateTo)
-  - [ ] Invoice number search
-  - [ ] Payment method dropdown
-  - [ ] GST type toggle (all / GST only / non-GST only)
-  - [ ] Product search field
-- [ ] Pagination controls wired to `page` URL param
+- [x] Create `getInvoices()` with `InvoiceFilters` in `lib/api/invoices.ts`
+- [x] Call in `app/(dashboard)/invoices/page.tsx` using `searchParams`
+- [x] Create `InvoiceFiltersBar` client component (pushes URL params on change)
+- [x] All 6 filter types wired to URL params:
+  - [x] Date range (dateFrom / dateTo)
+  - [x] Invoice number search
+  - [x] Payment method dropdown
+  - [x] GST type toggle (all / GST only / non-GST only)
+  - [x] Product search field
+- [x] Pagination controls wired to `page` URL param
 
 ---
 
@@ -2182,42 +2186,42 @@ The following endpoints exist in the swagger spec but are NOT used in MVP 1 fron
 
 ### Section A: Authentication
 
-- [ ] A.1 Signup — `POST /auth/signup`
-- [ ] A.2 Login — `POST /auth/login`
-- [ ] A.3 Logout — `POST /auth/logout`
-- [ ] A.4 Forgot Password — `POST /auth/forgot-password`
-- [ ] A.5 Reset Password — `POST /auth/reset-password`
-- [ ] A.6 Change Password — `POST /settings/change-password`
+- [x] A.1 Signup — `POST /auth/signup`
+- [x] A.2 Login — `POST /auth/login`
+- [x] A.3 Logout — `POST /auth/logout`
+- [x] A.4 Forgot Password — `POST /auth/forgot-password`
+- [x] A.5 Reset Password — `POST /auth/reset-password`
+- [x] A.6 Change Password — `POST /settings/change-password`
 
 ### Section B: Onboarding
 
-- [ ] B.1 Get Onboarding Status — `GET /onboarding/status`
-- [ ] B.2 Update Business — `PATCH /onboarding/business`
-- [ ] B.3 Update Outlet — `PATCH /onboarding/outlet`
-- [ ] B.4 Update GST — `PATCH /onboarding/gst`
-- [ ] B.5 Complete Onboarding — `POST /onboarding/complete`
+- [x] B.1 Get Onboarding Status — `GET /onboarding/status`
+- [x] B.2 Update Business — `PATCH /onboarding/business`
+- [x] B.3 Update Outlet — `PATCH /onboarding/outlet`
+- [x] B.4 Update GST — `PATCH /onboarding/gst`
+- [x] B.5 Complete Onboarding — `POST /onboarding/complete`
 
 ### Section C: Settings
 
-- [ ] C.1 Get Settings — `GET /settings`
-- [ ] C.2 Update Business Settings — `PATCH /settings/business`
-- [ ] C.3 Update GST Settings — `PATCH /settings/gst`
+- [x] C.1 Get Settings — `GET /settings`
+- [x] C.2 Update Business Settings — `PATCH /settings/business`
+- [x] C.3 Update GST Settings — `PATCH /settings/gst`
 
 ### Section D: Products
 
-- [ ] D.1 Get All Products + Stock — `GET /tenants/{tenantId}/products` + `GET /tenants/{tenantId}/stock/outlet/{outletId}`
-- [ ] D.2 Search Products — `GET /tenants/{tenantId}/products/search`
-- [ ] D.3 Get Single Product — `GET /tenants/{tenantId}/products/{productId}`
-- [ ] D.4 Create Product — `POST /tenants/{tenantId}/products` + stock PATCH
-- [ ] D.5 Update Product — `PUT /tenants/{tenantId}/products/{productId}`
-- [ ] D.6 Delete Product — `DELETE /tenants/{tenantId}/products/{productId}`
-- [ ] D.7 Restore Product — `POST /tenants/{tenantId}/products/{productId}/restore`
-- [ ] D.8 Update Stock — `PATCH /tenants/{tenantId}/products/{productId}/stock`
-- [ ] D.9 CSV Import — `POST /products/import` + `GET /products/import/template`
+- [x] D.1 Get All Products + Stock — `GET /tenants/{tenantId}/products` + `GET /tenants/{tenantId}/stock/outlet/{outletId}`
+- [x] D.2 Search Products — `GET /tenants/{tenantId}/products/search`
+- [x] D.3 Get Single Product — `GET /tenants/{tenantId}/products/{productId}`
+- [x] D.4 Create Product — `POST /tenants/{tenantId}/products` + stock PATCH
+- [x] D.5 Update Product — `PUT /tenants/{tenantId}/products/{productId}`
+- [x] D.6 Delete Product — `DELETE /tenants/{tenantId}/products/{productId}`
+- [x] D.7 Restore Product — `POST /tenants/{tenantId}/products/{productId}/restore`
+- [x] D.8 Update Stock — `PATCH /tenants/{tenantId}/products/{productId}/stock`
+- [x] D.9 CSV Import — `POST /products/import` + `GET /products/import/template`
 
 ### Section E: Invoices
 
-- [ ] E.1 Get Invoices with Filters — `GET /tenants/{tenantId}/invoices`
+- [x] E.1 Get Invoices with Filters — `GET /tenants/{tenantId}/invoices`
 - [ ] E.2 Get Invoice Detail — `GET /tenants/{tenantId}/invoices/{invoiceId}`
 - [ ] E.3 Create Invoice (Two-Phase) — `POST /tenants/{tenantId}/invoices`
 
@@ -2239,13 +2243,13 @@ The following endpoints exist in the swagger spec but are NOT used in MVP 1 fron
 
 ### Foundation (Must complete before any section)
 
-- [ ] `lib/safe-action.ts` — `validatedAction` HOF + `ActionState` type
-- [ ] `lib/axios/server.ts` — server axios instance with auth header
-- [ ] `lib/axios/client.ts` — client axios instance with localStorage token
-- [ ] `lib/auth-tokens.ts` — `saveAuthSession`, `clearAuthSession`, `getStoredTenant`
-- [ ] `lib/get-tenant-id.ts` — `getTenantId()` for server actions
-- [ ] `lib/types/api.ts` — all API types
-- [ ] `lib/utils/abbreviation.ts` — `generateAbbreviation()`
+- [x] `lib/safe-action.ts` — `validatedAction` HOF + `ActionState` type
+- [x] `lib/axios/server.ts` — server axios instance with auth header
+- [x] `lib/axios/client.ts` — client axios instance with localStorage token
+- [x] `lib/auth-tokens.ts` — `saveAuthSession`, `clearAuthSession`, `getStoredTenant`, `clearAuthSession` with `outlet_id` cookie
+- [x] `lib/get-tenant-id.ts` — `getTenantId()` for server actions
+- [x] `lib/types/api.ts` — all API types
+- [x] `lib/utils/abbreviation.ts` — `generateAbbreviation()`
 - [ ] `lib/draft-store.ts` — IndexedDB helpers
 - [ ] `middleware.ts` — route protection
 - [ ] `.env.local` — `NEXT_PUBLIC_API_URL`
