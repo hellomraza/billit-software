@@ -256,7 +256,7 @@ export const useInvoiceCustomerDetails = () =>
     })),
   );
 
-export const useInvoiceSummary = () =>
+export const useInvoiceSummary = (gstEnabled = true) =>
   useInvoiceStore(
     useShallow((state) => ({
       subtotal: state.cart.reduce((sum, item) => sum + item.subtotal, 0),
@@ -264,12 +264,13 @@ export const useInvoiceSummary = () =>
         (sum, item) => sum + item.subtotal * (item.gstRate / 100),
         0,
       ),
-      grandTotal:
-        state.cart.reduce((sum, item) => sum + item.subtotal, 0) +
-        state.cart.reduce(
-          (sum, item) => sum + item.subtotal * (item.gstRate / 100),
-          0,
-        ),
+      grandTotal: gstEnabled
+        ? state.cart.reduce((sum, item) => sum + item.subtotal, 0) +
+          state.cart.reduce(
+            (sum, item) => sum + item.subtotal * (item.gstRate / 100),
+            0,
+          )
+        : state.cart.reduce((sum, item) => sum + item.subtotal, 0),
     })),
   );
 

@@ -26,8 +26,8 @@ export function BillingSummaryPanel({
 }: BillingSummaryPanelProps) {
   const phase = useInvoicePhase();
   const isFinalizing = phase === "submitting";
-  const { subtotal, gstAmount, grandTotal } = useInvoiceSummary();
   const gstEnabled = useIsGstEnabled();
+  const { subtotal, gstAmount, grandTotal } = useInvoiceSummary(gstEnabled);
   const paymentButtonsRef = useRef<HTMLDivElement>(null);
   const announcementRef = useRef<HTMLDivElement>(null);
   const paymentMethod = useInvoicePaymentMethod();
@@ -121,7 +121,7 @@ export function BillingSummaryPanel({
         </div>
         <Button
           size="lg"
-          className="w-full font-bold h-12 text-base sm:h-auto sm:text-base"
+          className="w-full font-bold text-base  sm:text-base"
           disabled={!isEnabled || isFinalizing}
           onClick={() => {
             onFinalize();

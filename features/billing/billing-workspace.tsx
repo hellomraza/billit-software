@@ -48,7 +48,7 @@ export function BillingWorkspace({
   const actions = useInvoiceActions();
   const paymentMethod = useInvoicePaymentMethod();
   const phase = useInvoicePhase();
-  const { subtotal, gstAmount, grandTotal } = useInvoiceSummary();
+  const { subtotal, gstAmount, grandTotal } = useInvoiceSummary(gstEnabled);
   const { isClearDialogOpen, isStockModalOpen } = useInvoiceStore();
   const [isFinalizeDialogOpen, setIsFinalizeDialogOpen] = useState(false);
 
