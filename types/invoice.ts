@@ -22,3 +22,5 @@ export interface Invoice {
   totalGst: number;
   grandTotal: number;
 }
+
+export type InvoiceListItem = Omit<Invoice, "items">;

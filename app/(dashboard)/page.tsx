@@ -25,7 +25,7 @@ const page = async () => {
           <GstToggleButton />
         </div>
       </div>
-      <div className="animate-in fade-in duration-500 delay-200 h-[calc(100vh-28rem)] min-h-136">
+      <div className="animate-in fade-in duration-500 delay-200 h-[calc(100vh-12rem)] min-h-136">
         <BillingWorkspace
           initialProducts={initialProducts}
           tenantSettings={{

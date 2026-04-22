@@ -3,7 +3,7 @@
 import { createServerAxios } from "@/lib/axios/server";
 import { getTenantId } from "@/lib/get-tenant-id";
 import { Invoice as ApiInvoice } from "@/lib/types/api";
-import { Invoice } from "@/types/invoice";
+import { Invoice, InvoiceListItem, PaymentMethod } from "@/types/invoice";
 
 export interface InvoiceFilters {
   page?: number;
@@ -18,23 +18,49 @@ export interface InvoiceFilters {
 }
 
 export interface PaginatedInvoices {
-  data: Invoice[];
+  data: InvoiceListItem[];
   page: number;
   limit: number;
   total: number;
 }
+
+export type InvoiceListResponse = {
+  invoiceNumber: string;
+  invoiceId: string;
+  createdAt: string;
+  businessName: string;
+  gstEnabled: boolean;
+  itemCount: number;
+  subtotal: number;
+  gstTotal: number;
+  grandTotal: number;
+  paymentMethod: PaymentMethod;
+  customerName?: string;
+  deficitCount: number;
+};
 
 interface ApiPaginatedResponse {
-  data: ApiInvoice[];
+  data: InvoiceListResponse[];
   page: number;
   limit: number;
   total: number;
 }
 
-/**
- * Transform API invoice to local Invoice type
- */
-function transformInvoice(apiInvoice: ApiInvoice): Invoice {
+function transformInvoice(apiInvoice: InvoiceListResponse): InvoiceListItem {
+  return {
+    id: apiInvoice.invoiceId,
+    invoiceNumber: apiInvoice.invoiceNumber,
+    createdAt: apiInvoice.createdAt,
+    customerName: apiInvoice.customerName,
+    isGstInvoice: apiInvoice.gstEnabled,
+    paymentMethod: apiInvoice.paymentMethod,
+    subtotal: apiInvoice.subtotal,
+    totalGst: apiInvoice.gstTotal,
+    grandTotal: apiInvoice.grandTotal,
+  };
+}
+
+function transformInvoiceDetail(apiInvoice: ApiInvoice): Invoice {
   return {
     id: apiInvoice._id,
     invoiceNumber: apiInvoice.invoiceNumber,
@@ -43,17 +69,20 @@ function transformInvoice(apiInvoice: ApiInvoice): Invoice {
     customerPhone: apiInvoice.customerPhone,
     isGstInvoice: apiInvoice.isGstInvoice,
     paymentMethod: apiInvoice.paymentMethod,
-    items: apiInvoice.items as any,
+    items: apiInvoice.items.map((item) => ({
+      productId: item.productId,
+      productName: item.productName,
+      unitPrice: item.unitPrice,
+      quantity: item.quantity,
+      gstRate: item.gstRate,
+      subtotal: item.lineTotal,
+    })),
     subtotal: apiInvoice.subtotal,
     totalGst: apiInvoice.totalGstAmount,
     grandTotal: apiInvoice.grandTotal,
   };
 }
 
-/**
- * Fetch invoices for a tenant with optional filters
- * Returns paginated list of invoices with filter support
- */
 export async function getInvoices(
   filters: InvoiceFilters = {},
 ): Promise<PaginatedInvoices> {
@@ -96,9 +125,6 @@ export async function getInvoices(
   }
 }
 
-/**
- * Fetch a single invoice by ID
- */
 export async function getInvoice(invoiceId: string): Promise<Invoice> {
   try {
     const tenantId = await getTenantId();
@@ -108,7 +134,7 @@ export async function getInvoice(invoiceId: string): Promise<Invoice> {
       `/tenants/${tenantId}/invoices/${invoiceId}`,
     );
 
-    return transformInvoice(data);
+    return transformInvoiceDetail(data);
   } catch (error) {
     console.error("Failed to fetch invoice:", error);
     throw error;

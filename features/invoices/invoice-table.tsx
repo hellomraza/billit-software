@@ -5,7 +5,7 @@ import { MoneyText } from "@/components/shared/money-text";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { formatDateTime } from "@/lib/formatters/date";
-import { Invoice } from "@/types";
+import { InvoiceListItem } from "@/types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -16,8 +16,8 @@ interface PaginationInfo {
 }
 
 interface InvoiceTableProps {
-  invoices: Invoice[];
-  onSelectInvoice?: (invoice: Invoice) => void;
+  invoices: InvoiceListItem[];
+  onSelectInvoice?: (invoice: InvoiceListItem) => void;
   isLoading?: boolean;
   pagination?: PaginationInfo;
 }
@@ -44,7 +44,7 @@ export function InvoiceTable({
   const hasNextPage = currentPage < totalPages;
   const hasPrevPage = currentPage > 1;
 
-  const handleRowClick = (invoice: Invoice) => {
+  const handleRowClick = (invoice: InvoiceListItem) => {
     if (onSelectInvoice) {
       onSelectInvoice(invoice);
     } else {
