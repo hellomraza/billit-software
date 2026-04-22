@@ -186,7 +186,10 @@ export function BillingWorkspace({
     <div className="flex flex-col md:flex-row lg:flex-row h-full gap-3 md:gap-4 relative p-4">
       {/* Search Section - Full width on mobile, flex-1 on tablet+, max height on mobile */}
       <Card className="py-0 ring-0 flex-1 flex flex-col min-h-0 bg-transparent shadow-none max-h-[40vh] md:max-h-[50vh] lg:max-h-none">
-        <BillingSearch onSelectProduct={handleSelectProduct} />
+        <BillingSearch
+          onSelectProduct={handleSelectProduct}
+          initialProducts={initialProducts}
+        />
       </Card>
 
       {/* Cart & Summary Section - Bottom sheet on mobile, floating on tablet, sidebar on desktop */}

@@ -16,6 +16,7 @@ import { useEffect, useRef, useState } from "react";
 
 interface BillingSearchProps {
   onSelectProduct: (product: ProductWithStock) => void;
+  initialProducts: ProductWithStock[];
 }
 
 function HighlightedText({
@@ -55,7 +56,10 @@ function HighlightedText({
   );
 }
 
-export function BillingSearch({ onSelectProduct }: BillingSearchProps) {
+export function BillingSearch({
+  onSelectProduct,
+  initialProducts,
+}: BillingSearchProps) {
   const { setSearchQuery } = useInvoiceActions();
   const searchQuery = useInvoiceSearchQuery();
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -96,7 +100,8 @@ export function BillingSearch({ onSelectProduct }: BillingSearchProps) {
   }, []);
 
   // Use API results for search
-  const displayedProducts = apiResults;
+  const displayedProducts =
+    apiResults.length > 0 ? apiResults : initialProducts;
   return (
     <div className="flex flex-col h-full ">
       <div className="px-4">
