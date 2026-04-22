@@ -17,7 +17,6 @@ import { ChangePasswordForm } from "@/features/settings/change-password-form";
 import { GstSettingsForm } from "@/features/settings/gst-settings-form";
 import { clearAuthSession } from "@/lib/auth-tokens";
 import { useDarkMode } from "@/lib/hooks/use-dark-mode";
-import { useIsGstEnabled } from "@/stores/get-store";
 import { KeyRound, Laptop, LogOut, Moon, Sun } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -31,7 +30,6 @@ export function SettingsScreen({ settings }: SettingsScreenProps) {
   const router = useRouter();
   const [showLogout, setShowLogout] = useState(false);
   const { theme, setTheme, mounted } = useDarkMode();
-  const gstEnabled = useIsGstEnabled();
 
   const handleLogoutConfirm = async () => {
     setShowLogout(false);
@@ -90,10 +88,7 @@ export function SettingsScreen({ settings }: SettingsScreenProps) {
           </CardHeader>
           <CardContent>
             <div className="max-w-md">
-              <GstSettingsForm
-                gstNumber={settings?.gstNumber || ""}
-                gstEnabled={gstEnabled}
-              />
+              <GstSettingsForm gstNumber={settings?.gstNumber || ""} />
             </div>
           </CardContent>
         </Card>
