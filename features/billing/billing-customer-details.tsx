@@ -3,20 +3,14 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import {
+  useInvoiceActions,
+  useInvoiceCustomerDetails,
+} from "@/stores/invoice-store";
 
-interface BillingCustomerDetailsProps {
-  customerName: string;
-  customerPhone: string;
-  onCustomerNameChange: (name: string) => void;
-  onCustomerPhoneChange: (phone: string) => void;
-}
-
-export function BillingCustomerDetails({
-  customerName,
-  customerPhone,
-  onCustomerNameChange,
-  onCustomerPhoneChange,
-}: BillingCustomerDetailsProps) {
+export function BillingCustomerDetails() {
+  const { customerName, customerPhone } = useInvoiceCustomerDetails();
+  const { setCustomerName, setCustomerPhone } = useInvoiceActions();
   return (
     <div className="border-b bg-background px-4 py-3 space-y-3">
       <div className="space-y-0.5">
@@ -30,7 +24,7 @@ export function BillingCustomerDetails({
           id="customer-name"
           placeholder="Walk-in customer"
           value={customerName}
-          onChange={(e) => onCustomerNameChange(e.target.value)}
+          onChange={(e) => setCustomerName(e.target.value)}
           className="h-9 text-sm"
         />
       </div>
@@ -47,7 +41,7 @@ export function BillingCustomerDetails({
           type="tel"
           placeholder="9876543210"
           value={customerPhone}
-          onChange={(e) => onCustomerPhoneChange(e.target.value)}
+          onChange={(e) => setCustomerPhone(e.target.value)}
           className="h-9 text-sm"
         />
       </div>

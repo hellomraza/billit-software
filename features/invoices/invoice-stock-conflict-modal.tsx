@@ -1,6 +1,5 @@
 "use client";
 
-import { InsufficientStockDetail } from "@/actions/invoices";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,6 +9,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  useInvoiceInsufficientItems,
+  useInvoicePhase,
+} from "@/stores/invoice-store";
 import { AlertCircle, CheckCircle2, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -17,19 +20,18 @@ type ItemDecision = "use-available" | "override" | "remove";
 
 interface InvoiceStockConflictModalProps {
   isOpen: boolean;
-  items: InsufficientStockDetail[];
   onConfirm: (decisions: Record<string, ItemDecision>) => void;
   onCancel: () => void;
-  isSubmitting?: boolean;
 }
 
 export function InvoiceStockConflictModal({
   isOpen,
-  items,
   onConfirm,
   onCancel,
-  isSubmitting = false,
 }: InvoiceStockConflictModalProps) {
+  const items = useInvoiceInsufficientItems();
+  const phase = useInvoicePhase();
+  const isSubmitting = phase === "submitting";
   const [decisions, setDecisions] = useState<Record<string, ItemDecision>>({});
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
   const announcementRef = useRef<HTMLDivElement>(null);

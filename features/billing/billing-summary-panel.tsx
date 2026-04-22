@@ -4,38 +4,36 @@ import { MoneyText } from "@/components/shared/money-text";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PAYMENT_METHODS } from "@/lib/constants/defaults";
+import { useIsGstEnabled } from "@/stores/get-store";
+import {
+  useInvoiceActions,
+  useInvoicePaymentMethod,
+  useInvoicePhase,
+  useInvoiceSummary,
+} from "@/stores/invoice-store";
+import { type PaymentMethod } from "@/types";
 import { Loader2 } from "lucide-react";
 import { useRef } from "react";
 
 interface BillingSummaryPanelProps {
-  subtotal: number;
-  gstAmount: number;
-  grandTotal: number;
-  isGstEnabled: boolean;
-  paymentMethod: string;
-  onPaymentMethodChange: (method: any) => void;
   onFinalize: () => void;
-  onClear: () => void;
   isEnabled: boolean;
-  isFinalizing?: boolean;
 }
 
 export function BillingSummaryPanel({
-  subtotal,
-  gstAmount,
-  grandTotal,
-  isGstEnabled,
-  paymentMethod,
-  onPaymentMethodChange,
   onFinalize,
-  onClear,
   isEnabled,
-  isFinalizing = false,
 }: BillingSummaryPanelProps) {
+  const phase = useInvoicePhase();
+  const isFinalizing = phase === "submitting";
+  const { subtotal, gstAmount, grandTotal } = useInvoiceSummary();
+  const gstEnabled = useIsGstEnabled();
   const paymentButtonsRef = useRef<HTMLDivElement>(null);
   const announcementRef = useRef<HTMLDivElement>(null);
+  const paymentMethod = useInvoicePaymentMethod();
+  const { setPaymentMethod, openClearDialog } = useInvoiceActions();
 
-  const handlePaymentKeyDown = (e: React.KeyboardEvent, method: string) => {
+  const handlePaymentKeyDown = (e: React.KeyboardEvent, method: PaymentMethod) => {
     const buttons = Array.from(
       paymentButtonsRef.current?.querySelectorAll("button") || [],
     );
@@ -56,8 +54,10 @@ export function BillingSummaryPanel({
 
     const nextButton = buttons[nextIndex] as HTMLButtonElement;
     nextButton?.focus();
-    const nextMethod = nextButton?.textContent || "";
-    onPaymentMethodChange(nextMethod.trim());
+    const nextMethod = nextButton?.textContent?.trim() as PaymentMethod | undefined;
+    if (nextMethod) {
+      setPaymentMethod(nextMethod);
+    }
   };
 
   const announceAction = (message: string) => {
@@ -73,7 +73,7 @@ export function BillingSummaryPanel({
           <span className="text-muted-foreground">Subtotal</span>
           <MoneyText amount={subtotal} />
         </div>
-        {isGstEnabled && (
+        {gstEnabled && (
           <div className="flex justify-between">
             <span className="text-muted-foreground">GST</span>
             <MoneyText amount={gstAmount} />
@@ -101,9 +101,9 @@ export function BillingSummaryPanel({
               key={method}
               variant={paymentMethod === method ? "default" : "outline"}
               size="sm"
-              className="flex-1 min-w-[80px] text-xs h-9 sm:h-8"
+              className="flex-1 min-w-20 text-xs h-9 sm:h-8"
               onClick={() => {
-                onPaymentMethodChange(method);
+                setPaymentMethod(method);
                 announceAction(`Payment method changed to ${method}`);
               }}
               onKeyDown={(e) => handlePaymentKeyDown(e, method)}
@@ -137,7 +137,7 @@ export function BillingSummaryPanel({
           <Button
             variant="ghost"
             className="w-full text-muted-foreground mt-1 h-9 sm:h-8 text-xs sm:text-sm"
-            onClick={onClear}
+            onClick={openClearDialog}
           >
             Clear Bill
           </Button>

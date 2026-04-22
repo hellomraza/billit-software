@@ -4,9 +4,9 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { InvoiceDetailPanel } from "@/features/invoices/invoice-detail-panel";
 import { ROUTES } from "@/lib/routes";
+import { useInvoiceActions, useOsPreviewMode } from "@/stores/invoice-store";
 import { Invoice } from "@/types";
 import { Eye, EyeOff, Printer } from "lucide-react";
-import { useState } from "react";
 import { toast } from "sonner";
 
 interface InvoiceDetailViewClientProps {
@@ -16,7 +16,8 @@ interface InvoiceDetailViewClientProps {
 export function InvoiceDetailViewClient({
   invoice,
 }: InvoiceDetailViewClientProps) {
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const isPreviewMode = useOsPreviewMode();
+  const { enablePreviewMode, disablePreviewMode } = useInvoiceActions();
 
   return (
     <div
@@ -36,7 +37,7 @@ export function InvoiceDetailViewClient({
               variant="outline"
               size="sm"
               onClick={() => {
-                setIsPreviewMode(true);
+                enablePreviewMode();
                 toast.success("Preview Mode Enabled", {
                   description: "Showing how invoice will appear when printed",
                 });
@@ -73,7 +74,7 @@ export function InvoiceDetailViewClient({
             variant="outline"
             size="sm"
             onClick={() => {
-              setIsPreviewMode(false);
+              disablePreviewMode();
               toast.success("Preview Mode Disabled");
             }}
             className="gap-2"
@@ -103,8 +104,7 @@ export function InvoiceDetailViewClient({
             This invoice is valid as a transaction receipt.
           </p>
           <p>
-            For queries or complaints, please contact our customer service
-            team.
+            For queries or complaints, please contact our customer service team.
           </p>
           <p className="mt-2 text-gray-500">
             Document generated on {new Date().toLocaleDateString()}

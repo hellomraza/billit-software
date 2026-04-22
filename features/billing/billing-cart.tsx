@@ -2,23 +2,22 @@
 
 import { MoneyText } from "@/components/shared/money-text";
 import { QuantityControl } from "@/components/shared/quantity-control";
-import { InvoiceItem } from "@/types";
+import { useInvoiceCarts } from "@/stores/invoice-store";
 import { ShoppingCart } from "lucide-react";
 
 interface BillingCartProps {
-  items: InvoiceItem[];
   onUpdateQuantity: (productId: string, qty: number) => void;
   onRemoveItem: (productId: string) => void;
 }
 
 export function BillingCart({
-  items,
   onUpdateQuantity,
   onRemoveItem,
 }: BillingCartProps) {
+  const items = useInvoiceCarts();
   if (items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground h-full min-h-[300px]">
+      <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground h-full min-h-75">
         <ShoppingCart className="h-12 w-12 opacity-20 mb-4" />
         <p>Scan or select products to add them to the bill.</p>
       </div>
