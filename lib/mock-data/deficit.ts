@@ -1,6 +1,5 @@
 import { DeficitRecord } from "@/types";
 import { delay } from "./delay";
-import { updateProductStock } from "./product";
 
 export const MOCK_DEFICITS: DeficitRecord[] = [
   {
@@ -57,9 +56,6 @@ export function resolveDeficitGroup(productId: string, totalMissing: number) {
 
   // Persist updated deficits
   persistDeficits(updatedDeficits);
-
-  // Also replenish product stock
-  updateProductStock(productId, -totalMissing); // Negative to add stock back
 
   return true;
 }
