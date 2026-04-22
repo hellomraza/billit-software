@@ -1,7 +1,17 @@
 "use client";
 
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
+import { MoneyText } from "@/components/shared/money-text";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { InvoiceStockConflictModal } from "@/features/invoices/invoice-stock-conflict-modal";
 import { ProductWithStock } from "@/lib/utils/products";
 import { useIsGstEnabled } from "@/stores/get-store";
@@ -9,14 +19,16 @@ import {
   useInvoiceActions,
   useInvoiceCarts,
   useInvoicePaymentMethod,
+  useInvoicePhase,
   useInvoiceStore,
+  useInvoiceSummary,
 } from "@/stores/invoice-store";
+import { useState } from "react";
 import { toast } from "sonner";
 import { BillingCart } from "./billing-cart";
 import { BillingCustomerDetails } from "./billing-customer-details";
 import { BillingSearch } from "./billing-search";
 import { BillingSummaryPanel } from "./billing-summary-panel";
-import { useInvoiceCreation } from "./use-invoice-creation";
 
 interface BillingWorkspaceProps {
   initialProducts: ProductWithStock[];
@@ -32,12 +44,15 @@ export function BillingWorkspace({
 }: BillingWorkspaceProps) {
   const gstEnabled = useIsGstEnabled();
   const products = initialProducts;
-  const invoiceState = useInvoiceStore();
   const cart = useInvoiceCarts();
-  const invoiceCreation = useInvoiceCreation();
   const actions = useInvoiceActions();
   const paymentMethod = useInvoicePaymentMethod();
-  const { isClearDialogOpen, isStockModalOpen } = invoiceState;
+  const phase = useInvoicePhase();
+  const { subtotal, gstAmount, grandTotal } = useInvoiceSummary();
+  const { isClearDialogOpen, isStockModalOpen } = useInvoiceStore();
+  const [isFinalizeDialogOpen, setIsFinalizeDialogOpen] = useState(false);
+
+  const isSubmitting = phase === "submitting";
 
   const handleSelectProduct = (product: ProductWithStock) => {
     const existing = cart.find((item) => item.productId === product._id);
@@ -75,7 +90,15 @@ export function BillingWorkspace({
     actions.removeCartItem(productId);
   };
 
-  const handleFinalizeInit = async () => {
+  const openFinalizeDialog = () => {
+    if (cart.length === 0) {
+      toast.error("Cart is empty");
+      return;
+    }
+    setIsFinalizeDialogOpen(true);
+  };
+
+  const handleFinalizeConfirm = async () => {
     if (cart.length === 0) {
       toast.error("Cart is empty");
       return;
@@ -85,16 +108,17 @@ export function BillingWorkspace({
 
     if (result.success && result.phase === "success") {
       actions.resetInvoiceDraft();
+      setIsFinalizeDialogOpen(false);
 
       toast.success(`Invoice #${result.invoice?.invoiceNumber} Created`, {
         description: `Total ${tenantSettings.currency} ${result.invoice?.grandTotal.toFixed(2)} via ${paymentMethod}`,
       });
     } else if (result.phase === "stock_conflict") {
-      // Show modal for user to decide
+      setIsFinalizeDialogOpen(false);
       actions.openStockModal();
-    } else if (result.phase === "error") {
+    } else {
       toast.error("Failed to create invoice", {
-        description: result.message || invoiceCreation.error,
+        description: result.message || "Failed to create invoice",
       });
     }
   };
@@ -105,13 +129,10 @@ export function BillingWorkspace({
     let updatedCart = [...cart];
     const removedItems: string[] = [];
 
-    // Apply user decisions to cart
     Object.entries(decisions).forEach(([productId, decision]) => {
       if (decision === "remove") {
         const item = updatedCart.find((i) => i.productId === productId);
-        if (item) {
-          removedItems.push(item.productName);
-        }
+        if (item) removedItems.push(item.productName);
         updatedCart = updatedCart.filter((i) => i.productId !== productId);
       } else if (decision === "use-available") {
         const item = updatedCart.find((i) => i.productId === productId);
@@ -121,7 +142,6 @@ export function BillingWorkspace({
           item.subtotal = item.quantity * item.unitPrice;
         }
       }
-      // "override" means keep original quantity
     });
 
     if (updatedCart.length === 0) {
@@ -135,7 +155,6 @@ export function BillingWorkspace({
 
     actions.setCart(updatedCart);
 
-    // Create override map for items that user chose to sell anyway
     const overrides: Record<string, { quantity: number; override: boolean }> =
       {};
     Object.entries(decisions).forEach(([productId, decision]) => {
@@ -154,7 +173,6 @@ export function BillingWorkspace({
 
     if (result.success && result.phase === "success") {
       actions.closeStockModal();
-
       actions.resetInvoiceDraft();
 
       toast.success(`Invoice #${result.invoice?.invoiceNumber} Created`, {
@@ -164,46 +182,130 @@ export function BillingWorkspace({
       if (removedItems.length > 0) {
         toast.info(
           `Removed ${removedItems.length} item${removedItems.length > 1 ? "s" : ""} from bill`,
-          {
-            description: removedItems.join(", "),
-          },
+          { description: removedItems.join(", ") },
         );
       }
     } else if (result.phase === "stock_conflict") {
-      // Another conflict (shouldn't happen but handle it)
       toast.warning("Stock conflict persists. Please review your selections.");
-    } else if (result.phase === "error") {
+    } else {
       toast.error("Failed to create invoice", {
-        description: result.message || invoiceCreation.error,
+        description: result.message || "Failed to create invoice",
       });
       actions.closeStockModal();
-      // Restore cart
       actions.setCart(updatedCart);
     }
   };
 
   return (
     <div className="flex flex-col md:flex-row lg:flex-row h-full gap-3 md:gap-4 relative p-4">
-      {/* Search Section - Full width on mobile, flex-1 on tablet+, max height on mobile */}
-      <Card className="py-0 ring-0 flex-1 flex flex-col min-h-0 bg-transparent shadow-none max-h-[40vh] md:max-h-[50vh] lg:max-h-none">
+      <Card className="py-0 ring-0 flex-1 flex flex-col min-h-0 bg-transparent shadow-none max-h-[40vh] md:max-h-[60vh] lg:max-h-none">
         <BillingSearch
           onSelectProduct={handleSelectProduct}
           initialProducts={initialProducts}
         />
       </Card>
 
-      {/* Cart & Summary Section - Bottom sheet on mobile, floating on tablet, sidebar on desktop */}
-      <Card className="w-full md:w-80 lg:w-100 flex flex-col shadow-sm border overflow-hidden shrink-0 min-h-auto md:min-h-125 lg:min-h-125 max-h-[calc(100vh-16rem)] md:max-h-[calc(100vh-10rem)] lg:max-h-none sticky bottom-0 md:sticky md:top-4 lg:static bg-background z-10 rounded-t-lg md:rounded-lg">
+      <Card className="w-full py-0 border-0 md:w-80 lg:w-100 flex flex-col shadow-sm overflow-hidden shrink-0 min-h-auto md:min-h-125 lg:min-h-125 max-h-[calc(100vh-16rem)] md:max-h-[calc(100vh-10rem)] lg:max-h-none sticky bottom-0 md:sticky md:top-4 lg:static bg-background z-10 rounded-t-lg md:rounded-lg">
         <BillingCart
           onUpdateQuantity={handleUpdateQuantity}
           onRemoveItem={handleRemoveItem}
         />
-        <BillingCustomerDetails />
         <BillingSummaryPanel
-          onFinalize={handleFinalizeInit}
+          onFinalize={openFinalizeDialog}
           isEnabled={cart.length > 0}
         />
       </Card>
+
+      <Dialog
+        open={isFinalizeDialogOpen}
+        onOpenChange={(open) => setIsFinalizeDialogOpen(open)}
+      >
+        <DialogContent className="sm:max-w-xl  max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Confirm Invoice</DialogTitle>
+            <DialogDescription>
+              Review all invoice details before finalizing.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 overflow-y-auto pr-1">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-md border p-3">
+                <p className="text-muted-foreground">Payment Method</p>
+                <p className="font-semibold mt-1">{paymentMethod}</p>
+              </div>
+              <div className="rounded-md border p-3">
+                <p className="text-muted-foreground">Tax Mode</p>
+                <p className="font-semibold mt-1">
+                  {gstEnabled ? "GST Enabled" : "Non-GST"}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-md border">
+              <div className="px-3 py-2 border-b text-sm font-medium">
+                Invoice Items ({cart.length})
+              </div>
+              <div className="divide-y">
+                {cart.map((item) => (
+                  <div
+                    key={item.productId}
+                    className="px-3 py-2 flex items-center justify-between gap-3 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{item.productName}</p>
+                      <p className="text-muted-foreground text-xs">
+                        Qty: {item.quantity} x {tenantSettings.currency}{" "}
+                        {item.unitPrice.toFixed(2)}
+                      </p>
+                    </div>
+                    <MoneyText
+                      amount={item.subtotal}
+                      className="font-semibold"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-md border p-3 space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Subtotal</span>
+                <MoneyText amount={subtotal} />
+              </div>
+              {gstEnabled && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">GST</span>
+                  <MoneyText amount={gstAmount} />
+                </div>
+              )}
+              <div className="flex justify-between font-semibold text-base pt-1">
+                <span>Grand Total</span>
+                <MoneyText amount={grandTotal} />
+              </div>
+            </div>
+
+            <div className="rounded-md border p-3">
+              <p className="text-sm font-medium mb-3">
+                Customer Details (Optional)
+              </p>
+              <BillingCustomerDetails />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsFinalizeDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleFinalizeConfirm} disabled={isSubmitting}>
+              {isSubmitting ? "Finalizing..." : "Confirm & Finalize"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmationDialog
         isOpen={isClearDialogOpen}

@@ -2,7 +2,6 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import {
   useInvoiceActions,
   useInvoiceCustomerDetails,
@@ -12,11 +11,11 @@ export function BillingCustomerDetails() {
   const { customerName, customerPhone } = useInvoiceCustomerDetails();
   const { setCustomerName, setCustomerPhone } = useInvoiceActions();
   return (
-    <div className="border-b bg-background px-4 py-3 space-y-3">
+    <div className="p-4 space-y-3 rounded-lg">
       <div className="space-y-0.5">
         <Label
           htmlFor="customer-name"
-          className="text-xs text-muted-foreground uppercase tracking-wide"
+          className="text-xs text-muted-foreground uppercase mb-2 tracking-wide"
         >
           Customer Name (Optional)
         </Label>
@@ -32,7 +31,7 @@ export function BillingCustomerDetails() {
       <div className="space-y-0.5">
         <Label
           htmlFor="customer-phone"
-          className="text-xs text-muted-foreground uppercase tracking-wide"
+          className="text-xs text-muted-foreground uppercase mb-2 tracking-wide"
         >
           Phone (Optional)
         </Label>
@@ -45,8 +44,6 @@ export function BillingCustomerDetails() {
           className="h-9 text-sm"
         />
       </div>
-
-      <Separator className="mt-2" />
     </div>
   );
 }
