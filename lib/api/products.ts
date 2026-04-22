@@ -2,7 +2,7 @@
 
 import { createServerAxios } from "@/lib/axios/server";
 import { getTenantId } from "@/lib/get-tenant-id";
-import { PaginatedResponse, Product } from "@/lib/types/api";
+import { PaginatedResponse, Product, ProductWithStock } from "@/lib/types/api";
 
 export interface ProductFilters {
   page?: number;
@@ -12,7 +12,7 @@ export interface ProductFilters {
 
 export async function getProducts(
   filters: ProductFilters = {},
-): Promise<PaginatedResponse<Product>> {
+): Promise<PaginatedResponse<ProductWithStock>> {
   const tenantId = await getTenantId();
   const api = await createServerAxios();
 
@@ -29,9 +29,18 @@ export async function getProducts(
   return data;
 }
 
+export type StockResponse = {
+  _id: string;
+  tenantId: string;
+  productId: string;
+  outletId: string;
+  quantity: number;
+  updatedAt: Date;
+};
+
 export async function getOutletStock(
   outletId: string,
-): Promise<PaginatedResponse<any[]>> {
+): Promise<PaginatedResponse<StockResponse>> {
   const tenantId = await getTenantId();
   const api = await createServerAxios();
 

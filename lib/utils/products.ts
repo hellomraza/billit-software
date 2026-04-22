@@ -1,4 +1,5 @@
 import { Product } from "@/lib/types/api";
+import { StockResponse } from "../api/products";
 
 export interface ProductWithStock extends Product {
   stock?: number;
@@ -12,7 +13,7 @@ export interface ProductWithStock extends Product {
  */
 export function mergeStockIntoProducts(
   products: Product[],
-  stockRecords: any[],
+  stockRecords: StockResponse[],
 ): ProductWithStock[] {
   if (!stockRecords || stockRecords.length === 0) {
     // If no stock records, return products with stock = 0

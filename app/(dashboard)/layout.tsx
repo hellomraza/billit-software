@@ -17,7 +17,7 @@ export default function DashboardLayout({
           {/* Main content with responsive padding for sidebar */}
           <div className="md:pl-20 lg:pl-64 flex flex-col min-h-screen transition-all duration-300">
             <AppTopbar />
-            <main className="flex-1 p-4 md:p-6 lg:p-8">{children}</main>
+            <main className="flex-1 p-4">{children}</main>
           </div>
         </div>
       </OutletBootstrap>

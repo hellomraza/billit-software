@@ -42,7 +42,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
           ref={ref}
           value={internalValue}
           onChange={(e) => setInternalValue(e.target.value)}
-          className="pl-9 pr-9"
+          className="px-9 h-10"
           placeholder={placeholder}
           {...props}
         />
