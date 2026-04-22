@@ -33,7 +33,10 @@ export function BillingSummaryPanel({
   const paymentMethod = useInvoicePaymentMethod();
   const { setPaymentMethod, openClearDialog } = useInvoiceActions();
 
-  const handlePaymentKeyDown = (e: React.KeyboardEvent, method: PaymentMethod) => {
+  const handlePaymentKeyDown = (
+    e: React.KeyboardEvent,
+    method: PaymentMethod,
+  ) => {
     const buttons = Array.from(
       paymentButtonsRef.current?.querySelectorAll("button") || [],
     );
@@ -54,7 +57,9 @@ export function BillingSummaryPanel({
 
     const nextButton = buttons[nextIndex] as HTMLButtonElement;
     nextButton?.focus();
-    const nextMethod = nextButton?.textContent?.trim() as PaymentMethod | undefined;
+    const nextMethod = nextButton?.textContent?.trim() as
+      | PaymentMethod
+      | undefined;
     if (nextMethod) {
       setPaymentMethod(nextMethod);
     }
