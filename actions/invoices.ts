@@ -3,6 +3,7 @@
 import { createServerAxios } from "@/lib/axios/server";
 import { Invoice } from "@/types/invoice";
 import { AxiosError } from "axios";
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 
 export interface CreateInvoicePayload {
@@ -75,6 +76,9 @@ export async function submitInvoiceAction(
       `/tenants/${tenantId}/invoices`,
       { ...payload, outletId },
     );
+
+    revalidatePath("/dashboard");
+    revalidatePath("/invoices");
 
     return {
       success: true,
@@ -154,6 +158,9 @@ export async function submitInvoiceWithOverridesAction(
       `/tenants/${tenantId}/invoices`,
       { ...payload, outletId },
     );
+
+    revalidatePath("/dashboard");
+    revalidatePath("/invoices");
 
     return {
       success: true,
