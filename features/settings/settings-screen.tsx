@@ -17,13 +17,14 @@ import { ChangePasswordForm } from "@/features/settings/change-password-form";
 import { GstSettingsForm } from "@/features/settings/gst-settings-form";
 import { clearAuthSession } from "@/lib/auth-tokens";
 import { useDarkMode } from "@/lib/hooks/use-dark-mode";
+import { Tenant } from "@/lib/types/api";
 import { KeyRound, Laptop, LogOut, Moon, Sun } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
 interface SettingsScreenProps {
-  settings: any;
+  settings: Tenant;
 }
 
 export function SettingsScreen({ settings }: SettingsScreenProps) {
