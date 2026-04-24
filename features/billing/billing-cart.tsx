@@ -2,7 +2,7 @@
 
 import { MoneyText } from "@/components/shared/money-text";
 import { QuantityControl } from "@/components/shared/quantity-control";
-import { useInvoiceCarts } from "@/stores/invoice-store";
+import { useBillingItems } from "@/stores/billing-store";
 import { ShoppingCart, X } from "lucide-react";
 
 interface BillingCartProps {
@@ -14,7 +14,7 @@ export function BillingCart({
   onUpdateQuantity,
   onRemoveItem,
 }: BillingCartProps) {
-  const items = useInvoiceCarts();
+  const items = useBillingItems();
   if (items.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-muted-foreground h-full min-h-75">
@@ -42,7 +42,7 @@ export function BillingCart({
                 className="text-muted-foreground text-xs"
               />
               <MoneyText
-                amount={item.subtotal}
+                amount={item.quantity * item.unitPrice}
                 className="font-semibold text-sm"
               />
             </div>

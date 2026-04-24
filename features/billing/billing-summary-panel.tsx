@@ -4,13 +4,12 @@ import { MoneyText } from "@/components/shared/money-text";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PAYMENT_METHODS } from "@/lib/constants/defaults";
-import { useIsGstEnabled } from "@/stores/get-store";
 import {
-  useInvoiceActions,
-  useInvoicePaymentMethod,
-  useInvoicePhase,
-  useInvoiceSummary,
-} from "@/stores/invoice-store";
+  useBillingActions,
+  useBillingPaymentMethod,
+} from "@/stores/billing-store";
+import { useIsGstEnabled } from "@/stores/get-store";
+import { useInvoiceActions, useInvoicePhase } from "@/stores/invoice-store";
 import { type PaymentMethod } from "@/types";
 import { Loader2 } from "lucide-react";
 import { useRef } from "react";
@@ -18,20 +17,26 @@ import { useRef } from "react";
 interface BillingSummaryPanelProps {
   onFinalize: () => void;
   isEnabled: boolean;
+  subtotal: number;
+  gstAmount: number;
+  grandTotal: number;
 }
 
 export function BillingSummaryPanel({
   onFinalize,
   isEnabled,
+  subtotal,
+  gstAmount,
+  grandTotal,
 }: BillingSummaryPanelProps) {
   const phase = useInvoicePhase();
   const isFinalizing = phase === "submitting";
   const gstEnabled = useIsGstEnabled();
-  const { subtotal, gstAmount, grandTotal } = useInvoiceSummary(gstEnabled);
   const paymentButtonsRef = useRef<HTMLDivElement>(null);
   const announcementRef = useRef<HTMLDivElement>(null);
-  const paymentMethod = useInvoicePaymentMethod();
-  const { setPaymentMethod, openClearDialog } = useInvoiceActions();
+  const paymentMethod = useBillingPaymentMethod();
+  const { setPaymentMethod } = useBillingActions();
+  const { openClearDialog } = useInvoiceActions();
 
   const handlePaymentKeyDown = (
     e: React.KeyboardEvent,

@@ -3,13 +3,13 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  useInvoiceActions,
-  useInvoiceCustomerDetails,
-} from "@/stores/invoice-store";
+  useBillingActions,
+  useBillingCustomerDetails,
+} from "@/stores/billing-store";
 
 export function BillingCustomerDetails() {
-  const { customerName, customerPhone } = useInvoiceCustomerDetails();
-  const { setCustomerName, setCustomerPhone } = useInvoiceActions();
+  const { customerName, customerPhone } = useBillingCustomerDetails();
+  const { setCustomerName, setCustomerPhone } = useBillingActions();
   return (
     <div className="p-4 space-y-3 rounded-lg">
       <div className="space-y-0.5">

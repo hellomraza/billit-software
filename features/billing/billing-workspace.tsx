@@ -14,21 +14,25 @@ import {
 } from "@/components/ui/dialog";
 import { InvoiceStockConflictModal } from "@/features/invoices/invoice-stock-conflict-modal";
 import { ProductWithStock } from "@/lib/utils/products";
+import {
+  useBillingActions,
+  useBillingCustomerDetails,
+  useBillingPaymentMethod,
+} from "@/stores/billing-store";
 import { useIsGstEnabled } from "@/stores/get-store";
 import {
   useInvoiceActions,
-  useInvoiceCarts,
-  useInvoicePaymentMethod,
   useInvoicePhase,
   useInvoiceStore,
-  useInvoiceSummary,
 } from "@/stores/invoice-store";
-import { useState } from "react";
+import { PaymentMethod } from "@/types";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BillingCart } from "./billing-cart";
 import { BillingCustomerDetails } from "./billing-customer-details";
 import { BillingSearch } from "./billing-search";
 import { BillingSummaryPanel } from "./billing-summary-panel";
+import { useBillingCart } from "./use-billing-cart";
 
 interface BillingWorkspaceProps {
   initialProducts: ProductWithStock[];
@@ -42,13 +46,32 @@ export function BillingWorkspace({
   initialProducts,
   tenantSettings,
 }: BillingWorkspaceProps) {
+  const billingCart = useBillingCart();
   const gstEnabled = useIsGstEnabled();
   const products = initialProducts;
-  const cart = useInvoiceCarts();
-  const actions = useInvoiceActions();
-  const paymentMethod = useInvoicePaymentMethod();
+  const cart = billingCart.items;
+  const { clearCart, setItems: setBillingItems } = billingCart;
+  const billingActions = useBillingActions();
+  const { customerName, customerPhone } = useBillingCustomerDetails();
+  const paymentMethod = useBillingPaymentMethod();
+  const invoiceActions = useInvoiceActions();
   const phase = useInvoicePhase();
-  const { subtotal, gstAmount, grandTotal } = useInvoiceSummary(gstEnabled);
+
+  const subtotal = useMemo(
+    () => cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
+    [cart],
+  );
+  const gstAmount = useMemo(
+    () =>
+      cart.reduce(
+        (sum, item) =>
+          sum + item.unitPrice * item.quantity * (item.gstRate / 100),
+        0,
+      ),
+    [cart],
+  );
+  const grandTotal = gstEnabled ? subtotal + gstAmount : subtotal;
+
   const { isClearDialogOpen, isStockModalOpen } = useInvoiceStore();
   const [isFinalizeDialogOpen, setIsFinalizeDialogOpen] = useState(false);
 
@@ -65,15 +88,13 @@ export function BillingWorkspace({
       });
     }
 
-    actions.addCartItem(
-      {
-        productId: product._id,
-        productName: product.name,
-        unitPrice: product.basePrice,
-        gstRate: product.gstRate,
-      },
-      1,
-    );
+    billingActions.addItem({
+      productId: product._id,
+      productName: product.name,
+      unitPrice: product.basePrice,
+      gstRate: product.gstRate,
+      quantity: 1,
+    });
   };
 
   const handleUpdateQuantity = (productId: string, quantity: number) => {
@@ -83,11 +104,11 @@ export function BillingWorkspace({
       toast.warning(`Insufficient stock for ${product.name}`);
     }
 
-    actions.updateCartItemQuantity(productId, quantity);
+    billingActions.updateQuantity(productId, quantity);
   };
 
   const handleRemoveItem = (productId: string) => {
-    actions.removeCartItem(productId);
+    billingActions.removeItem(productId);
   };
 
   const openFinalizeDialog = () => {
@@ -98,16 +119,37 @@ export function BillingWorkspace({
     setIsFinalizeDialogOpen(true);
   };
 
+  const syncDraftToInvoiceStore = () => {
+    const normalizedPaymentMethod: PaymentMethod =
+      paymentMethod === "" ? "CASH" : paymentMethod;
+
+    invoiceActions.setCart(
+      cart.map((item) => ({
+        productId: item.productId,
+        productName: item.productName,
+        unitPrice: item.unitPrice,
+        gstRate: item.gstRate,
+        quantity: item.quantity,
+        subtotal: item.unitPrice * item.quantity,
+      })),
+    );
+    invoiceActions.setCustomerName(customerName);
+    invoiceActions.setCustomerPhone(customerPhone);
+    invoiceActions.setPaymentMethod(normalizedPaymentMethod);
+  };
+
   const handleFinalizeConfirm = async () => {
     if (cart.length === 0) {
       toast.error("Cart is empty");
       return;
     }
 
-    const result = await actions.submitInvoice(gstEnabled);
+    syncDraftToInvoiceStore();
+    const result = await invoiceActions.submitInvoice(gstEnabled);
 
     if (result.success && result.phase === "success") {
-      actions.resetInvoiceDraft();
+      invoiceActions.resetInvoiceDraft();
+      clearCart();
       setIsFinalizeDialogOpen(false);
 
       toast.success(`Invoice #${result.invoice?.invoiceNumber} Created`, {
@@ -115,7 +157,7 @@ export function BillingWorkspace({
       });
     } else if (result.phase === "stock_conflict") {
       setIsFinalizeDialogOpen(false);
-      actions.openStockModal();
+      invoiceActions.openStockModal();
     } else {
       toast.error("Failed to create invoice", {
         description: result.message || "Failed to create invoice",
@@ -139,7 +181,6 @@ export function BillingWorkspace({
         const product = products.find((p) => p._id === productId);
         if (item && product) {
           item.quantity = product.stock ?? 0;
-          item.subtotal = item.quantity * item.unitPrice;
         }
       }
     });
@@ -148,12 +189,24 @@ export function BillingWorkspace({
       toast.error("All items were removed", {
         description: "Your bill has been cleared. No invoice was created.",
       });
-      actions.resetInvoiceDraft();
-      actions.closeStockModal();
+      clearCart();
+      invoiceActions.resetInvoiceDraft();
+      invoiceActions.closeStockModal();
       return;
     }
 
-    actions.setCart(updatedCart);
+    setBillingItems(updatedCart);
+
+    invoiceActions.setCart(
+      updatedCart.map((item) => ({
+        productId: item.productId,
+        productName: item.productName,
+        unitPrice: item.unitPrice,
+        gstRate: item.gstRate,
+        quantity: item.quantity,
+        subtotal: item.unitPrice * item.quantity,
+      })),
+    );
 
     const overrides: Record<string, { quantity: number; override: boolean }> =
       {};
@@ -169,11 +222,12 @@ export function BillingWorkspace({
       }
     });
 
-    const result = await actions.submitInvoice(gstEnabled, overrides);
+    const result = await invoiceActions.submitInvoice(gstEnabled, overrides);
 
     if (result.success && result.phase === "success") {
-      actions.closeStockModal();
-      actions.resetInvoiceDraft();
+      invoiceActions.closeStockModal();
+      invoiceActions.resetInvoiceDraft();
+      clearCart();
 
       toast.success(`Invoice #${result.invoice?.invoiceNumber} Created`, {
         description: `Total ${tenantSettings.currency} ${result.invoice?.grandTotal.toFixed(2)} via ${paymentMethod}`,
@@ -191,8 +245,8 @@ export function BillingWorkspace({
       toast.error("Failed to create invoice", {
         description: result.message || "Failed to create invoice",
       });
-      actions.closeStockModal();
-      actions.setCart(updatedCart);
+      invoiceActions.closeStockModal();
+      setBillingItems(updatedCart);
     }
   };
 
@@ -213,6 +267,9 @@ export function BillingWorkspace({
         <BillingSummaryPanel
           onFinalize={openFinalizeDialog}
           isEnabled={cart.length > 0}
+          subtotal={subtotal}
+          gstAmount={gstAmount}
+          grandTotal={grandTotal}
         />
       </Card>
 
@@ -260,7 +317,7 @@ export function BillingWorkspace({
                       </p>
                     </div>
                     <MoneyText
-                      amount={item.subtotal}
+                      amount={item.unitPrice * item.quantity}
                       className="font-semibold"
                     />
                   </div>
@@ -314,15 +371,16 @@ export function BillingWorkspace({
         confirmText="Clear Bill"
         isDangerous={true}
         onConfirm={() => {
-          actions.resetInvoiceDraft();
+          invoiceActions.resetInvoiceDraft();
+          clearCart();
         }}
-        onCancel={actions.closeClearDialog}
+        onCancel={invoiceActions.closeClearDialog}
       />
 
       <InvoiceStockConflictModal
         isOpen={isStockModalOpen}
         onConfirm={handleStockConflictDecision}
-        onCancel={actions.closeStockModal}
+        onCancel={invoiceActions.closeStockModal}
       />
     </div>
   );

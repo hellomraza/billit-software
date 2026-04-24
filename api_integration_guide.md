@@ -1780,6 +1780,8 @@ const resolveAdjustmentSchema = z.object({
 
 The billing screen manages draft state client-side in IndexedDB. This is NOT an API integration — it is client-side persistence. However, it interacts with the invoice creation API.
 
+Implementation note: this project uses Zustand `persist` + a custom IndexedDB adapter (`idb`) instead of direct `saveDraft/loadDraft/clearDraft` helper functions.
+
 ### G.1 IndexedDB Draft Management
 
 Create `lib/draft-store.ts`:
@@ -1854,14 +1856,10 @@ export async function clearDraft(): Promise<void> {
 }
 ```
 
-- [ ] Create `lib/draft-store.ts` with `saveDraft`, `loadDraft`, `clearDraft`
-- [ ] Create `useBillingCart` hook in `features/billing/use-billing-cart.ts`:
-  - [ ] On mount: `loadDraft()` from IndexedDB and hydrate cart state
-  - [ ] On any cart change: `saveDraft()` to IndexedDB (debounced 300ms)
-  - [ ] Expose: `items`, `addItem`, `removeItem`, `updateQuantity`, `clearCart`
-  - [ ] `clearCart()` calls `clearDraft()` and resets all state
-- [ ] Wire billing page to use `useBillingCart`
-- [ ] After successful invoice creation: call `clearCart()`
+- [x] Create persisted billing store + IndexedDB adapter (`stores/billing-store.ts` + `lib/indexedDbStorage.ts`)
+- [x] Create `useBillingCart` hook in `features/billing/use-billing-cart.ts` exposing `items`, `addItem`, `removeItem`, `updateQuantity`, `clearCart`
+- [x] Wire billing workspace/components to use persisted billing draft store
+- [x] After successful invoice creation: call `clearCart()`
 
 ---
 
@@ -2158,7 +2156,7 @@ The following endpoints exist in the swagger spec but are NOT used in MVP 1 fron
 
 ### Section G: Billing (Client-Side)
 
-- [ ] G.1 IndexedDB Draft — `saveDraft`, `loadDraft`, `clearDraft`
+- [x] G.1 IndexedDB Draft — Zustand persist + IndexedDB adapter
 - [ ] G.2 Stock Refresh — `GET /tenants/{tenantId}/stock/outlet/{outletId}` (client-side)
 
 ### Section H: Navigation
@@ -2174,7 +2172,7 @@ The following endpoints exist in the swagger spec but are NOT used in MVP 1 fron
 - [x] `lib/get-tenant-id.ts` — `getTenantId()` for server actions
 - [x] `lib/types/api.ts` — all API types
 - [x] `lib/utils/abbreviation.ts` — `generateAbbreviation()`
-- [ ] `lib/draft-store.ts` — IndexedDB helpers
+- [x] `lib/indexedDbStorage.ts` + `stores/billing-store.ts` — IndexedDB persistence via Zustand
 - [ ] `middleware.ts` — route protection
 - [ ] `.env.local` — `NEXT_PUBLIC_API_URL`
 - [ ] `uuid` package installed
