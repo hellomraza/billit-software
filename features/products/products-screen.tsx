@@ -1,0 +1,205 @@
+"use client";
+
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
+
+import { deleteProductAction, restoreProductAction } from "@/actions/products";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
+import { EmptyState } from "@/components/shared/empty-state";
+import { PageHeader } from "@/components/shared/page-header";
+import { SearchBar } from "@/components/shared/search-bar";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ProductTable } from "@/features/products/product-table";
+import { ROUTES } from "@/lib/routes";
+import { ProductWithStock } from "@/lib/utils/products";
+import { Download, PackageSearch, Plus } from "lucide-react";
+import Link from "next/link";
+import StockUpdateForm from "./stock-update-form";
+
+interface ProductsScreenProps {
+  products: ProductWithStock[];
+  outletId: string;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+  };
+}
+
+export function ProductsScreen({
+  products,
+  outletId,
+  pagination,
+}: ProductsScreenProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState("");
+  const includeDeleted = searchParams.get("includeDeleted") === "true";
+  const [deleteCandidate, setDeleteCandidate] =
+    useState<ProductWithStock | null>(null);
+  const [stockCandidate, setStockCandidate] = useState<ProductWithStock | null>(
+    null,
+  );
+
+  const [isDeleting, startTransition] = useTransition();
+  const [isRestoring, startRestoringTransition] = useTransition();
+
+  const filteredProducts = products.filter((p) => {
+    const query = searchQuery.toLowerCase();
+    const matchesSearch = p.name.toLowerCase().includes(query);
+    const matchesDeletedFilter = includeDeleted ? true : !p.isDeleted;
+    return matchesSearch && matchesDeletedFilter;
+  });
+
+  const handleDeleteInitial = (product: ProductWithStock) =>
+    setDeleteCandidate(product);
+
+  const handleConfirmDelete = async () => {
+    if (!deleteCandidate) return;
+    startTransition(async () => {
+      await deleteProductAction({ productId: deleteCandidate._id });
+    });
+  };
+
+  const handleRestore = async (product: ProductWithStock) => {
+    startRestoringTransition(async () => {
+      const result = await restoreProductAction({
+        productId: product._id,
+      });
+
+      if (result?.error) {
+        toast.error("Failed to restore product", {
+          description: result.error,
+        });
+      } else {
+        toast.success("Product restored successfully");
+      }
+    });
+  };
+
+  const handleUpdateStockInitial = (product: ProductWithStock) => {
+    setStockCandidate(product);
+  };
+
+  return (
+    <div className="p-4 sm:p-8 space-y-6 h-full flex flex-col max-w-[1400px] mx-auto">
+      <div>
+        <PageHeader
+          title="Products"
+          actions={[
+            <Button key="import" variant="outline">
+              <Link href={ROUTES.PRODUCTS_IMPORT}>
+                <Download className="mr-2 h-4 w-4" /> Import CSV
+              </Link>
+            </Button>,
+            <Button key="new">
+              <Link href={ROUTES.PRODUCTS_NEW}>
+                <Plus className="mr-2 h-4 w-4" /> Add Product
+              </Link>
+            </Button>,
+          ]}
+        />
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start">
+        <SearchBar
+          onSearch={setSearchQuery}
+          placeholder="Search products..."
+          className="w-full sm:max-w-xs"
+        />
+        <Button
+          variant="ghost"
+          onClick={() => {
+            const params = new URLSearchParams(searchParams.toString());
+            if (includeDeleted) {
+              params.delete("includeDeleted");
+            } else {
+              params.set("includeDeleted", "true");
+            }
+            router.replace(`?${params.toString()}`);
+          }}
+          className="text-muted-foreground transition-colors"
+        >
+          {includeDeleted ? "Hide Deleted" : "Show Deleted"}
+        </Button>
+      </div>
+
+      <div className="flex-1 overflow-auto">
+        {filteredProducts.length === 0 ? (
+          <EmptyState
+            icon={PackageSearch}
+            title="No Products Found"
+            description={
+              products.length === 0
+                ? "No products yet. Create your first product or import a CSV to get started."
+                : "No products match your search. Try adjusting your search terms."
+            }
+            actionLabel={products.length === 0 ? "Add Product" : undefined}
+            onAction={
+              products.length === 0
+                ? () => router.push(ROUTES.PRODUCTS_NEW)
+                : undefined
+            }
+            className="mt-8"
+          />
+        ) : (
+          <ProductTable
+            products={filteredProducts}
+            showDeleted={includeDeleted}
+            onDelete={handleDeleteInitial}
+            onRestore={handleRestore}
+            onUpdateStock={handleUpdateStockInitial}
+            isLoading={false}
+            isRestoring={isRestoring}
+          />
+        )}
+      </div>
+
+      <ConfirmationDialog
+        isOpen={!!deleteCandidate}
+        title="Delete Product"
+        description={`Are you sure you want to delete ${deleteCandidate?.name}? This will hide it from active billing but maintain references in past invoices.`}
+        confirmText="Delete"
+        isDangerous={true}
+        isLoading={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteCandidate(null)}
+      />
+
+      <Dialog
+        open={!!stockCandidate}
+        onOpenChange={(open) => {
+          if (!open) {
+            setStockCandidate(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Stock</DialogTitle>
+            <DialogDescription>
+              Update stock for{" "}
+              <span className="font-semibold">{stockCandidate?.name}</span>
+            </DialogDescription>
+          </DialogHeader>
+          <StockUpdateForm
+            outletId={outletId}
+            productId={stockCandidate?._id ?? ""}
+            currentStock={stockCandidate?.stock ?? 0}
+            onClose={() => {
+              setStockCandidate(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

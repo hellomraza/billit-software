@@ -3,16 +3,23 @@
 import { MoneyText } from "@/components/shared/money-text";
 import { SearchBar } from "@/components/shared/search-bar";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { useProductSearch } from "@/features/billing/use-product-search";
+import { useStockRefresh } from "@/features/billing/use-stock-refresh";
+import { getStoredOutletId, getStoredTenant } from "@/lib/auth-tokens";
 import { formatStock } from "@/lib/formatters/quantity";
-import { Product } from "@/types";
+import { ProductWithStock } from "@/lib/utils/products";
+import {
+  useInvoiceActions,
+  useInvoiceSearchQuery,
+} from "@/stores/invoice-store";
+import { Loader2, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 interface BillingSearchProps {
-  products: Product[];
-  onSelectProduct: (product: Product) => void;
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
+  onSelectProduct: (product: ProductWithStock) => void;
+  initialProducts: ProductWithStock[];
 }
 
 function HighlightedText({
@@ -22,13 +29,20 @@ function HighlightedText({
   text: string;
   highlight: string;
 }) {
-  if (!highlight) return <>{text}</>;
+  const normalizedHighlight = highlight.trim();
+  if (!normalizedHighlight) {
+    return <span className="wrap-break-word">{text}</span>;
+  }
 
-  const parts = text.split(new RegExp(`(${highlight})`, "gi"));
+  const escapedHighlight = normalizedHighlight.replace(
+    /[.*+?^${}()|[\]\\]/g,
+    "\\$&",
+  );
+  const parts = text.split(new RegExp(`(${escapedHighlight})`, "gi"));
   return (
     <>
       {parts.map((part, i) =>
-        part.toLowerCase() === highlight.toLowerCase() ? (
+        part.toLowerCase() === normalizedHighlight.toLowerCase() ? (
           <mark
             key={i}
             className="bg-yellow-200/70 dark:bg-yellow-700/70 font-medium"
@@ -36,7 +50,9 @@ function HighlightedText({
             {part}
           </mark>
         ) : (
-          <span key={i}>{part}</span>
+          <span key={i} className="wrap-break-word">
+            {part}
+          </span>
         ),
       )}
     </>
@@ -44,13 +60,38 @@ function HighlightedText({
 }
 
 export function BillingSearch({
-  products,
   onSelectProduct,
-  searchQuery,
-  onSearchChange,
+  initialProducts,
 }: BillingSearchProps) {
-  const [isSearching, setIsSearching] = useState(false);
+  const { setSearchQuery } = useInvoiceActions();
+  const searchQuery = useInvoiceSearchQuery();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [tenantId] = useState(() => {
+    const tenant = getStoredTenant();
+    return tenant?._id || null;
+  });
+
+  const [outletId] = useState(() => {
+    return getStoredOutletId();
+  });
+
+  // Initialize API search hook with tenantId
+  const {
+    results: apiResults,
+    loading: apiLoading,
+    search,
+  } = useProductSearch(tenantId || "", outletId || "");
+  const { stockMap, refresh, refreshing } = useStockRefresh(
+    tenantId || "",
+    outletId || "",
+  );
+
+  // Trigger API search when search query changes
+  useEffect(() => {
+    if (tenantId && searchQuery) {
+      search(searchQuery);
+    }
+  }, [searchQuery, tenantId, search]);
 
   // Keyboard shortcut: Alt+S to focus search
   useEffect(() => {
@@ -65,90 +106,94 @@ export function BillingSearch({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Simulate search loading for 150ms after search query changes
-  useEffect(() => {
-    if (searchQuery) {
-      setIsSearching(true);
-      const timer = setTimeout(() => setIsSearching(false), 150);
-      return () => clearTimeout(timer);
-    } else {
-      setIsSearching(false);
-    }
-  }, [searchQuery]);
-
-  const filteredProducts = useMemo(() => {
-    // Clear results on empty query
-    if (!searchQuery) return [];
-    const query = searchQuery.toLowerCase();
-    return products.filter(
-      (p) =>
-        p.name.toLowerCase().includes(query) ||
-        (p.productCode?.toLowerCase().includes(query) ?? false),
-    );
-  }, [searchQuery, products]);
+  const displayedProducts = useMemo(() => {
+    const sourceProducts = searchQuery.trim() ? apiResults : initialProducts;
+    return sourceProducts.map((product) => ({
+      ...product,
+      stock: stockMap[product._id] ?? product.stock ?? 0,
+    }));
+  }, [searchQuery, apiResults, initialProducts, stockMap]);
 
   return (
-    <div className="flex flex-col space-y-4 h-full">
-      <SearchBar
-        ref={searchInputRef}
-        onSearch={onSearchChange}
-        placeholder="Search products by name or code (Alt+S)"
-        className="max-w-full h-12 text-md"
-        loading={isSearching}
-      />
+    <div className="flex flex-col h-full ">
+      <div className="px-4 flex items-center gap-2">
+        <SearchBar
+          ref={searchInputRef}
+          onSearch={setSearchQuery}
+          placeholder="Search products by name or code (Alt+S)"
+          className="max-w-full h-12 text-md flex-1"
+          loading={apiLoading && searchQuery ? true : false}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-12 px-3"
+          disabled={!tenantId || !outletId || refreshing}
+          onClick={() => void refresh()}
+        >
+          {refreshing ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4" />
+          )}
+          <span className="hidden sm:inline">Refresh stock</span>
+        </Button>
+      </div>
 
-      <div className="flex-1 overflow-auto grid grid-cols-2 sm:grid-cols-3 gap-4 pb-4 content-start">
-        {filteredProducts.map((product) => (
+      <div className="flex-1 overflow-auto grid grid-cols-2 sm:grid-cols-3 gap-4 p-4 content-start">
+        {displayedProducts?.map((product) => (
           <Card
-            key={product.id}
-            className="cursor-pointer hover:border-primary/50 transition-colors flex flex-col h-[100px]"
+            key={product._id}
+            className="cursor-pointer hover:border-primary/50 transition-colors flex flex-col h-25 py-2 px-2 justify-start"
             onClick={() => onSelectProduct(product)}
           >
-            <CardHeader className="p-3 pb-1">
+            <CardContent className="p-3 flex flex-col justify-between flex-1 text-xs">
               <div className="flex justify-between items-start gap-2">
-                <div className="flex-1">
-                  <div className="font-medium line-clamp-2 text-sm leading-tight">
+                <div className="flex-1 min-w-0">
+                  <div
+                    className="font-medium text-sm leading-tight line-clamp-2 wrap-break-word overflow-hidden"
+                    title={product.name}
+                  >
                     <HighlightedText
                       text={product.name}
                       highlight={searchQuery}
                     />
                   </div>
-                  {product.productCode && (
-                    <div className="text-xs text-muted-foreground">
-                      Code:{" "}
-                      <HighlightedText
-                        text={product.productCode}
-                        highlight={searchQuery}
-                      />
-                    </div>
+                </div>
+
+                <div className="shrink-0 flex items-start justify-end">
+                  {product.stock && product.stock > 0 ? (
+                    <span className="text-muted-foreground font-medium whitespace-nowrap">
+                      {formatStock(product.stock, product.deficitThreshold)}
+                    </span>
+                  ) : (
+                    <StatusBadge
+                      status="danger"
+                      variant="secondary"
+                      className="text-[10px] px-1 h-4 shrink-0 whitespace-nowrap"
+                    >
+                      Out of Stock
+                    </StatusBadge>
                   )}
                 </div>
-                <MoneyText
-                  amount={product.basePrice}
-                  className="text-sm shrink-0"
-                />
               </div>
-            </CardHeader>
-            <CardContent className="p-3 pt-0 mt-auto flex justify-between items-center text-xs">
-              {product.currentStock > 0 ? (
-                <span className="text-muted-foreground font-medium">
-                  {formatStock(product.currentStock, product.deficitThreshold)}
-                </span>
-              ) : (
-                <StatusBadge
-                  status="danger"
-                  variant="secondary"
-                  className="text-[10px] px-1 h-4"
-                >
-                  Out of Stock
-                </StatusBadge>
-              )}
+              <MoneyText
+                amount={product.basePrice}
+                className="text-lg font-semibold shrink-0"
+              />
             </CardContent>
           </Card>
         ))}
-        {searchQuery && !isSearching && filteredProducts.length === 0 && (
+        {searchQuery && !apiLoading && apiResults.length === 0 && tenantId && (
           <div className="col-span-full py-12 text-center text-muted-foreground">
-            No products found matching "{searchQuery}"
+            No products found matching &quot;{searchQuery}&quot;
+          </div>
+        )}
+        {apiLoading && searchQuery && (
+          <div className="col-span-full py-12 text-center text-muted-foreground">
+            <div className="inline-block h-6 w-6 rounded-full border-t-2 border-primary animate-spin mb-2" />
+            <p>Searching products...</p>
           </div>
         )}
       </div>

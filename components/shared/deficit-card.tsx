@@ -1,12 +1,11 @@
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Product } from "@/types";
 import { ChevronDown, PackageMinus } from "lucide-react";
 
 export interface DeficitGroup {
   productId: string;
-  product?: Product;
+  productName?: string;
   totalMissing: number;
   recordsCount: number;
   status: "PENDING" | "RESOLVED";
@@ -18,6 +17,7 @@ interface DeficitCardProps {
   isExpanded?: boolean;
   onToggleExpand?: () => void;
   onResolve?: () => void;
+  onAdjust?: () => void;
 }
 
 export function DeficitCard({
@@ -25,6 +25,7 @@ export function DeficitCard({
   isExpanded,
   onToggleExpand,
   onResolve,
+  onAdjust,
 }: DeficitCardProps) {
   return (
     <Card
@@ -50,10 +51,20 @@ export function DeficitCard({
                 Acknowledge Restock
               </Button>
             )}
+            {deficit.status === "PENDING" && onAdjust && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                onClick={onAdjust}
+              >
+                Mark as Adjustment
+              </Button>
+            )}
           </div>
         </div>
         <CardTitle className="text-lg leading-tight mt-1">
-          {deficit.product?.name || "Unknown Product"}
+          {deficit.productName || "Unknown Product"}
         </CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-4">

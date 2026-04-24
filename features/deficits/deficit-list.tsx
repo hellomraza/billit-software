@@ -11,6 +11,7 @@ interface DeficitListProps {
   deficits: DeficitGroup[];
   recordsByGroup: Record<string, DeficitRecord[]>;
   onResolve: (productId: string, totalMissing: number) => void;
+  onAdjust: (productId: string) => void;
   isLoading?: boolean;
 }
 
@@ -18,6 +19,7 @@ export function DeficitList({
   deficits,
   recordsByGroup,
   onResolve,
+  onAdjust,
   isLoading,
 }: DeficitListProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -74,6 +76,11 @@ export function DeficitList({
             onResolve={
               deficit.status === "PENDING"
                 ? () => onResolve(deficit.productId, deficit.totalMissing)
+                : undefined
+            }
+            onAdjust={
+              deficit.status === "PENDING"
+                ? () => onAdjust(deficit.productId)
                 : undefined
             }
           />

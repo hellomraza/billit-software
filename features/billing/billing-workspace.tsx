@@ -1,27 +1,42 @@
 "use client";
 
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
-import {
-  DeficitResolutionAction,
-  InsufficientItem,
-  InsufficientStockModal,
-} from "@/components/shared/insufficient-stock-modal";
+import { MoneyText } from "@/components/shared/money-text";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MOCK_DEFICITS, persistDeficits } from "@/lib/mock-data/deficit";
-import { saveInvoice } from "@/lib/mock-data/invoice";
-import { updateProductStock } from "@/lib/mock-data/product";
-import { Invoice, InvoiceItem, Product } from "@/types";
-import { useEffect, useMemo, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { InvoiceStockConflictModal } from "@/features/invoices/invoice-stock-conflict-modal";
+import { ProductWithStock } from "@/lib/utils/products";
+import {
+  useBillingActions,
+  useBillingCustomerDetails,
+  useBillingPaymentMethod,
+} from "@/stores/billing-store";
+import { useIsGstEnabled } from "@/stores/get-store";
+import {
+  useInvoiceActions,
+  useInvoicePhase,
+  useInvoiceStore,
+} from "@/stores/invoice-store";
+import { PaymentMethod } from "@/types";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BillingCart } from "./billing-cart";
 import { BillingCustomerDetails } from "./billing-customer-details";
 import { BillingSearch } from "./billing-search";
 import { BillingSummaryPanel } from "./billing-summary-panel";
+import { useBillingCart } from "./use-billing-cart";
 
 interface BillingWorkspaceProps {
-  initialProducts: Product[];
+  initialProducts: ProductWithStock[];
   tenantSettings: {
-    isGstEnabled: boolean;
     defaultGstRate: number;
     currency: string;
   };
@@ -31,300 +46,323 @@ export function BillingWorkspace({
   initialProducts,
   tenantSettings,
 }: BillingWorkspaceProps) {
-  const [cart, setCart] = useState<InvoiceItem[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("CASH");
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
-  const [isFinalizing, setIsFinalizing] = useState(false);
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const billingCart = useBillingCart();
+  const gstEnabled = useIsGstEnabled();
+  const products = initialProducts;
+  const cart = billingCart.items;
+  const { clearCart, setItems: setBillingItems } = billingCart;
+  const billingActions = useBillingActions();
+  const { customerName, customerPhone } = useBillingCustomerDetails();
+  const paymentMethod = useBillingPaymentMethod();
+  const invoiceActions = useInvoiceActions();
+  const phase = useInvoicePhase();
 
-  // Load imported products and merge with initial products
-  useEffect(() => {
-    const importedStr = localStorage.getItem("billit_imported_products");
-    if (importedStr) {
-      const importedProducts = JSON.parse(importedStr);
-      // Merge: imported products first, then initial (mock) products
-      setProducts([...importedProducts, ...initialProducts]);
-    } else {
-      setProducts(initialProducts);
+  const subtotal = useMemo(
+    () => cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
+    [cart],
+  );
+  const gstAmount = useMemo(
+    () =>
+      cart.reduce(
+        (sum, item) =>
+          sum + item.unitPrice * item.quantity * (item.gstRate / 100),
+        0,
+      ),
+    [cart],
+  );
+  const grandTotal = gstEnabled ? subtotal + gstAmount : subtotal;
+
+  const { isClearDialogOpen, isStockModalOpen } = useInvoiceStore();
+  const [isFinalizeDialogOpen, setIsFinalizeDialogOpen] = useState(false);
+
+  const isSubmitting = phase === "submitting";
+
+  const handleSelectProduct = (product: ProductWithStock) => {
+    const existing = cart.find((item) => item.productId === product._id);
+    const requestedQty = existing ? existing.quantity + 1 : 1;
+    const availableStock = product.stock || 0;
+
+    if (requestedQty > availableStock) {
+      toast.warning(`Insufficient inventory for ${product.name}`, {
+        description: `Only ${availableStock} remaining in stock.`,
+      });
     }
-  }, [initialProducts]);
 
-  // Stock Validation State
-  const [isStockModalOpen, setIsStockModalOpen] = useState(false);
-  const [conflictItems, setConflictItems] = useState<InsufficientItem[]>([]);
-
-  const handleSelectProduct = (product: Product) => {
-    setCart((prev) => {
-      const existing = prev.find((item) => item.productId === product.id);
-
-      // Stock checking immediately on add
-      const requestedQty = existing ? existing.quantity + 1 : 1;
-      if (requestedQty > product.currentStock) {
-        toast.warning(`Insufficient inventory for ${product.name}`, {
-          description: `Only ${product.currentStock} remaining in stock.`,
-        });
-      }
-
-      if (existing) {
-        return prev.map((item) =>
-          item.productId === product.id
-            ? {
-                ...item,
-                quantity: item.quantity + 1,
-                subtotal: (item.quantity + 1) * item.unitPrice,
-              }
-            : item,
-        );
-      }
-      return [
-        ...prev,
-        {
-          productId: product.id,
-          productName: product.name,
-          quantity: 1,
-          unitPrice: product.basePrice,
-          gstRate: product.gstRate,
-          subtotal: product.basePrice,
-        },
-      ];
+    billingActions.addItem({
+      productId: product._id,
+      productName: product.name,
+      unitPrice: product.basePrice,
+      gstRate: product.gstRate,
+      quantity: 1,
     });
   };
 
   const handleUpdateQuantity = (productId: string, quantity: number) => {
-    const product = products.find((p) => p.id === productId);
-    if (product && quantity > product.currentStock) {
+    const product = products.find((p) => p._id === productId);
+    const availableStock = product?.stock ?? 0;
+    if (product && quantity > availableStock) {
       toast.warning(`Insufficient stock for ${product.name}`);
     }
 
-    setCart((prev) =>
-      prev.map((item) =>
-        item.productId === productId
-          ? { ...item, quantity, subtotal: quantity * item.unitPrice }
-          : item,
-      ),
-    );
+    billingActions.updateQuantity(productId, quantity);
   };
 
   const handleRemoveItem = (productId: string) => {
-    setCart((prev) => prev.filter((item) => item.productId !== productId));
+    billingActions.removeItem(productId);
   };
 
-  const subtotal = useMemo(
-    () => cart.reduce((sum, item) => sum + item.subtotal, 0),
-    [cart],
-  );
+  const openFinalizeDialog = () => {
+    if (cart.length === 0) {
+      toast.error("Cart is empty");
+      return;
+    }
+    setIsFinalizeDialogOpen(true);
+  };
 
-  const gstAmount = useMemo(() => {
-    if (!tenantSettings.isGstEnabled) return 0;
-    return cart.reduce(
-      (sum, item) => sum + item.subtotal * (item.gstRate / 100),
-      0,
+  const syncDraftToInvoiceStore = () => {
+    const normalizedPaymentMethod: PaymentMethod =
+      paymentMethod === "" ? "CASH" : paymentMethod;
+
+    invoiceActions.setCart(
+      cart.map((item) => ({
+        productId: item.productId,
+        productName: item.productName,
+        unitPrice: item.unitPrice,
+        gstRate: item.gstRate,
+        quantity: item.quantity,
+        subtotal: item.unitPrice * item.quantity,
+      })),
     );
-  }, [cart, tenantSettings.isGstEnabled]);
+    invoiceActions.setCustomerName(customerName);
+    invoiceActions.setCustomerPhone(customerPhone);
+    invoiceActions.setPaymentMethod(normalizedPaymentMethod);
+  };
 
-  const grandTotal = subtotal + gstAmount;
+  const handleFinalizeConfirm = async () => {
+    if (cart.length === 0) {
+      toast.error("Cart is empty");
+      return;
+    }
 
-  const handleFinalizeInit = async () => {
-    setIsFinalizing(true);
-    try {
-      const conflicts = cart
-        .map((item) => {
-          const product = products.find((p) => p.id === item.productId)!;
-          return {
-            product,
-            requested: item.quantity,
-            available: product.currentStock,
-          };
-        })
-        .filter((i) => i.requested > i.available);
+    syncDraftToInvoiceStore();
+    const result = await invoiceActions.submitInvoice(gstEnabled);
 
-      if (conflicts.length > 0) {
-        setConflictItems(conflicts);
-        setIsStockModalOpen(true);
-      } else {
-        await finalizeSuccess();
-      }
-    } finally {
-      setIsFinalizing(false);
+    if (result.success && result.phase === "success") {
+      invoiceActions.resetInvoiceDraft();
+      clearCart();
+      setIsFinalizeDialogOpen(false);
+
+      toast.success(`Invoice #${result.invoice?.invoiceNumber} Created`, {
+        description: `Total ${tenantSettings.currency} ${result.invoice?.grandTotal.toFixed(2)} via ${paymentMethod}`,
+      });
+    } else if (result.phase === "stock_conflict") {
+      setIsFinalizeDialogOpen(false);
+      invoiceActions.openStockModal();
+    } else {
+      toast.error("Failed to create invoice", {
+        description: result.message || "Failed to create invoice",
+      });
     }
   };
 
-  const handleResolveConflicts = async (
-    resolutions: { productId: string; action: DeficitResolutionAction }[],
+  const handleStockConflictDecision = async (
+    decisions: Record<string, "use-available" | "override" | "remove">,
   ) => {
-    let newCart = [...cart];
+    let updatedCart = [...cart];
     const removedItems: string[] = [];
 
-    resolutions.forEach((res) => {
-      if (res.action === "remove") {
-        const item = newCart.find((i) => i.productId === res.productId);
-        if (item) {
-          removedItems.push(item.productName);
-        }
-        newCart = newCart.filter((i) => i.productId !== res.productId);
-      } else if (res.action === "use-available") {
-        const item = newCart.find((i) => i.productId === res.productId);
-        const product = products.find((p) => p.id === res.productId);
+    Object.entries(decisions).forEach(([productId, decision]) => {
+      if (decision === "remove") {
+        const item = updatedCart.find((i) => i.productId === productId);
+        if (item) removedItems.push(item.productName);
+        updatedCart = updatedCart.filter((i) => i.productId !== productId);
+      } else if (decision === "use-available") {
+        const item = updatedCart.find((i) => i.productId === productId);
+        const product = products.find((p) => p._id === productId);
         if (item && product) {
-          item.quantity = product.currentStock;
-          item.subtotal = item.quantity * item.unitPrice;
+          item.quantity = product.stock ?? 0;
         }
       }
-      // if "sell-anyway", do nothing to the cart quantities
     });
 
-    setCart(newCart);
-    setIsStockModalOpen(false);
-
-    // Only continue if cart is not empty after resolution
-    if (newCart.length > 0) {
-      await finalizeSuccess(resolutions);
-
-      // Show toast about removed items if any
-      if (removedItems.length > 0) {
-        toast.info(
-          `Removed ${removedItems.length} item${removedItems.length > 1 ? "s" : ""} from bill`,
-          {
-            description: removedItems.join(", "),
-          },
-        );
-      }
-    } else {
-      // Show warning that all items were removed
+    if (updatedCart.length === 0) {
       toast.error("All items were removed", {
         description: "Your bill has been cleared. No invoice was created.",
       });
-      setIsFinalizing(false);
+      clearCart();
+      invoiceActions.resetInvoiceDraft();
+      invoiceActions.closeStockModal();
+      return;
     }
-  };
 
-  const finalizeSuccess = async (
-    resolutions: { productId: string; action: DeficitResolutionAction }[] = [],
-  ) => {
-    // Simulate processing delay
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    // Generate next invoice number
-    const nextInvoiceNum = parseInt(
-      localStorage.getItem("billit_next_invoice_num") || "1",
+    setBillingItems(updatedCart);
+
+    invoiceActions.setCart(
+      updatedCart.map((item) => ({
+        productId: item.productId,
+        productName: item.productName,
+        unitPrice: item.unitPrice,
+        gstRate: item.gstRate,
+        quantity: item.quantity,
+        subtotal: item.unitPrice * item.quantity,
+      })),
     );
-    const invoiceNumber = `INV-${String(nextInvoiceNum).padStart(3, "0")}`;
 
-    // Save to localStorage for next invoice
-    localStorage.setItem("billit_next_invoice_num", String(nextInvoiceNum + 1));
-
-    // Decrement stock for all items sold
-    cart.forEach((item) => {
-      updateProductStock(item.productId, item.quantity);
+    const overrides: Record<string, { quantity: number; override: boolean }> =
+      {};
+    Object.entries(decisions).forEach(([productId, decision]) => {
+      if (decision === "override") {
+        const item = updatedCart.find((i) => i.productId === productId);
+        if (item) {
+          overrides[productId] = {
+            quantity: item.quantity,
+            override: true,
+          };
+        }
+      }
     });
 
-    // Log deficits for items sold at zero stock
-    const deficitsCreated = resolutions.filter(
-      (r) => r.action === "sell-anyway",
-    );
+    const result = await invoiceActions.submitInvoice(gstEnabled, overrides);
 
-    if (deficitsCreated.length > 0) {
-      const persistedStr = localStorage.getItem("billit_deficits");
-      const allDeficits = persistedStr
-        ? JSON.parse(persistedStr)
-        : [...MOCK_DEFICITS];
+    if (result.success && result.phase === "success") {
+      invoiceActions.closeStockModal();
+      invoiceActions.resetInvoiceDraft();
+      clearCart();
 
-      // Create new deficit records for sold-anyway items
-      deficitsCreated.forEach((res) => {
-        const cartItem = cart.find((i) => i.productId === res.productId);
-        if (cartItem) {
-          allDeficits.push({
-            id: `def_${Date.now()}_${res.productId}`,
-            productId: res.productId,
-            invoiceId: `inv_${Date.now()}`, // Placeholder, will be updated below
-            missingQuantity: cartItem.quantity,
-            status: "PENDING" as const,
-            createdAt: new Date().toISOString(),
-          });
-        }
+      toast.success(`Invoice #${result.invoice?.invoiceNumber} Created`, {
+        description: `Total ${tenantSettings.currency} ${result.invoice?.grandTotal.toFixed(2)} via ${paymentMethod}`,
       });
 
-      persistDeficits(allDeficits);
+      if (removedItems.length > 0) {
+        toast.info(
+          `Removed ${removedItems.length} item${removedItems.length > 1 ? "s" : ""} from bill`,
+          { description: removedItems.join(", ") },
+        );
+      }
+    } else if (result.phase === "stock_conflict") {
+      toast.warning("Stock conflict persists. Please review your selections.");
+    } else {
+      toast.error("Failed to create invoice", {
+        description: result.message || "Failed to create invoice",
+      });
+      invoiceActions.closeStockModal();
+      setBillingItems(updatedCart);
     }
-
-    // Create invoice object
-    const newInvoice: Invoice = {
-      id: `inv_${Date.now()}`,
-      invoiceNumber,
-      createdAt: new Date().toISOString(),
-      customerName: customerName || undefined,
-      customerPhone: customerPhone || undefined,
-      isGstInvoice: tenantSettings.isGstEnabled,
-      paymentMethod: paymentMethod as any,
-      items: cart,
-      subtotal,
-      totalGst: gstAmount,
-      grandTotal,
-    };
-
-    // Save invoice
-    saveInvoice(newInvoice);
-
-    toast.success(`Invoice #${invoiceNumber} Finalized`, {
-      description: `Total ${tenantSettings.currency} ${grandTotal.toFixed(2)} via ${paymentMethod}`,
-    });
-
-    if (deficitsCreated.length > 0) {
-      toast.warning(
-        `${deficitsCreated.length} inventory deficit${deficitsCreated.length > 1 ? "s" : ""} logged`,
-        {
-          description: `Review and resolve in Inventory Deficits section.`,
-        },
-      );
-    }
-
-    // Reset form
-    setCart([]);
-    setPaymentMethod("CASH");
-    setCustomerName("");
-    setCustomerPhone("");
   };
 
   return (
-    <div className="flex flex-col md:flex-row lg:flex-row h-full gap-3 md:gap-4 relative">
-      {/* Search Section - Full width on mobile, flex-1 on tablet+, max height on mobile */}
-      <Card className="flex-1 flex flex-col min-h-0 bg-transparent border-0 shadow-none max-h-[40vh] md:max-h-[50vh] lg:max-h-none">
+    <div className="flex flex-col md:flex-row lg:flex-row h-full gap-3 md:gap-4 relative p-4">
+      <Card className="py-0 ring-0 flex-1 flex flex-col min-h-0 bg-transparent shadow-none max-h-[40vh] md:max-h-[60vh] lg:max-h-none">
         <BillingSearch
-          products={products}
           onSelectProduct={handleSelectProduct}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          initialProducts={initialProducts}
         />
       </Card>
 
-      {/* Cart & Summary Section - Bottom sheet on mobile, floating on tablet, sidebar on desktop */}
-      <Card className="w-full md:w-80 lg:w-[400px] flex flex-col shadow-sm border overflow-hidden shrink-0 min-h-[auto] md:min-h-[500px] lg:min-h-[500px] max-h-[calc(100vh-16rem)] md:max-h-[calc(100vh-10rem)] lg:max-h-none sticky bottom-0 md:sticky md:top-4 lg:static bg-background z-10 rounded-t-lg md:rounded-lg">
+      <Card className="w-full py-0 border-0 md:w-80 lg:w-100 flex flex-col shadow-sm overflow-hidden shrink-0 min-h-auto md:min-h-125 lg:min-h-125 max-h-[calc(100vh-16rem)] md:max-h-[calc(100vh-10rem)] lg:max-h-none sticky bottom-0 md:sticky md:top-4 lg:static bg-background z-10 rounded-t-lg md:rounded-lg">
         <BillingCart
-          items={cart}
           onUpdateQuantity={handleUpdateQuantity}
           onRemoveItem={handleRemoveItem}
         />
-        <BillingCustomerDetails
-          customerName={customerName}
-          customerPhone={customerPhone}
-          onCustomerNameChange={setCustomerName}
-          onCustomerPhoneChange={setCustomerPhone}
-        />
         <BillingSummaryPanel
+          onFinalize={openFinalizeDialog}
+          isEnabled={cart.length > 0}
           subtotal={subtotal}
           gstAmount={gstAmount}
           grandTotal={grandTotal}
-          isGstEnabled={tenantSettings.isGstEnabled}
-          paymentMethod={paymentMethod}
-          onPaymentMethodChange={setPaymentMethod}
-          onFinalize={handleFinalizeInit}
-          onClear={() => setIsClearDialogOpen(true)}
-          isEnabled={cart.length > 0}
-          isFinalizing={isFinalizing}
         />
       </Card>
+
+      <Dialog
+        open={isFinalizeDialogOpen}
+        onOpenChange={(open) => setIsFinalizeDialogOpen(open)}
+      >
+        <DialogContent className="sm:max-w-xl  max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Confirm Invoice</DialogTitle>
+            <DialogDescription>
+              Review all invoice details before finalizing.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 overflow-y-auto pr-1">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-md border p-3">
+                <p className="text-muted-foreground">Payment Method</p>
+                <p className="font-semibold mt-1">{paymentMethod}</p>
+              </div>
+              <div className="rounded-md border p-3">
+                <p className="text-muted-foreground">Tax Mode</p>
+                <p className="font-semibold mt-1">
+                  {gstEnabled ? "GST Enabled" : "Non-GST"}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-md border">
+              <div className="px-3 py-2 border-b text-sm font-medium">
+                Invoice Items ({cart.length})
+              </div>
+              <div className="divide-y">
+                {cart.map((item) => (
+                  <div
+                    key={item.productId}
+                    className="px-3 py-2 flex items-center justify-between gap-3 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{item.productName}</p>
+                      <p className="text-muted-foreground text-xs">
+                        Qty: {item.quantity} x {tenantSettings.currency}{" "}
+                        {item.unitPrice.toFixed(2)}
+                      </p>
+                    </div>
+                    <MoneyText
+                      amount={item.unitPrice * item.quantity}
+                      className="font-semibold"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-md border p-3 space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Subtotal</span>
+                <MoneyText amount={subtotal} />
+              </div>
+              {gstEnabled && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">GST</span>
+                  <MoneyText amount={gstAmount} />
+                </div>
+              )}
+              <div className="flex justify-between font-semibold text-base pt-1">
+                <span>Grand Total</span>
+                <MoneyText amount={grandTotal} />
+              </div>
+            </div>
+
+            <div className="rounded-md border p-3">
+              <p className="text-sm font-medium mb-3">
+                Customer Details (Optional)
+              </p>
+              <BillingCustomerDetails />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsFinalizeDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleFinalizeConfirm} disabled={isSubmitting}>
+              {isSubmitting ? "Finalizing..." : "Confirm & Finalize"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmationDialog
         isOpen={isClearDialogOpen}
@@ -333,17 +371,16 @@ export function BillingWorkspace({
         confirmText="Clear Bill"
         isDangerous={true}
         onConfirm={() => {
-          setCart([]);
-          setIsClearDialogOpen(false);
+          invoiceActions.resetInvoiceDraft();
+          clearCart();
         }}
-        onCancel={() => setIsClearDialogOpen(false)}
+        onCancel={invoiceActions.closeClearDialog}
       />
 
-      <InsufficientStockModal
+      <InvoiceStockConflictModal
         isOpen={isStockModalOpen}
-        items={conflictItems}
-        onResolve={handleResolveConflicts}
-        onCancel={() => setIsStockModalOpen(false)}
+        onConfirm={handleStockConflictDecision}
+        onCancel={invoiceActions.closeStockModal}
       />
     </div>
   );
