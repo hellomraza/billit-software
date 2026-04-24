@@ -3,7 +3,16 @@
 import { DeficitGroup as DeficitCardGroup } from "@/components/shared/deficit-card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { DeficitList } from "@/features/deficits/deficit-list";
+import { ResolveAdjustmentForm } from "@/features/deficits/resolve-adjustment-form";
+import { ResolveStockAdditionForm } from "@/features/deficits/resolve-stock-addition-form";
 import {
   DeficitGroup as ApiDeficitGroup,
   DeficitRecord as ApiDeficitRecord,
@@ -11,7 +20,8 @@ import {
 } from "@/lib/types/api";
 import { DeficitRecord } from "@/types";
 import { AlertCircle } from "lucide-react";
-import { useMemo, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface DeficitsScreenProps {
@@ -23,7 +33,17 @@ export function DeficitsScreen({
   groupedDeficits,
   detailedDeficits,
 }: DeficitsScreenProps) {
+  const router = useRouter();
   const announcementRef = useRef<HTMLDivElement>(null);
+  const [resolveCandidate, setResolveCandidate] = useState<{
+    productId: string;
+    productName: string;
+    totalMissing: number;
+  } | null>(null);
+  const [adjustCandidate, setAdjustCandidate] = useState<{
+    productId: string;
+    productName: string;
+  } | null>(null);
 
   const recordsByGroup = useMemo(() => {
     const grouped: Record<string, DeficitRecord[]> = {};
@@ -61,12 +81,33 @@ export function DeficitsScreen({
     const productName = group?.productName || "product";
 
     if (announcementRef.current) {
-      announcementRef.current.textContent = `Resolution is not yet connected for ${productName}.`;
+      announcementRef.current.textContent = `Open stock addition resolution for ${productName}.`;
     }
 
-    toast.info("Deficit resolution coming next", {
-      description: `F.1 is read-only. F.3/F.4 will resolve ${totalMissing} units for ${productName}.`,
+    toast.info("Resolve deficit", {
+      description: `Record stock addition for ${totalMissing} pending units of ${productName}.`,
     });
+
+    setResolveCandidate({
+      productId,
+      productName,
+      totalMissing,
+    });
+  };
+
+  const handleAdjust = (productId: string) => {
+    const group = groupedDeficits.find((item) => item.productId === productId);
+    const productName = group?.productName || "product";
+
+    if (announcementRef.current) {
+      announcementRef.current.textContent = `Open adjustment resolution for ${productName}.`;
+    }
+
+    toast.info("Mark deficit as adjustment", {
+      description: `Record a write-off reason for pending deficits of ${productName}.`,
+    });
+
+    setAdjustCandidate({ productId, productName });
   };
 
   return (
@@ -90,6 +131,7 @@ export function DeficitsScreen({
             deficits={deficitGroups}
             recordsByGroup={recordsByGroup}
             onResolve={handleResolve}
+            onAdjust={handleAdjust}
             isLoading={false}
           />
         )}
@@ -138,6 +180,69 @@ export function DeficitsScreen({
         className="sr-only"
         role="status"
       />
+
+      <Dialog
+        open={!!resolveCandidate}
+        onOpenChange={(open) => {
+          if (!open) {
+            setResolveCandidate(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Resolve Deficit with Stock Addition</DialogTitle>
+            <DialogDescription>
+              Record received stock for{" "}
+              <span className="font-semibold">
+                {resolveCandidate?.productName}
+              </span>
+              .
+            </DialogDescription>
+          </DialogHeader>
+
+          {resolveCandidate ? (
+            <ResolveStockAdditionForm
+              productId={resolveCandidate.productId}
+              productName={resolveCandidate.productName}
+              suggestedQuantity={resolveCandidate.totalMissing}
+              onResolved={() => router.refresh()}
+              onClose={() => setResolveCandidate(null)}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!adjustCandidate}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAdjustCandidate(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Resolve Deficit as Adjustment</DialogTitle>
+            <DialogDescription>
+              Mark pending deficits for{" "}
+              <span className="font-semibold">
+                {adjustCandidate?.productName}
+              </span>{" "}
+              as adjustment with a reason.
+            </DialogDescription>
+          </DialogHeader>
+
+          {adjustCandidate ? (
+            <ResolveAdjustmentForm
+              productId={adjustCandidate.productId}
+              productName={adjustCandidate.productName}
+              onResolved={() => router.refresh()}
+              onClose={() => setAdjustCandidate(null)}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

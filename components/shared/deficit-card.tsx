@@ -17,6 +17,7 @@ interface DeficitCardProps {
   isExpanded?: boolean;
   onToggleExpand?: () => void;
   onResolve?: () => void;
+  onAdjust?: () => void;
 }
 
 export function DeficitCard({
@@ -24,6 +25,7 @@ export function DeficitCard({
   isExpanded,
   onToggleExpand,
   onResolve,
+  onAdjust,
 }: DeficitCardProps) {
   return (
     <Card
@@ -47,6 +49,16 @@ export function DeficitCard({
                 onClick={onResolve}
               >
                 Acknowledge Restock
+              </Button>
+            )}
+            {deficit.status === "PENDING" && onAdjust && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                onClick={onAdjust}
+              >
+                Mark as Adjustment
               </Button>
             )}
           </div>

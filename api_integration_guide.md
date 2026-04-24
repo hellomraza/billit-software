@@ -1739,11 +1739,11 @@ const resolveStockAdditionSchema = z.object({
 });
 ```
 
-- [ ] Create `resolveStockAdditionSchema` + `resolveStockAdditionAction` in `actions/deficits.ts`
-- [ ] Trigger from "Resolve — Stock received" button in deficit resolution panel
-- [ ] Show quantity input: "How many units did you receive?"
-- [ ] Show result: `resolved` count and whether `remainingQuantity > 0`
-- [ ] Call `revalidatePath('/deficits')` and `revalidatePath('/products')`
+- [x] Create `resolveStockAdditionSchema` + `resolveStockAdditionAction` in `actions/deficits.ts`
+- [x] Trigger from "Resolve — Stock received" button in deficit resolution panel
+- [x] Show quantity input: "How many units did you receive?"
+- [x] Show result: `resolved` count and whether `remainingQuantity > 0`
+- [x] Call `revalidatePath('/deficits')` and `revalidatePath('/products')`
 
 ---
 
@@ -1769,10 +1769,10 @@ const resolveAdjustmentSchema = z.object({
 });
 ```
 
-- [ ] Create `resolveAdjustmentSchema` + `resolveAdjustmentAction` in `actions/deficits.ts`
-- [ ] Trigger from "Mark as adjustment" button
-- [ ] Show reason selector: Damage / Loss / Correction
-- [ ] Call `revalidatePath('/deficits')`
+- [x] Create `resolveAdjustmentSchema` + `resolveAdjustmentAction` in `actions/deficits.ts`
+- [x] Trigger from "Mark as adjustment" button
+- [x] Show reason selector: Damage / Loss / Correction
+- [x] Call `revalidatePath('/deficits')`
 
 ---
 
@@ -2153,8 +2153,8 @@ The following endpoints exist in the swagger spec but are NOT used in MVP 1 fron
 
 - [x] F.1 Get Deficits Grouped — `GET /tenants/{tenantId}/deficits/grouped-by-product`
 - [x] F.2 Get Deficits with Status — `GET /tenants/{tenantId}/deficits/with-status`
-- [ ] F.3 Resolve — Stock Addition — `PATCH /tenants/{tenantId}/deficits/by-product/{productId}/resolve-stock-addition`
-- [ ] F.4 Resolve — Adjustment — `PATCH /tenants/{tenantId}/deficits/by-product/{productId}/resolve-adjustment`
+- [x] F.3 Resolve — Stock Addition — `PATCH /tenants/{tenantId}/deficits/by-product/{productId}/resolve-stock-addition`
+- [x] F.4 Resolve — Adjustment — `PATCH /tenants/{tenantId}/deficits/by-product/{productId}/resolve-adjustment`
 
 ### Section G: Billing (Client-Side)
 
