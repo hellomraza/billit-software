@@ -1605,7 +1605,7 @@ export async function getInvoice(
 **Response 200:** Invoice created (idempotent duplicate)  
 **Response 409:** Stock insufficient — returns `insufficientItems` array  
 **Response 403:** Override blocked by deficit threshold  
-**Mechanism:** This is the most complex flow. It uses `clientAxios` directly from a client component (not a server action), because it requires two-phase interaction (show modal after 409, then re-submit with user decisions).
+**Mechanism:** This flow is implemented with **server actions + Zustand state orchestration**. Billing UI calls store actions, store actions call `submitInvoiceAction` / `submitInvoiceWithOverridesAction` from `actions/invoices.ts`, and the UI transitions through `phase` states (`submitting`, `stock_conflict`, `success`, `error`).
 
 **Request payload:**
 
@@ -1625,103 +1625,27 @@ interface CreateInvoicePayload {
 }
 ```
 
-**Client-Side Invoice Creation Hook:**
+**Current Implementation Shape:**
 
 ```typescript
-// features/billing/use-invoice-creation.ts
-"use client";
-import { useState, useCallback } from "react";
-import { v4 as uuidv4 } from "uuid";
-import clientAxios from "@/lib/axios/client";
+// stores/invoice-store.ts
+// 1) submitInvoice(gstEnabled, overrides?) builds payload with stable clientGeneratedId
+// 2) calls submitInvoiceAction (phase 1) or submitInvoiceWithOverridesAction (phase 2)
+// 3) sets phase: "success" | "stock_conflict" | "error"
 
-type Phase = "idle" | "submitting" | "stock_conflict" | "success" | "error";
+// actions/invoices.ts
+// submitInvoiceAction(payload): handles 201/200 success, 409 stock_conflict, 403 error
+// submitInvoiceWithOverridesAction(payload): retry path with override flags
 
-export function useInvoiceCreation(tenantId: string, outletId: string) {
-  const [phase, setPhase] = useState<Phase>("idle");
-  const [insufficientItems, setInsufficientItems] = useState<
-    InsufficientStockItem[]
-  >([]);
-  const [createdInvoice, setCreatedInvoice] =
-    useState<InvoiceCreatedResponse | null>(null);
-  const [error, setError] = useState<string>("");
-  const [clientGeneratedId] = useState(() => uuidv4()); // stable across phases
-
-  const submitInvoice = useCallback(
-    async (
-      cartItems: CartItem[],
-      paymentMethod: string,
-      customerName: string,
-      customerPhone: string,
-      gstEnabled: boolean,
-      overrides: Record<string, { quantity: number; override: boolean }> = {},
-    ) => {
-      setPhase("submitting");
-      setError("");
-
-      const payload: CreateInvoicePayload = {
-        clientGeneratedId,
-        outletId,
-        paymentMethod: paymentMethod as "CASH" | "CARD" | "UPI",
-        customerName: customerName || undefined,
-        customerPhone: customerPhone || undefined,
-        gstEnabled,
-        items: cartItems.map((item) => ({
-          productId: item.productId,
-          quantity: overrides[item.productId]?.quantity ?? item.quantity,
-          ...(overrides[item.productId]?.override ? { override: true } : {}),
-        })),
-      };
-
-      try {
-        const { data, status } = await clientAxios.post(
-          `/tenants/${tenantId}/invoices`,
-          payload,
-          { validateStatus: (s) => s < 500 },
-        );
-
-        if (status === 201 || status === 200) {
-          setCreatedInvoice(data);
-          setPhase("success");
-          return { success: true, invoice: data };
-        }
-
-        if (status === 409 && data.status === "STOCK_INSUFFICIENT") {
-          setInsufficientItems(data.insufficientItems);
-          setPhase("stock_conflict");
-          return { success: false, conflict: data.insufficientItems };
-        }
-
-        if (status === 403) {
-          setError(
-            "Override blocked: deficit limit reached for one or more products.",
-          );
-          setPhase("error");
-          return { success: false };
-        }
-
-        setError(data.message || "Something went wrong. Please try again.");
-        setPhase("error");
-        return { success: false };
-      } catch (err: any) {
-        setError(
-          err.message ||
-            "Something went wrong. Please check your connection and try again.",
-        );
-        setPhase("error");
-        return { success: false };
-      }
-    },
-    [clientGeneratedId, tenantId, outletId],
-  );
-
-  return { phase, insufficientItems, createdInvoice, error, submitInvoice };
-}
+// features/invoices/invoice-stock-conflict-modal.tsx
+// user decisions: "use-available" | "override" | "remove"
+// confirm returns decisions map to billing workspace
 ```
 
 **Billing Screen Finalization Flow:**
 
 1. User clicks "Finalize Invoice" → `submitInvoice(cartItems, ...)` called
-2. If 201/200 → clear cart → navigate to invoice detail
+2. If 201/200 → clear invoice draft/cart state and show success toast
 3. If 409 → `phase === 'stock_conflict'` → show `<InsufficientStockModal>`
 4. Modal: user makes decisions per item (adjust / override / remove)
 5. User clicks "Confirm" → `submitInvoice(cartItems, ...)` called again with same `clientGeneratedId` and `overrides` map
@@ -1729,24 +1653,24 @@ export function useInvoiceCreation(tenantId: string, outletId: string) {
 
 **InsufficientStockModal:** Client component showing all insufficient items with their options. Manages per-item decision state. Confirms only when all items have a decision.
 
-- [ ] Install `uuid` package: `npm install uuid @types/uuid`
-- [ ] Create `useInvoiceCreation` hook in `features/billing/use-invoice-creation.ts`
-- [ ] Wire "Finalize Invoice" button to `submitInvoice`
-- [ ] Show loading spinner when `phase === 'submitting'`
-- [ ] Show `<InsufficientStockModal>` when `phase === 'stock_conflict'`
-- [ ] Create `InsufficientStockModal` client component:
-  - [ ] Show each insufficient item with product name, requested qty, available qty
-  - [ ] Per-item option A: "Use available qty" (or "Remove" if available = 0)
-  - [ ] Per-item option B: "Sell anyway" — disabled if `deficitThresholdExceeded === true`
-  - [ ] Per-item option C: "Remove from bill"
-  - [ ] "Confirm" button disabled until all items have a decision
-  - [ ] "Cancel" button dismisses modal, returns to billing
-  - [ ] On confirm: call `submitInvoice` with override decisions map
+- [x] Install `uuid` package: `npm install uuid @types/uuid`
+- [x] Create `useInvoiceCreation` hook in `features/billing/use-invoice-creation.ts` (store-backed compatibility wrapper)
+- [x] Wire "Finalize Invoice" button to `submitInvoice`
+- [x] Show loading spinner when `phase === 'submitting'`
+- [x] Show `<InsufficientStockModal>` when `phase === 'stock_conflict'`
+- [x] Create `InsufficientStockModal` client component:
+  - [x] Show each insufficient item with product name, requested qty, available qty
+  - [x] Per-item option A: "Use available qty" (or "Remove" if available = 0)
+  - [x] Per-item option B: "Sell anyway" — disabled if threshold exceeded
+  - [x] Per-item option C: "Remove from bill"
+  - [x] "Confirm" button gated by valid resolution state
+  - [x] "Cancel" button dismisses modal, returns to billing
+  - [x] On confirm: call `submitInvoice` with override decisions map
 - [ ] On success:
-  - [ ] Clear cart (clear IndexedDB draft)
+  - [x] Clear invoice/cart draft state
   - [ ] Navigate to `/invoices/${invoice.invoiceId}`
   - [ ] If `abbreviationsLocked` in response: update stored tenant to lock abbreviations
-- [ ] On error: show error message, keep cart intact
+- [x] On error: show error message, keep cart intact
 
 ---
 
@@ -1775,10 +1699,10 @@ export async function getDeficitsGroupedByProduct(
 }
 ```
 
-- [ ] Create `getDeficitsGroupedByProduct()` in `lib/api/deficits.ts`
-- [ ] Call in `app/(dashboard)/deficits/page.tsx`
-- [ ] Pass data to `DeficitsScreen` component
-- [ ] Show empty state if no pending deficits
+- [x] Create `getDeficitsGroupedByProduct()` in `lib/api/deficits.ts`
+- [x] Call in `app/(dashboard)/deficits/page.tsx`
+- [x] Pass data to `DeficitsScreen` component
+- [x] Show empty state if no pending deficits
 
 ---
 
@@ -1787,8 +1711,8 @@ export async function getDeficitsGroupedByProduct(
 **Endpoint:** `GET /tenants/{tenantId}/deficits/with-status?status=PENDING&page=1&limit=20`  
 **Mechanism:** Async server component (alternative view if needed)
 
-- [ ] Create `getDeficitsWithStatus()` in `lib/api/deficits.ts`
-- [ ] Use when detailed paginated deficit list is needed
+- [x] Create `getDeficitsWithStatus()` in `lib/api/deficits.ts`
+- [x] Use when detailed paginated deficit list is needed
 
 ---
 
@@ -2223,12 +2147,12 @@ The following endpoints exist in the swagger spec but are NOT used in MVP 1 fron
 
 - [x] E.1 Get Invoices with Filters — `GET /tenants/{tenantId}/invoices`
 - [x] E.2 Get Invoice Detail — `GET /tenants/{tenantId}/invoices/{invoiceId}`
-- [ ] E.3 Create Invoice (Two-Phase) — `POST /tenants/{tenantId}/invoices`
+- [x] E.3 Create Invoice (Two-Phase) — `POST /tenants/{tenantId}/invoices`
 
 ### Section F: Deficits
 
-- [ ] F.1 Get Deficits Grouped — `GET /tenants/{tenantId}/deficits/grouped-by-product`
-- [ ] F.2 Get Deficits with Status — `GET /tenants/{tenantId}/deficits/with-status`
+- [x] F.1 Get Deficits Grouped — `GET /tenants/{tenantId}/deficits/grouped-by-product`
+- [x] F.2 Get Deficits with Status — `GET /tenants/{tenantId}/deficits/with-status`
 - [ ] F.3 Resolve — Stock Addition — `PATCH /tenants/{tenantId}/deficits/by-product/{productId}/resolve-stock-addition`
 - [ ] F.4 Resolve — Adjustment — `PATCH /tenants/{tenantId}/deficits/by-product/{productId}/resolve-adjustment`
 

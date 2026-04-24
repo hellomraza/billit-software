@@ -1,12 +1,11 @@
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Product } from "@/types";
 import { ChevronDown, PackageMinus } from "lucide-react";
 
 export interface DeficitGroup {
   productId: string;
-  product?: Product;
+  productName?: string;
   totalMissing: number;
   recordsCount: number;
   status: "PENDING" | "RESOLVED";
@@ -53,7 +52,7 @@ export function DeficitCard({
           </div>
         </div>
         <CardTitle className="text-lg leading-tight mt-1">
-          {deficit.product?.name || "Unknown Product"}
+          {deficit.productName || "Unknown Product"}
         </CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-4">
