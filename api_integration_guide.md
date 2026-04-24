@@ -2161,7 +2161,7 @@ The following endpoints exist in the swagger spec but are NOT used in MVP 1 fron
 
 ### Section H: Navigation
 
-- [ ] H.1 GST Toggle — `PATCH /settings/gst` (optimistic client toggle)
+- [ ] H.1 GST Toggle — Frontend-only scope (excluded from API master checklist tracking)
 
 ### Foundation (Must complete before any section)
 
@@ -2175,7 +2175,7 @@ The following endpoints exist in the swagger spec but are NOT used in MVP 1 fron
 - [x] `lib/indexedDbStorage.ts` + `stores/billing-store.ts` — IndexedDB persistence via Zustand
 - [ ] `middleware.ts` — route protection
 - [ ] `.env.local` — `NEXT_PUBLIC_API_URL`
-- [ ] `uuid` package installed
+- [x] `uuid` package installed
 
 ---
 
