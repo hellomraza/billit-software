@@ -1898,10 +1898,10 @@ export function useStockRefresh(tenantId: string, outletId: string) {
 }
 ```
 
-- [ ] Create `useStockRefresh` hook in `features/billing/use-stock-refresh.ts`
-- [ ] Wire "Refresh stock" button on billing screen
-- [ ] Show refreshing spinner on button when `refreshing === true`
-- [ ] Use `stockMap` to display stock on product search results
+- [x] Create `useStockRefresh` hook in `features/billing/use-stock-refresh.ts`
+- [x] Wire "Refresh stock" button on billing screen
+- [x] Show refreshing spinner on button when `refreshing === true`
+- [x] Use `stockMap` to display stock on product search results
 
 ---
 
@@ -2157,7 +2157,7 @@ The following endpoints exist in the swagger spec but are NOT used in MVP 1 fron
 ### Section G: Billing (Client-Side)
 
 - [x] G.1 IndexedDB Draft — Zustand persist + IndexedDB adapter
-- [ ] G.2 Stock Refresh — `GET /tenants/{tenantId}/stock/outlet/{outletId}` (client-side)
+- [x] G.2 Stock Refresh — `GET /tenants/{tenantId}/stock/outlet/{outletId}` (client-side)
 
 ### Section H: Navigation
 
