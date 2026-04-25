@@ -60,7 +60,7 @@ export const updateOnboardingBusinessAction = validatedAction(
         }
         return { error: err.message };
       }
-      return { error: "An unexpected error occurred" };
+      return { error: "An unexpected error occurred", success: "" };
     }
 
     redirect(ROUTES.ONBOARDING_OUTLET);
@@ -118,9 +118,9 @@ export const updateOnboardingOutletAction = validatedAction(
               "This abbreviation is already in use. Please choose a different one.",
           };
         }
-        return { error: err.message };
+        return { error: err.message, success: "" };
       }
-      return { error: "An unexpected error occurred" };
+      return { error: "An unexpected error occurred", success: "" };
     }
 
     redirect(ROUTES.ONBOARDING_GST);
@@ -160,9 +160,9 @@ export const updateOnboardingGstAction = validatedAction(
       await completeOnboardingStepAction(); // Mark GST step as completed
     } catch (err: unknown) {
       if (err instanceof Error) {
-        return { error: err.message };
+        return { error: err.message, success: "" };
       }
-      return { error: "An unexpected error occurred" };
+      return { error: "An unexpected error occurred", success: "" };
     }
 
     // Only reached if both API calls succeeded

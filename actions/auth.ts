@@ -29,7 +29,7 @@ export const signupAction = validatedAction(signupSchema, async (data) => {
       tenant: res.tenant,
     };
   } catch (err: any) {
-    return { error: err.message };
+    return { error: err.message, success: "" };
   }
 });
 
@@ -60,7 +60,7 @@ export const loginAction = validatedAction(loginSchema, async (data) => {
     if (err.message && err.message.includes("401")) {
       return { error: "Incorrect email or password." };
     }
-    return { error: err.message };
+    return { error: err.message, success: "" };
   }
 });
 
@@ -101,12 +101,14 @@ export const forgotPasswordAction = validatedAction(
         success:
           "If an account with that email exists, you'll receive a reset link.",
         resetToken: res.token ?? null,
+        error: "",
       };
     } catch (err: any) {
       // Even on error, show the same success message for security
       return {
         success:
           "If an account with that email exists, you'll receive a reset link.",
+        error: "",
       };
     }
   },
