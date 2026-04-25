@@ -40,11 +40,11 @@ export const changePasswordAction = validatedAction(
       // Check if current password is incorrect (400 error)
       if (err instanceof Error) {
         if (err.message.includes("400")) {
-          return { error: "Current password is incorrect." };
+          return { error: "Current password is incorrect.", success: "" };
         }
-        return { error: err.message };
+        return { error: err.message, success: "" };
       }
-      return { error: "An unknown error occurred." };
+      return { error: "An unknown error occurred.", success: "" };
     }
   },
 );
@@ -70,9 +70,9 @@ export const updateBusinessSettingsAction = validatedAction(
       return { success: "Business settings updated successfully." };
     } catch (err: unknown) {
       if (err instanceof Error) {
-        return { error: err.message };
+        return { error: err.message, success: "" };
       }
-      return { error: "An unknown error occurred." };
+      return { error: "An unknown error occurred.", success: "" };
     }
   },
 );

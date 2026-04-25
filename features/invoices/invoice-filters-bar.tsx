@@ -67,12 +67,22 @@ export function InvoiceFiltersBar() {
     updateParams({ productId: debouncedProductId || undefined });
   }, [debouncedProductId, updateParams]);
 
-  const handlePaymentMethodChange = (value: string) => {
+  const handlePaymentMethodChange = (value: string | null) => {
+    if (!value) {
+      setPaymentMethod("");
+      updateParams({ paymentMethod: undefined });
+      return;
+    }
     setPaymentMethod(value);
     updateParams({ paymentMethod: value || undefined });
   };
 
-  const handleGstEnabledChange = (value: string) => {
+  const handleGstEnabledChange = (value: string | null) => {
+    if (!value) {
+      setGstEnabled("");
+      updateParams({ gstEnabled: undefined });
+      return;
+    }
     setGstEnabled(value);
     updateParams({ gstEnabled: value || undefined });
   };

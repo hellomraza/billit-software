@@ -119,9 +119,9 @@ export const updateProductAction = validatedAction(
       return { success: "Product updated successfully" };
     } catch (err: unknown) {
       if (err instanceof Error) {
-        return { error: err.message || "Failed to update product" };
+        return { error: err.message || "Failed to update product", success: "" };
       }
-      return { error: "Failed to update product" };
+      return { error: "Failed to update product", success: "" };
     }
   },
 );

@@ -13,7 +13,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { InvoiceStockConflictModal } from "@/features/invoices/invoice-stock-conflict-modal";
+import { getStoredOutletId, getStoredTenant } from "@/lib/auth-tokens";
 import { ProductWithStock } from "@/lib/utils/products";
+import { useBillingTabsStore } from "@/store/billing-tabs-store";
 import {
   useBillingActions,
   useBillingCustomerDetails,
@@ -26,7 +28,8 @@ import {
   useInvoiceStore,
 } from "@/stores/invoice-store";
 import { PaymentMethod } from "@/types";
-import { useMemo, useState } from "react";
+import { openDB } from "idb";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { BillingCart } from "./billing-cart";
 import { BillingCustomerDetails } from "./billing-customer-details";
@@ -54,8 +57,93 @@ export function BillingWorkspace({
   const billingActions = useBillingActions();
   const { customerName, customerPhone } = useBillingCustomerDetails();
   const paymentMethod = useBillingPaymentMethod();
+  const drafts = useBillingTabsStore((state) => state.drafts);
+  const createTab = useBillingTabsStore((state) => state.createTab);
+  const updateDraftItems = useBillingTabsStore(
+    (state) => state.updateDraftItems,
+  );
+  const updateDraftCustomer = useBillingTabsStore(
+    (state) => state.updateDraftCustomer,
+  );
+  const updateDraftPayment = useBillingTabsStore(
+    (state) => state.updateDraftPayment,
+  );
   const invoiceActions = useInvoiceActions();
   const phase = useInvoicePhase();
+  const migrationAttemptedRef = useRef(false);
+
+  useEffect(() => {
+    if (migrationAttemptedRef.current || drafts.length > 0) {
+      return;
+    }
+
+    migrationAttemptedRef.current = true;
+
+    const migrateMVP1Draft = async () => {
+      const tenant = getStoredTenant();
+      const outletId = getStoredOutletId();
+      const tenantId = tenant?._id;
+
+      if (!tenantId || !outletId) {
+        return;
+      }
+
+      const db = await openDB("billing-app-db", 1);
+      const rawDraft = await db.get("zustand-store", "billing-draft");
+
+      if (!rawDraft) {
+        return;
+      }
+
+      let parsedDraft: any;
+      if (typeof rawDraft === "string") {
+        try {
+          parsedDraft = JSON.parse(rawDraft);
+        } catch {
+          return;
+        }
+      } else {
+        parsedDraft = rawDraft;
+      }
+
+      const oldState = parsedDraft?.state ?? parsedDraft;
+
+      if (!Array.isArray(oldState?.items) || oldState.items.length === 0) {
+        return;
+      }
+
+      createTab(tenantId, outletId);
+      const newId = useBillingTabsStore.getState().activeTabId;
+
+      if (!newId) {
+        return;
+      }
+
+      updateDraftItems(newId, oldState.items);
+
+      if (oldState.customerName || oldState.customerPhone) {
+        updateDraftCustomer(
+          newId,
+          oldState.customerName ?? "",
+          oldState.customerPhone ?? "",
+        );
+      }
+
+      if (oldState.paymentMethod) {
+        updateDraftPayment(newId, oldState.paymentMethod);
+      }
+    };
+
+    migrateMVP1Draft().catch(() => {
+      // Non-blocking migration path: ignore and continue with current flow.
+    });
+  }, [
+    drafts.length,
+    createTab,
+    updateDraftItems,
+    updateDraftCustomer,
+    updateDraftPayment,
+  ]);
 
   const subtotal = useMemo(
     () => cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
