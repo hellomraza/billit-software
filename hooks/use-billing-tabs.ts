@@ -10,6 +10,7 @@ import type {
 } from "@/types/draft";
 import { openDB } from "idb";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 
 export interface UseBillingTabsReturn {
   tabs: TabState[];
@@ -206,8 +207,36 @@ export function useBillingTabs(): UseBillingTabsReturn {
       return;
     }
 
-    createStoreTab(tenantId, outletId);
-  }, [createStoreTab]);
+    useBillingTabsStore.setState((state) => {
+      const counter = state.tabCounter + 1;
+      const now = new Date().toISOString();
+
+      const newDraft: LocalDraft = {
+        clientDraftId: uuidv4(),
+        tenantId,
+        outletId,
+        tabLabel: `Bill ${counter}`,
+        items: [],
+        customerName: "",
+        customerPhone: "",
+        paymentMethod: "",
+        isDeleted: false,
+        createdAt: now,
+        updatedAt: now,
+        localUpdatedAt: now,
+        syncStatus: "PENDING_SYNC",
+        syncFailureType: null,
+        isOfflineCreated: !navigator.onLine,
+      };
+
+      return {
+        drafts: [...state.drafts, newDraft],
+        openTabIds: [...state.openTabIds, newDraft.clientDraftId],
+        activeTabId: newDraft.clientDraftId,
+        tabCounter: counter,
+      };
+    });
+  }, []);
 
   const updateActiveCart = useCallback(
     (items: DraftItem[]) => {
