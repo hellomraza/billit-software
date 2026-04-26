@@ -26,14 +26,23 @@ export const updateOnboardingBusinessAction = validatedAction(
   onboardingBusinessSchema,
   async (data) => {
     try {
-      const api = await createServerAxios();
-      const { data: businessData } = await api.patch("/onboarding/business", {
-        businessName: data.businessName,
-        businessAbbr: data.businessAbbr,
-      });
-
-      // Store tenant_id in cookie
       const cookieStore = await cookies();
+      const tenantId = cookieStore.get("tenant_id")?.value;
+      if (!tenantId) {
+        return {
+          error: "Tenant ID is missing. Please log in again.",
+          success: "",
+        };
+      }
+      const api = await createServerAxios();
+      const { data: businessData } = await api.patch(
+        `/tenants/${tenantId}/onboarding/business`,
+        {
+          businessName: data.businessName,
+          businessAbbr: data.businessAbbr,
+        },
+      );
+
       if (businessData?.tenantId || businessData?._id) {
         const tenantId = businessData.tenantId || businessData._id;
         cookieStore.set("tenant_id", tenantId, {
@@ -86,14 +95,24 @@ export const updateOnboardingOutletAction = validatedAction(
   onboardingOutletSchema,
   async (data) => {
     try {
+      const cookieStore = await cookies();
+      const tenantId = cookieStore.get("tenant_id")?.value;
+      if (!tenantId) {
+        return {
+          error: "Tenant ID is missing. Please log in again.",
+          success: "",
+        };
+      }
       const api = await createServerAxios();
-      const { data: outletData } = await api.patch("/onboarding/outlet", {
-        name: data.outletName,
-        abbr: data.outletAbbr,
-      });
+      const { data: outletData } = await api.patch(
+        `/tenants/${tenantId}/onboarding/outlet`,
+        {
+          name: data.outletName,
+          abbr: data.outletAbbr,
+        },
+      );
 
       // Store outlet_id in cookie
-      const cookieStore = await cookies();
       if (outletData?.outletId || outletData?._id) {
         const outletId = outletData.outletId || outletData._id;
         cookieStore.set("outlet_id", outletId, {
@@ -152,9 +171,17 @@ export const updateOnboardingGstAction = validatedAction(
   onboardingGstSchema,
   async (data) => {
     try {
+      const cookieStore = await cookies();
+      const tenantId = cookieStore.get("tenant_id")?.value;
+      if (!tenantId) {
+        return {
+          error: "Tenant ID is missing. Please log in again.",
+          success: "",
+        };
+      }
       const api = await createServerAxios();
       // PATCH /onboarding/gst with gstNumber
-      await api.patch("/onboarding/gst", {
+      await api.patch(`/tenants/${tenantId}/onboarding/gst`, {
         gstNumber: data.gstNumber || "",
       });
       await completeOnboardingStepAction(); // Mark GST step as completed
@@ -181,6 +208,11 @@ export const updateOnboardingGstAction = validatedAction(
 export const completeOnboardingStepAction = async () => {
   // check if onboarding cookies are set, if not redirect to first incomplete step
   const cookieStore = await cookies();
+  const tenantId = cookieStore.get("tenant_id")?.value;
+  if (!tenantId) {
+    console.error("Tenant ID is missing. Cannot mark onboarding complete.");
+    redirect(ROUTES.AUTH_LOGIN);
+  }
   const businessCompleted = cookieStore.get(
     "billit_onboarding_business",
   )?.value;
@@ -195,7 +227,7 @@ export const completeOnboardingStepAction = async () => {
   // call /onboarding/complete to mark onboarding as complete in backend
   try {
     const api = await createServerAxios();
-    await api.post("/onboarding/complete");
+    await api.post(`/tenants/${tenantId}/onboarding/complete`);
   } catch (err: unknown) {
     console.error("Error marking onboarding complete:", err);
   }
