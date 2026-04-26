@@ -4,8 +4,7 @@ import { loginAction } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getOnboardingStatus } from "@/lib/api/auth";
-import { saveAuthSession } from "@/lib/auth-tokens";
+import { completeOnboarding, saveAuthSession } from "@/lib/auth-tokens";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect } from "react";
 
@@ -28,16 +27,12 @@ export function LoginForm() {
       saveAuthSession(state.accessToken, state.tenant);
 
       // Check onboarding status and redirect accordingly
-      const checkOnboardingAndRedirect = async () => {
-        const onboardingStatus = await getOnboardingStatus();
-        if (onboardingStatus?.completed === false) {
-          router.push("/onboarding/business");
-        } else {
-          router.push("/");
-        }
-      };
-
-      checkOnboardingAndRedirect();
+      if (!state.tenant?.onboardingComplete) {
+        router.push("/onboarding/business");
+      } else {
+        completeOnboarding();
+        router.push("/");
+      }
     }
   }, [state, router]);
 

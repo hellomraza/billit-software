@@ -12,6 +12,13 @@ export function saveAuthSession(accessToken: string, tenant: Tenant) {
   document.cookie = `tenant_id=${tenant._id}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
 }
 
+export function completeOnboarding() {
+  localStorage.setItem("billit_onboarding_complete", "true");
+  // Set onboarding complete cookie with proper attributes
+  document.cookie =
+    "billit_onboarding_complete=true; path=/; max-age=2592000; SameSite=Lax";
+}
+
 export function clearAuthSession() {
   // Clear auth tokens
   localStorage.removeItem("access_token");
