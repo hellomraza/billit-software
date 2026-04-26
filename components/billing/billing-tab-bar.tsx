@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -66,6 +66,15 @@ export function BillingTabBar(props: BillingTabBarProps) {
   const tabs = props.tabs.length > 0 ? props.tabs : [placeholderTab];
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState("");
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!editingTabId || !inputRef.current) {
+      return;
+    }
+
+    inputRef.current.select();
+  }, [editingTabId]);
 
   function cancelEditing() {
     setEditingTabId(null);
@@ -137,6 +146,7 @@ export function BillingTabBar(props: BillingTabBarProps) {
 
                   {editingTabId === tab.clientDraftId ? (
                     <input
+                      ref={inputRef}
                       value={editingValue}
                       onChange={(event) => setEditingValue(event.target.value)}
                       onKeyDown={(event) => {
