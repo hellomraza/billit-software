@@ -55,7 +55,7 @@ interface BillingWorkspaceProps {
   hideInternalTabBar?: boolean;
   onUpdateActiveCart?: (items: DraftItem[]) => void;
   onUpdateActiveCustomer?: (name: string, phone: string) => void;
-  onUpdateActivePayment?: (method: PaymentMethod) => void;
+  onUpdateActivePayment?: (method: DraftPaymentMethod) => void;
 }
 
 export function BillingWorkspace({
@@ -114,7 +114,7 @@ export function BillingWorkspace({
     onUpdateActiveCustomer?.(name, phone);
   };
 
-  const updateActivePayment = (method: PaymentMethod) => {
+  const updateActivePayment = (method: DraftPaymentMethod) => {
     if (!activeDraft) {
       return;
     }
@@ -611,6 +611,8 @@ export function BillingWorkspace({
         onConfirm={() => {
           invoiceActions.resetInvoiceDraft();
           updateActiveCart([]);
+          updateActiveCustomer("", "");
+          updateActivePayment("");
         }}
         onCancel={invoiceActions.closeClearDialog}
       />
