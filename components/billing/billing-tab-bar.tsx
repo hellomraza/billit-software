@@ -109,6 +109,18 @@ export function BillingTabBar(props: BillingTabBarProps) {
     props.onCloseTab(tab.clientDraftId);
   }
 
+  function cancelCloseTab() {
+    setClosingTabId(null);
+  }
+
+  function confirmCloseTab() {
+    if (closingTabId) {
+      props.onCloseTab(closingTabId);
+    }
+
+    setClosingTabId(null);
+  }
+
   return (
     <div className="rounded-xl border bg-background/95 px-3 py-2 shadow-sm backdrop-blur supports-backdrop-filter:bg-background/80">
       <div className="flex min-w-0 items-center gap-2">
@@ -249,7 +261,7 @@ export function BillingTabBar(props: BillingTabBarProps) {
         open={Boolean(closingTabId)}
         onOpenChange={(open) => {
           if (!open) {
-            setClosingTabId(null);
+            cancelCloseTab();
           }
         }}
       >
@@ -264,9 +276,12 @@ export function BillingTabBar(props: BillingTabBarProps) {
           <DialogFooter>
             <Button
               type="button"
-              variant="outline"
-              onClick={() => setClosingTabId(null)}
+              variant="destructive"
+              onClick={confirmCloseTab}
             >
+              Close Bill
+            </Button>
+            <Button type="button" variant="outline" onClick={cancelCloseTab}>
               Keep Open
             </Button>
           </DialogFooter>
