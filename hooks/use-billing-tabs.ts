@@ -286,6 +286,13 @@ export function useBillingTabs(): UseBillingTabsReturn {
     [createTab],
   );
 
+  const renameTab = useCallback(
+    (clientDraftId: string, newLabel: string) => {
+      renameStoreTab(clientDraftId, newLabel);
+    },
+    [renameStoreTab],
+  );
+
   const updateActiveCart = useCallback(
     (items: DraftItem[]) => {
       if (!activeTabId) {
@@ -338,7 +345,7 @@ export function useBillingTabs(): UseBillingTabsReturn {
     createTab,
     switchTab,
     closeTab,
-    renameTab: renameStoreTab,
+    renameTab,
     updateActiveCart,
     updateActiveCustomer,
     updateActivePayment,
