@@ -8,6 +8,7 @@ import { cookies } from "next/headers";
 
 export interface CreateInvoicePayload {
   clientGeneratedId: string;
+  clientDraftId?: string;
   paymentMethod: "CASH" | "CARD" | "UPI";
   customerName?: string;
   customerPhone?: string;

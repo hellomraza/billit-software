@@ -29,6 +29,7 @@ export function BillingShell({
     updateActiveCart,
     updateActiveCustomer,
     updateActivePayment,
+    clearActiveTab,
   } = useBillingTabs();
 
   return (
@@ -63,6 +64,7 @@ export function BillingShell({
         onUpdateActiveCart={updateActiveCart}
         onUpdateActiveCustomer={updateActiveCustomer}
         onUpdateActivePayment={updateActivePayment}
+        onClearActiveTab={clearActiveTab}
       />
     </div>
   );

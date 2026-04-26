@@ -65,6 +65,7 @@ type InvoiceStoreState = {
     submitInvoice: (
       gstEnabled: boolean,
       overrides?: Record<string, { quantity: number; override: boolean }>,
+      clientDraftId?: string,
     ) => Promise<SubmitInvoiceResult>;
   };
 };
@@ -151,7 +152,7 @@ export const useInvoiceStore = create<InvoiceStoreState>((set, get) => ({
       set((state) => ({ isPreviewMode: !state.isPreviewMode })),
     resetInvoiceDraft: () =>
       set({ ...createDraftState(), isPreviewMode: get().isPreviewMode }),
-    submitInvoice: async (gstEnabled, overrides = {}) => {
+    submitInvoice: async (gstEnabled, overrides = {}, clientDraftId) => {
       const {
         cart,
         clientGeneratedId,
@@ -175,6 +176,7 @@ export const useInvoiceStore = create<InvoiceStoreState>((set, get) => ({
 
       const payload: CreateInvoicePayload = {
         clientGeneratedId,
+        ...(clientDraftId ? { clientDraftId } : {}),
         paymentMethod,
         customerName: customerName || undefined,
         customerPhone: customerPhone || undefined,

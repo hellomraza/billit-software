@@ -56,6 +56,7 @@ interface BillingWorkspaceProps {
   onUpdateActiveCart?: (items: DraftItem[]) => void;
   onUpdateActiveCustomer?: (name: string, phone: string) => void;
   onUpdateActivePayment?: (method: DraftPaymentMethod) => void;
+  onClearActiveTab?: () => void;
 }
 
 export function BillingWorkspace({
@@ -66,6 +67,7 @@ export function BillingWorkspace({
   onUpdateActiveCart,
   onUpdateActiveCustomer,
   onUpdateActivePayment,
+  onClearActiveTab,
 }: BillingWorkspaceProps) {
   const gstEnabled = useIsGstEnabled();
   const products = initialProducts;
@@ -329,11 +331,15 @@ export function BillingWorkspace({
     }
 
     syncDraftToInvoiceStore();
-    const result = await invoiceActions.submitInvoice(gstEnabled);
+    const result = await invoiceActions.submitInvoice(
+      gstEnabled,
+      undefined,
+      activeDraft?.clientDraftId,
+    );
 
     if (result.success && result.phase === "success") {
       invoiceActions.resetInvoiceDraft();
-      updateActiveCart([]);
+      onClearActiveTab?.();
       setIsFinalizeDialogOpen(false);
 
       toast.success(`Invoice #${result.invoice?.invoiceNumber} Created`, {
@@ -424,12 +430,16 @@ export function BillingWorkspace({
       }
     });
 
-    const result = await invoiceActions.submitInvoice(gstEnabled, overrides);
+    const result = await invoiceActions.submitInvoice(
+      gstEnabled,
+      overrides,
+      activeDraft?.clientDraftId,
+    );
 
     if (result.success && result.phase === "success") {
       invoiceActions.closeStockModal();
       invoiceActions.resetInvoiceDraft();
-      updateActiveCart([]);
+      onClearActiveTab?.();
 
       toast.success(`Invoice #${result.invoice?.invoiceNumber} Created`, {
         description: `Total ${tenantSettings.currency} ${result.invoice?.grandTotal.toFixed(2)} via ${selectedPaymentMethod}`,
