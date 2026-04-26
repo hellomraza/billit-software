@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -62,6 +64,23 @@ function getSyncIndicator(syncStatus: TabState["syncStatus"]) {
 
 export function BillingTabBar(props: BillingTabBarProps) {
   const tabs = props.tabs.length > 0 ? props.tabs : [placeholderTab];
+  const [editingTabId, setEditingTabId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState("");
+
+  function cancelEditing() {
+    setEditingTabId(null);
+    setEditingValue("");
+  }
+
+  function confirmEditing(tab: TabState) {
+    const trimmedValue = editingValue.trim();
+
+    if (trimmedValue.length > 0 && trimmedValue !== tab.tabLabel) {
+      props.onRenameTab(tab.clientDraftId, trimmedValue);
+    }
+
+    cancelEditing();
+  }
 
   return (
     <div className="rounded-xl border bg-background/95 px-3 py-2 shadow-sm backdrop-blur supports-backdrop-filter:bg-background/80">
@@ -116,7 +135,37 @@ export function BillingTabBar(props: BillingTabBarProps) {
                     />
                   )}
 
-                  <span className="max-w-56 truncate">{displayLabel}</span>
+                  {editingTabId === tab.clientDraftId ? (
+                    <input
+                      value={editingValue}
+                      onChange={(event) => setEditingValue(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          confirmEditing(tab);
+                          return;
+                        }
+
+                        if (event.key === "Escape") {
+                          event.preventDefault();
+                          cancelEditing();
+                        }
+                      }}
+                      onBlur={() => confirmEditing(tab)}
+                      onClick={(event) => event.stopPropagation()}
+                      className="h-6 w-32 rounded-sm border border-border bg-background px-1.5 text-xs text-foreground outline-none"
+                    />
+                  ) : (
+                    <span
+                      className="max-w-56 truncate"
+                      onDoubleClick={() => {
+                        setEditingTabId(tab.clientDraftId);
+                        setEditingValue(tab.tabLabel);
+                      }}
+                    >
+                      {displayLabel}
+                    </span>
+                  )}
 
                   {itemCount > 0 && (
                     <Badge
