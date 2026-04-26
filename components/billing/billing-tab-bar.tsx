@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { TabState } from "@/types/draft";
-import { FolderOpen, Plus } from "lucide-react";
+import { AlertTriangle, FolderOpen, Plus } from "lucide-react";
 
 interface BillingTabBarProps {
   tabs: TabState[];
@@ -106,6 +106,16 @@ export function BillingTabBar(props: BillingTabBarProps) {
                   className="inline-flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   title={tab.tabLabel}
                 >
+                  {tab.hasStockWarning && (
+                    <AlertTriangle
+                      className={cn(
+                        "size-3.5 shrink-0",
+                        isActive ? "text-amber-200" : "text-amber-500",
+                      )}
+                      aria-label="Stock warning"
+                    />
+                  )}
+
                   <span className="max-w-56 truncate">{displayLabel}</span>
 
                   {itemCount > 0 && (
