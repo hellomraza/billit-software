@@ -81,7 +81,6 @@ export function useBillingTabs(): UseBillingTabsReturn {
 
   const createStoreTab = useBillingTabsStore((state) => state.createTab);
   const switchStoreTab = useBillingTabsStore((state) => state.switchTab);
-  const closeStoreTab = useBillingTabsStore((state) => state.closeTab);
   const renameStoreTab = useBillingTabsStore((state) => state.renameTab);
   const updateDraftItems = useBillingTabsStore(
     (state) => state.updateDraftItems,
@@ -245,6 +244,48 @@ export function useBillingTabs(): UseBillingTabsReturn {
     [switchStoreTab],
   );
 
+  const closeTab = useCallback(
+    (clientDraftId: string) => {
+      let shouldCreateTab = false;
+
+      useBillingTabsStore.setState((state) => {
+        const currentOpenTabIds = state.openTabIds;
+        const closingIndex = currentOpenTabIds.indexOf(clientDraftId);
+
+        if (closingIndex === -1) {
+          return state;
+        }
+
+        const nextOpenTabIds = currentOpenTabIds.filter(
+          (id) => id !== clientDraftId,
+        );
+
+        let nextActiveTabId = state.activeTabId;
+        if (state.activeTabId === clientDraftId) {
+          if (nextOpenTabIds.length === 0) {
+            nextActiveTabId = "";
+            shouldCreateTab = true;
+          } else {
+            nextActiveTabId =
+              nextOpenTabIds[closingIndex] ??
+              nextOpenTabIds[closingIndex - 1] ??
+              nextOpenTabIds[0];
+          }
+        }
+
+        return {
+          openTabIds: nextOpenTabIds,
+          activeTabId: nextActiveTabId,
+        };
+      });
+
+      if (shouldCreateTab) {
+        createTab();
+      }
+    },
+    [createTab],
+  );
+
   const updateActiveCart = useCallback(
     (items: DraftItem[]) => {
       if (!activeTabId) {
@@ -296,7 +337,7 @@ export function useBillingTabs(): UseBillingTabsReturn {
     activeDraft,
     createTab,
     switchTab,
-    closeTab: closeStoreTab,
+    closeTab,
     renameTab: renameStoreTab,
     updateActiveCart,
     updateActiveCustomer,
