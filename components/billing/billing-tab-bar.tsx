@@ -2,6 +2,12 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { TabState } from "@/types/draft";
 import { FolderOpen, Plus } from "lucide-react";
@@ -33,6 +39,27 @@ function truncateTabLabel(label: string): string {
   return `${label.slice(0, MAX_TAB_LABEL_LENGTH - 1)}…`;
 }
 
+function getSyncIndicator(syncStatus: TabState["syncStatus"]) {
+  switch (syncStatus) {
+    case "SYNCED":
+      return {
+        dotClassName: "bg-emerald-500",
+        label: "Saved",
+      };
+    case "SYNC_FAILED":
+      return {
+        dotClassName: "bg-rose-500",
+        label: "Save failed",
+      };
+    case "PENDING_SYNC":
+    default:
+      return {
+        dotClassName: "bg-amber-500",
+        label: "Saving...",
+      };
+  }
+}
+
 export function BillingTabBar(props: BillingTabBarProps) {
   const tabs = props.tabs.length > 0 ? props.tabs : [placeholderTab];
 
@@ -44,17 +71,35 @@ export function BillingTabBar(props: BillingTabBarProps) {
             const isActive = tab.clientDraftId === props.activeTabId;
             const itemCount = tab.items.length;
             const displayLabel = truncateTabLabel(tab.tabLabel);
+            const syncIndicator = getSyncIndicator(tab.syncStatus);
 
             return (
               <div
                 key={tab.clientDraftId}
                 className={cn(
-                  "group/tab inline-flex shrink-0 items-center rounded-lg border px-1.5 py-1.5 text-sm font-medium transition-colors",
+                  "group/tab relative inline-flex shrink-0 items-center rounded-lg border px-1.5 py-1.5 text-sm font-medium transition-colors",
                   isActive
                     ? "border-primary bg-primary text-primary-foreground shadow-sm"
                     : "border-border bg-muted/50 text-muted-foreground hover:border-border/80 hover:bg-muted hover:text-foreground",
                 )}
               >
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <span
+                          className={cn(
+                            "absolute -top-1 -right-1 inline-flex h-2.5 w-2.5 rounded-full ring-2 ring-background",
+                            syncIndicator.dotClassName,
+                          )}
+                          aria-label={syncIndicator.label}
+                        />
+                      }
+                    />
+                    <TooltipContent>{syncIndicator.label}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
                 <button
                   type="button"
                   onClick={() => props.onTabClick(tab.clientDraftId)}
