@@ -4,10 +4,6 @@ import { MoneyText } from "@/components/shared/money-text";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PAYMENT_METHODS } from "@/lib/constants/defaults";
-import {
-  useBillingActions,
-  useBillingPaymentMethod,
-} from "@/stores/billing-store";
 import { useIsGstEnabled } from "@/stores/get-store";
 import { useInvoiceActions, useInvoicePhase } from "@/stores/invoice-store";
 import { type PaymentMethod } from "@/types";
@@ -20,6 +16,8 @@ interface BillingSummaryPanelProps {
   subtotal: number;
   gstAmount: number;
   grandTotal: number;
+  paymentMethod: PaymentMethod;
+  onPaymentMethodChange: (method: PaymentMethod) => void;
 }
 
 export function BillingSummaryPanel({
@@ -28,14 +26,14 @@ export function BillingSummaryPanel({
   subtotal,
   gstAmount,
   grandTotal,
+  paymentMethod,
+  onPaymentMethodChange,
 }: BillingSummaryPanelProps) {
   const phase = useInvoicePhase();
   const isFinalizing = phase === "submitting";
   const gstEnabled = useIsGstEnabled();
   const paymentButtonsRef = useRef<HTMLDivElement>(null);
   const announcementRef = useRef<HTMLDivElement>(null);
-  const paymentMethod = useBillingPaymentMethod();
-  const { setPaymentMethod } = useBillingActions();
   const { openClearDialog } = useInvoiceActions();
 
   const handlePaymentKeyDown = (
@@ -66,7 +64,7 @@ export function BillingSummaryPanel({
       | PaymentMethod
       | undefined;
     if (nextMethod) {
-      setPaymentMethod(nextMethod);
+      onPaymentMethodChange(nextMethod);
     }
   };
 
@@ -113,7 +111,7 @@ export function BillingSummaryPanel({
               size="sm"
               className="flex-1 min-w-20 text-xs h-9 sm:h-8"
               onClick={() => {
-                setPaymentMethod(method);
+                onPaymentMethodChange(method);
                 announceAction(`Payment method changed to ${method}`);
               }}
               onKeyDown={(e) => handlePaymentKeyDown(e, method)}

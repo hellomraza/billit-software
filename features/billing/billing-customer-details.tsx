@@ -2,14 +2,20 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  useBillingActions,
-  useBillingCustomerDetails,
-} from "@/stores/billing-store";
 
-export function BillingCustomerDetails() {
-  const { customerName, customerPhone } = useBillingCustomerDetails();
-  const { setCustomerName, setCustomerPhone } = useBillingActions();
+interface BillingCustomerDetailsProps {
+  customerName: string;
+  customerPhone: string;
+  onCustomerNameChange: (name: string) => void;
+  onCustomerPhoneChange: (phone: string) => void;
+}
+
+export function BillingCustomerDetails({
+  customerName,
+  customerPhone,
+  onCustomerNameChange,
+  onCustomerPhoneChange,
+}: BillingCustomerDetailsProps) {
   return (
     <div className="p-4 space-y-3 rounded-lg">
       <div className="space-y-0.5">
@@ -23,7 +29,7 @@ export function BillingCustomerDetails() {
           id="customer-name"
           placeholder="Walk-in customer"
           value={customerName}
-          onChange={(e) => setCustomerName(e.target.value)}
+          onChange={(e) => onCustomerNameChange(e.target.value)}
           className="h-9 text-sm"
         />
       </div>
@@ -40,7 +46,7 @@ export function BillingCustomerDetails() {
           type="tel"
           placeholder="9876543210"
           value={customerPhone}
-          onChange={(e) => setCustomerPhone(e.target.value)}
+          onChange={(e) => onCustomerPhoneChange(e.target.value)}
           className="h-9 text-sm"
         />
       </div>

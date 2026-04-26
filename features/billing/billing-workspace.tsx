@@ -16,10 +16,6 @@ import { InvoiceStockConflictModal } from "@/features/invoices/invoice-stock-con
 import { getStoredOutletId, getStoredTenant } from "@/lib/auth-tokens";
 import { ProductWithStock } from "@/lib/utils/products";
 import { useBillingTabsStore } from "@/store/billing-tabs-store";
-import {
-  useBillingCustomerDetails,
-  useBillingPaymentMethod,
-} from "@/stores/billing-store";
 import { useIsGstEnabled } from "@/stores/get-store";
 import {
   useInvoiceActions,
@@ -27,7 +23,12 @@ import {
   useInvoiceStore,
 } from "@/stores/invoice-store";
 import { PaymentMethod } from "@/types";
-import type { DraftItem, LocalDraft, TabState } from "@/types/draft";
+import type {
+  DraftItem,
+  PaymentMethod as DraftPaymentMethod,
+  LocalDraft,
+  TabState,
+} from "@/types/draft";
 import { openDB } from "idb";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -53,6 +54,8 @@ interface BillingWorkspaceProps {
   activeDraft?: LocalDraft;
   hideInternalTabBar?: boolean;
   onUpdateActiveCart?: (items: DraftItem[]) => void;
+  onUpdateActiveCustomer?: (name: string, phone: string) => void;
+  onUpdateActivePayment?: (method: PaymentMethod) => void;
 }
 
 export function BillingWorkspace({
@@ -61,11 +64,11 @@ export function BillingWorkspace({
   activeDraft,
   hideInternalTabBar = false,
   onUpdateActiveCart,
+  onUpdateActiveCustomer,
+  onUpdateActivePayment,
 }: BillingWorkspaceProps) {
   const gstEnabled = useIsGstEnabled();
   const products = initialProducts;
-  const { customerName, customerPhone } = useBillingCustomerDetails();
-  const paymentMethod = useBillingPaymentMethod();
   const drafts = useBillingTabsStore((state) => state.drafts);
   const openTabIds = useBillingTabsStore((state) => state.openTabIds);
   const activeTabId = useBillingTabsStore((state) => state.activeTabId);
@@ -89,6 +92,11 @@ export function BillingWorkspace({
     () => activeDraft?.items ?? [],
     [activeDraft],
   );
+  const customerName = activeDraft?.customerName ?? "";
+  const customerPhone = activeDraft?.customerPhone ?? "";
+  const paymentMethod = activeDraft?.paymentMethod ?? "";
+  const selectedPaymentMethod: PaymentMethod =
+    paymentMethod === "" ? "CASH" : paymentMethod;
 
   const updateActiveCart = (nextItems: LocalDraft["items"]) => {
     if (!activeDraft) {
@@ -96,6 +104,30 @@ export function BillingWorkspace({
     }
 
     onUpdateActiveCart?.(nextItems);
+  };
+
+  const updateActiveCustomer = (name: string, phone: string) => {
+    if (!activeDraft) {
+      return;
+    }
+
+    onUpdateActiveCustomer?.(name, phone);
+  };
+
+  const updateActivePayment = (method: PaymentMethod) => {
+    if (!activeDraft) {
+      return;
+    }
+
+    onUpdateActivePayment?.(method);
+  };
+
+  const handlePaymentMethodChange = (method: DraftPaymentMethod) => {
+    if (!method) {
+      return;
+    }
+
+    updateActivePayment(method);
   };
 
   const tabStates = useMemo<TabState[]>(() => {
@@ -275,9 +307,6 @@ export function BillingWorkspace({
   };
 
   const syncDraftToInvoiceStore = () => {
-    const normalizedPaymentMethod: PaymentMethod =
-      paymentMethod === "" ? "CASH" : paymentMethod;
-
     invoiceActions.setCart(
       cart.map((item) => ({
         productId: item.productId,
@@ -290,7 +319,7 @@ export function BillingWorkspace({
     );
     invoiceActions.setCustomerName(customerName);
     invoiceActions.setCustomerPhone(customerPhone);
-    invoiceActions.setPaymentMethod(normalizedPaymentMethod);
+    invoiceActions.setPaymentMethod(selectedPaymentMethod);
   };
 
   const handleFinalizeConfirm = async () => {
@@ -308,7 +337,7 @@ export function BillingWorkspace({
       setIsFinalizeDialogOpen(false);
 
       toast.success(`Invoice #${result.invoice?.invoiceNumber} Created`, {
-        description: `Total ${tenantSettings.currency} ${result.invoice?.grandTotal.toFixed(2)} via ${paymentMethod}`,
+        description: `Total ${tenantSettings.currency} ${result.invoice?.grandTotal.toFixed(2)} via ${selectedPaymentMethod}`,
       });
     } else if (result.phase === "stock_conflict") {
       setIsFinalizeDialogOpen(false);
@@ -403,7 +432,7 @@ export function BillingWorkspace({
       updateActiveCart([]);
 
       toast.success(`Invoice #${result.invoice?.invoiceNumber} Created`, {
-        description: `Total ${tenantSettings.currency} ${result.invoice?.grandTotal.toFixed(2)} via ${paymentMethod}`,
+        description: `Total ${tenantSettings.currency} ${result.invoice?.grandTotal.toFixed(2)} via ${selectedPaymentMethod}`,
       });
 
       if (removedItems.length > 0) {
@@ -467,6 +496,8 @@ export function BillingWorkspace({
             subtotal={subtotal}
             gstAmount={gstAmount}
             grandTotal={grandTotal}
+            paymentMethod={selectedPaymentMethod}
+            onPaymentMethodChange={handlePaymentMethodChange}
           />
         </Card>
       </div>
@@ -487,7 +518,7 @@ export function BillingWorkspace({
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="rounded-md border p-3">
                 <p className="text-muted-foreground">Payment Method</p>
-                <p className="font-semibold mt-1">{paymentMethod}</p>
+                <p className="font-semibold mt-1">{selectedPaymentMethod}</p>
               </div>
               <div className="rounded-md border p-3">
                 <p className="text-muted-foreground">Tax Mode</p>
@@ -544,7 +575,16 @@ export function BillingWorkspace({
               <p className="text-sm font-medium mb-3">
                 Customer Details (Optional)
               </p>
-              <BillingCustomerDetails />
+              <BillingCustomerDetails
+                customerName={customerName}
+                customerPhone={customerPhone}
+                onCustomerNameChange={(name) =>
+                  updateActiveCustomer(name, customerPhone)
+                }
+                onCustomerPhoneChange={(phone) =>
+                  updateActiveCustomer(customerName, phone)
+                }
+              />
             </div>
           </div>
 
