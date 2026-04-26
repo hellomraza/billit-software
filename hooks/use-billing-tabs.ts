@@ -238,6 +238,13 @@ export function useBillingTabs(): UseBillingTabsReturn {
     });
   }, []);
 
+  const switchTab = useCallback(
+    (clientDraftId: string) => {
+      switchStoreTab(clientDraftId);
+    },
+    [switchStoreTab],
+  );
+
   const updateActiveCart = useCallback(
     (items: DraftItem[]) => {
       if (!activeTabId) {
@@ -288,7 +295,7 @@ export function useBillingTabs(): UseBillingTabsReturn {
     activeTabId,
     activeDraft,
     createTab,
-    switchTab: switchStoreTab,
+    switchTab,
     closeTab: closeStoreTab,
     renameTab: renameStoreTab,
     updateActiveCart,
