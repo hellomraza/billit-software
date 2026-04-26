@@ -26,6 +26,7 @@ export function BillingShell({
     switchTab,
     closeTab,
     renameTab,
+    updateActiveCart,
   } = useBillingTabs();
 
   return (
@@ -57,6 +58,7 @@ export function BillingShell({
         tenantSettings={tenantSettings}
         activeDraft={activeDraft}
         hideInternalTabBar
+        onUpdateActiveCart={updateActiveCart}
       />
     </div>
   );
