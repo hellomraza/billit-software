@@ -5,6 +5,14 @@ import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -66,6 +74,7 @@ export function BillingTabBar(props: BillingTabBarProps) {
   const tabs = props.tabs.length > 0 ? props.tabs : [placeholderTab];
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState("");
+  const [closingTabId, setClosingTabId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -89,6 +98,15 @@ export function BillingTabBar(props: BillingTabBarProps) {
     }
 
     cancelEditing();
+  }
+
+  function requestTabClose(tab: TabState) {
+    if (tab.items.length > 0) {
+      setClosingTabId(tab.clientDraftId);
+      return;
+    }
+
+    props.onCloseTab(tab.clientDraftId);
   }
 
   return (
@@ -192,7 +210,7 @@ export function BillingTabBar(props: BillingTabBarProps) {
 
                 <button
                   type="button"
-                  onClick={() => props.onCloseTab(tab.clientDraftId)}
+                  onClick={() => requestTabClose(tab)}
                   className="inline-flex h-6 w-6 items-center justify-center rounded-full text-sm leading-none text-current opacity-70 transition-opacity hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   aria-label={`Close ${tab.tabLabel}`}
                 >
@@ -226,6 +244,34 @@ export function BillingTabBar(props: BillingTabBarProps) {
           </Button>
         </div>
       </div>
+
+      <Dialog
+        open={Boolean(closingTabId)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setClosingTabId(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Close this bill?</DialogTitle>
+            <DialogDescription>
+              This bill has items. It will be saved to your Drafts and can be
+              reopened any time.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setClosingTabId(null)}
+            >
+              Keep Open
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
