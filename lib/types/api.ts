@@ -4,6 +4,7 @@ export interface Tenant {
   email: string;
   businessName: string;
   businessAbbr: string;
+  onboardingComplete: boolean;
   gstNumber?: string;
   gstEnabled: boolean;
   abbrLocked: boolean;
@@ -109,12 +110,9 @@ export interface DeficitGroup {
 
 // Onboarding Status
 export interface OnboardingStatus {
-  completed: boolean;
-  steps: {
-    business: boolean;
-    outlet: boolean;
-    gst: boolean;
-  };
+  businessStep: boolean;
+  outletStep: boolean;
+  completedAt?: string;
 }
 
 // Paginated response wrapper

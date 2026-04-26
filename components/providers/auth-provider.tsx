@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import React, {
   createContext,
   useCallback,
@@ -51,7 +50,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [tenantSettings, setTenantSettings] =
     useState<TenantSettings>(DEFAULT_TENANT);
   const [isInitialized, setIsInitialized] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     const onboarded = localStorage.getItem("billit_onboarding_complete");

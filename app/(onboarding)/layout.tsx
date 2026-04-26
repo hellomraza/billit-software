@@ -11,7 +11,7 @@ export default async function OnboardingLayout({
   const onboardingStatus = await getOnboardingStatus();
 
   // If onboarding is already completed, redirect to home
-  if (onboardingStatus.completed) {
+  if (onboardingStatus.businessStep && onboardingStatus.outletStep) {
     redirect("/");
   }
 

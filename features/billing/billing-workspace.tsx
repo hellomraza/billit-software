@@ -28,9 +28,11 @@ import {
   useInvoiceStore,
 } from "@/stores/invoice-store";
 import { PaymentMethod } from "@/types";
+import type { TabState } from "@/types/draft";
 import { openDB } from "idb";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { BillingTabBar } from "../../components/billing/billing-tab-bar";
 import { BillingCart } from "./billing-cart";
 import { BillingCustomerDetails } from "./billing-customer-details";
 import { BillingSearch } from "./billing-search";
@@ -58,7 +60,12 @@ export function BillingWorkspace({
   const { customerName, customerPhone } = useBillingCustomerDetails();
   const paymentMethod = useBillingPaymentMethod();
   const drafts = useBillingTabsStore((state) => state.drafts);
+  const openTabIds = useBillingTabsStore((state) => state.openTabIds);
+  const activeTabId = useBillingTabsStore((state) => state.activeTabId);
   const createTab = useBillingTabsStore((state) => state.createTab);
+  const switchTab = useBillingTabsStore((state) => state.switchTab);
+  const closeTab = useBillingTabsStore((state) => state.closeTab);
+  const renameTab = useBillingTabsStore((state) => state.renameTab);
   const updateDraftItems = useBillingTabsStore(
     (state) => state.updateDraftItems,
   );
@@ -71,6 +78,19 @@ export function BillingWorkspace({
   const invoiceActions = useInvoiceActions();
   const phase = useInvoicePhase();
   const migrationAttemptedRef = useRef(false);
+
+  const tabStates = useMemo<TabState[]>(() => {
+    return drafts
+      .filter(
+        (draft) => openTabIds.includes(draft.clientDraftId) && !draft.isDeleted,
+      )
+      .map((draft) => ({
+        clientDraftId: draft.clientDraftId,
+        tabLabel: draft.tabLabel,
+        items: draft.items,
+        syncStatus: draft.syncStatus,
+      }));
+  }, [drafts, openTabIds]);
 
   useEffect(() => {
     if (migrationAttemptedRef.current || drafts.length > 0) {
@@ -253,6 +273,24 @@ export function BillingWorkspace({
     }
   };
 
+  const handleNewTab = () => {
+    const tenant = getStoredTenant();
+    const outletId = getStoredOutletId();
+
+    if (!tenant?._id || !outletId) {
+      toast.error("Missing billing context", {
+        description: "Please sign in again to create a new bill.",
+      });
+      return;
+    }
+
+    createTab(tenant._id, outletId);
+  };
+
+  const handleOpenDraftsPanel = () => {
+    toast.info("Saved drafts panel will be added in the next billing story.");
+  };
+
   const handleStockConflictDecision = async (
     decisions: Record<string, "use-available" | "override" | "remove">,
   ) => {
@@ -339,27 +377,49 @@ export function BillingWorkspace({
   };
 
   return (
-    <div className="flex flex-col md:flex-row lg:flex-row h-full gap-3 md:gap-4 relative p-4">
-      <Card className="py-0 ring-0 flex-1 flex flex-col min-h-0 bg-transparent shadow-none max-h-[40vh] md:max-h-[60vh] lg:max-h-none">
-        <BillingSearch
-          onSelectProduct={handleSelectProduct}
-          initialProducts={initialProducts}
-        />
-      </Card>
+    <div className="flex h-full flex-col gap-3 p-4">
+      <BillingTabBar
+        tabs={tabStates}
+        activeTabId={
+          activeTabId || tabStates[0]?.clientDraftId || "placeholder-tab"
+        }
+        onTabClick={(clientDraftId: string) => {
+          if (clientDraftId !== "placeholder-tab") {
+            switchTab(clientDraftId);
+          }
+        }}
+        onNewTab={handleNewTab}
+        onCloseTab={(clientDraftId: string) => {
+          if (clientDraftId !== "placeholder-tab") {
+            closeTab(clientDraftId);
+          }
+        }}
+        onRenameTab={renameTab}
+        onOpenDraftsPanel={handleOpenDraftsPanel}
+      />
 
-      <Card className="w-full py-0 border-0 md:w-80 lg:w-100 flex flex-col shadow-sm overflow-hidden shrink-0 min-h-auto md:min-h-125 lg:min-h-125 max-h-[calc(100vh-16rem)] md:max-h-[calc(100vh-10rem)] lg:max-h-none sticky bottom-0 md:sticky md:top-4 lg:static bg-background z-10 rounded-t-lg md:rounded-lg">
-        <BillingCart
-          onUpdateQuantity={handleUpdateQuantity}
-          onRemoveItem={handleRemoveItem}
-        />
-        <BillingSummaryPanel
-          onFinalize={openFinalizeDialog}
-          isEnabled={cart.length > 0}
-          subtotal={subtotal}
-          gstAmount={gstAmount}
-          grandTotal={grandTotal}
-        />
-      </Card>
+      <div className="relative flex flex-1 flex-col gap-3 md:flex-row lg:flex-row">
+        <Card className="py-0 ring-0 flex-1 flex flex-col min-h-0 bg-transparent shadow-none max-h-[40vh] md:max-h-[60vh] lg:max-h-none">
+          <BillingSearch
+            onSelectProduct={handleSelectProduct}
+            initialProducts={initialProducts}
+          />
+        </Card>
+
+        <Card className="w-full py-0 border-0 md:w-80 lg:w-100 flex flex-col shadow-sm overflow-hidden shrink-0 min-h-auto md:min-h-125 lg:min-h-125 max-h-[calc(100vh-16rem)] md:max-h-[calc(100vh-10rem)] lg:max-h-none sticky bottom-0 md:sticky md:top-4 lg:static bg-background z-10 rounded-t-lg md:rounded-lg">
+          <BillingCart
+            onUpdateQuantity={handleUpdateQuantity}
+            onRemoveItem={handleRemoveItem}
+          />
+          <BillingSummaryPanel
+            onFinalize={openFinalizeDialog}
+            isEnabled={cart.length > 0}
+            subtotal={subtotal}
+            gstAmount={gstAmount}
+            grandTotal={grandTotal}
+          />
+        </Card>
+      </div>
 
       <Dialog
         open={isFinalizeDialogOpen}

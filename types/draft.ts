@@ -10,6 +10,14 @@ export type SyncStatus = "SYNCED" | "PENDING_SYNC" | "SYNC_FAILED";
 export type SyncFailureType = "NETWORK" | "SERVER" | null;
 export type PaymentMethod = "CASH" | "CARD" | "UPI" | "";
 
+export interface TabState {
+  clientDraftId: string;
+  tabLabel: string;
+  items: DraftItem[];
+  syncStatus: SyncStatus;
+  hasStockWarning?: boolean;
+}
+
 export interface LocalDraft {
   id?: string;
   clientDraftId: string;
