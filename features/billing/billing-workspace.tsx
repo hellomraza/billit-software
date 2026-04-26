@@ -28,7 +28,7 @@ import {
   useInvoiceStore,
 } from "@/stores/invoice-store";
 import { PaymentMethod } from "@/types";
-import type { TabState } from "@/types/draft";
+import type { LocalDraft, TabState } from "@/types/draft";
 import { openDB } from "idb";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -45,11 +45,15 @@ interface BillingWorkspaceProps {
     defaultGstRate: number;
     currency: string;
   };
+  activeDraft?: LocalDraft;
+  hideInternalTabBar?: boolean;
 }
 
 export function BillingWorkspace({
   initialProducts,
   tenantSettings,
+  activeDraft: _activeDraft,
+  hideInternalTabBar = false,
 }: BillingWorkspaceProps) {
   const billingCart = useBillingCart();
   const gstEnabled = useIsGstEnabled();
@@ -377,26 +381,28 @@ export function BillingWorkspace({
   };
 
   return (
-    <div className="flex h-full flex-col gap-3 p-4">
-      <BillingTabBar
-        tabs={tabStates}
-        activeTabId={
-          activeTabId || tabStates[0]?.clientDraftId || "placeholder-tab"
-        }
-        onTabClick={(clientDraftId: string) => {
-          if (clientDraftId !== "placeholder-tab") {
-            switchTab(clientDraftId);
+    <div className="flex h-full flex-col gap-3">
+      {!hideInternalTabBar ? (
+        <BillingTabBar
+          tabs={tabStates}
+          activeTabId={
+            activeTabId || tabStates[0]?.clientDraftId || "placeholder-tab"
           }
-        }}
-        onNewTab={handleNewTab}
-        onCloseTab={(clientDraftId: string) => {
-          if (clientDraftId !== "placeholder-tab") {
-            closeTab(clientDraftId);
-          }
-        }}
-        onRenameTab={renameTab}
-        onOpenDraftsPanel={handleOpenDraftsPanel}
-      />
+          onTabClick={(clientDraftId: string) => {
+            if (clientDraftId !== "placeholder-tab") {
+              switchTab(clientDraftId);
+            }
+          }}
+          onNewTab={handleNewTab}
+          onCloseTab={(clientDraftId: string) => {
+            if (clientDraftId !== "placeholder-tab") {
+              closeTab(clientDraftId);
+            }
+          }}
+          onRenameTab={renameTab}
+          onOpenDraftsPanel={handleOpenDraftsPanel}
+        />
+      ) : null}
 
       <div className="relative flex flex-1 flex-col gap-3 md:flex-row lg:flex-row">
         <Card className="py-0 ring-0 flex-1 flex flex-col min-h-0 bg-transparent shadow-none max-h-[40vh] md:max-h-[60vh] lg:max-h-none">

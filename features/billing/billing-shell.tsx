@@ -1,0 +1,63 @@
+"use client";
+
+import { BillingTabBar } from "@/components/billing/billing-tab-bar";
+import { useBillingTabs } from "@/hooks/use-billing-tabs";
+import type { ProductWithStock } from "@/lib/utils/products";
+import { toast } from "sonner";
+import { BillingWorkspace } from "./billing-workspace";
+
+interface BillingShellProps {
+  initialProducts: ProductWithStock[];
+  tenantSettings: {
+    defaultGstRate: number;
+    currency: string;
+  };
+}
+
+export function BillingShell({
+  initialProducts,
+  tenantSettings,
+}: BillingShellProps) {
+  const {
+    tabs,
+    activeTabId,
+    activeDraft,
+    createTab,
+    switchTab,
+    closeTab,
+    renameTab,
+  } = useBillingTabs();
+
+  return (
+    <div className="flex h-full flex-col gap-3 p-4">
+      <BillingTabBar
+        tabs={tabs}
+        activeTabId={activeTabId || tabs[0]?.clientDraftId || "placeholder-tab"}
+        onTabClick={(clientDraftId: string) => {
+          if (clientDraftId !== "placeholder-tab") {
+            switchTab(clientDraftId);
+          }
+        }}
+        onNewTab={createTab}
+        onCloseTab={(clientDraftId: string) => {
+          if (clientDraftId !== "placeholder-tab") {
+            closeTab(clientDraftId);
+          }
+        }}
+        onRenameTab={renameTab}
+        onOpenDraftsPanel={() => {
+          toast.info(
+            "Saved drafts panel will be added in the next billing story.",
+          );
+        }}
+      />
+
+      <BillingWorkspace
+        initialProducts={initialProducts}
+        tenantSettings={tenantSettings}
+        activeDraft={activeDraft}
+        hideInternalTabBar
+      />
+    </div>
+  );
+}

@@ -1,5 +1,5 @@
 import GstToggleButton from "@/app/(dashboard)/components/gst-toggle-button";
-import { BillingWorkspace } from "@/features/billing/billing-workspace";
+import { BillingShell } from "@/features/billing/billing-shell";
 import { InvoiceTable } from "@/features/invoices/invoice-table";
 import { getInvoices } from "@/lib/api/invoices";
 import { getProducts } from "@/lib/api/products";
@@ -26,7 +26,7 @@ const page = async () => {
         </div>
       </div>
       <div className="animate-in fade-in duration-500 delay-200 h-[calc(100vh-12rem)] min-h-136">
-        <BillingWorkspace
+        <BillingShell
           initialProducts={initialProducts}
           tenantSettings={{
             defaultGstRate: 18,
