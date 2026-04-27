@@ -12,19 +12,19 @@ import { z } from "zod";
 const createProductSchema = z.object({
   name: z.string().min(1, "Product name is required").max(200),
   basePrice: z.coerce
-    .number({ invalid_type_error: "Price must be a number" })
+    .number({ error: "Price must be a number" })
     .positive("Price must be greater than 0")
     .multipleOf(0.01, "Price can have at most 2 decimal places"),
   gstRate: z.coerce
-    .number()
+    .number({ error: "GST rate must be a number" })
     .refine((v) => [0, 5, 12, 18, 28].includes(v), "Select a valid GST rate"),
   deficitThreshold: z.coerce
-    .number({ invalid_type_error: "Threshold must be a number" })
+    .number({ error: "Threshold must be a number" })
     .int("Threshold must be a whole number")
     .min(1, "Threshold must be at least 1")
     .default(10),
   openingStock: z.coerce
-    .number()
+    .number({ error: "Opening stock must be a number" })
     .int("Opening stock must be a whole number")
     .min(0, "Opening stock cannot be negative")
     .default(0),
@@ -119,7 +119,10 @@ export const updateProductAction = validatedAction(
       return { success: "Product updated successfully" };
     } catch (err: unknown) {
       if (err instanceof Error) {
-        return { error: err.message || "Failed to update product", success: "" };
+        return {
+          error: err.message || "Failed to update product",
+          success: "",
+        };
       }
       return { error: "Failed to update product", success: "" };
     }
@@ -188,7 +191,7 @@ const updateStockSchema = z.object({
   productId: z.string().min(1, "Product ID is required"),
   outletId: z.string().min(1, "Outlet ID is required"),
   quantity: z.coerce
-    .number({ invalid_type_error: "Quantity must be a number" })
+    .number({ error: "Quantity must be a number" })
     .int("Quantity must be a whole number")
     .min(0, "Quantity cannot be negative"),
 });

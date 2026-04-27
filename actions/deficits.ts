@@ -9,7 +9,7 @@ import { z } from "zod";
 const resolveStockAdditionSchema = z.object({
   productId: z.string().min(1, "Product ID is required"),
   quantity: z.coerce
-    .number({ invalid_type_error: "Quantity must be a number" })
+    .number({ error: "Quantity must be a number" })
     .int("Quantity must be a whole number")
     .min(1, "Quantity must be at least 1"),
   notes: z.string().optional(),
@@ -59,7 +59,7 @@ export const resolveStockAdditionAction = validatedAction(
 const resolveAdjustmentSchema = z.object({
   productId: z.string().min(1, "Product ID is required"),
   reason: z.enum(["DAMAGE", "LOSS", "CORRECTION"], {
-    errorMap: () => ({ message: "Please select a reason" }),
+    error: 'Reason must be one of "DAMAGE", "LOSS", or "CORRECTION"',
   }),
   notes: z.string().optional(),
 });

@@ -18,7 +18,9 @@ export function validatedAction<S extends z.ZodType<any, any>, T>(
   return async (prevState: ActionState, formData: FormData) => {
     const result = schema.safeParse(Object.fromEntries(formData));
     if (!result.success) {
-      return { error: result.error.errors[0].message, success: "" } as T;
+      return {
+        error: result.error.issues.map((issue) => issue.message).join(", "),
+      } as T;
     }
     return action(result.data, formData);
   };
