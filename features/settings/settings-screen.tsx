@@ -16,9 +16,9 @@ import { BusinessSettingsForm } from "@/features/settings/business-settings-form
 import { ChangePasswordForm } from "@/features/settings/change-password-form";
 import { GstSettingsForm } from "@/features/settings/gst-settings-form";
 import { clearAuthSession } from "@/lib/auth-tokens";
-import { useDarkMode } from "@/lib/hooks/use-dark-mode";
 import { Tenant } from "@/lib/types/api";
 import { KeyRound, Laptop, LogOut, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -30,7 +30,8 @@ interface SettingsScreenProps {
 export function SettingsScreen({ settings }: SettingsScreenProps) {
   const router = useRouter();
   const [showLogout, setShowLogout] = useState(false);
-  const { theme, setTheme, mounted } = useDarkMode();
+  const { theme, setTheme } = useTheme();
+  console.log("Current theme:", theme);
 
   const handleLogoutConfirm = async () => {
     setShowLogout(false);
@@ -124,43 +125,41 @@ export function SettingsScreen({ settings }: SettingsScreenProps) {
               <p className="text-sm text-muted-foreground mb-3">
                 Choose how BillIt appears on your screen.
               </p>
-              {mounted && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <button
-                    onClick={() => handleThemeChange("light")}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
-                      theme === "light"
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <Sun className="h-6 w-6" />
-                    <span className="text-sm font-medium">Light</span>
-                  </button>
-                  <button
-                    onClick={() => handleThemeChange("dark")}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
-                      theme === "dark"
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <Moon className="h-6 w-6" />
-                    <span className="text-sm font-medium">Dark</span>
-                  </button>
-                  <button
-                    onClick={() => handleThemeChange("system")}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
-                      theme === "system"
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <Laptop className="h-6 w-6" />
-                    <span className="text-sm font-medium">System</span>
-                  </button>
-                </div>
-              )}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <button
+                  onClick={() => handleThemeChange("light")}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                    theme === "light"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                >
+                  <Sun className="h-6 w-6" />
+                  <span className="text-sm font-medium">Light</span>
+                </button>
+                <button
+                  onClick={() => handleThemeChange("dark")}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                    theme === "dark"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                >
+                  <Moon className="h-6 w-6" />
+                  <span className="text-sm font-medium">Dark</span>
+                </button>
+                <button
+                  onClick={() => handleThemeChange("system")}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                    theme === "system"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                >
+                  <Laptop className="h-6 w-6" />
+                  <span className="text-sm font-medium">System</span>
+                </button>
+              </div>
               <p className="text-xs text-muted-foreground mt-3">
                 <strong>System:</strong> Automatically matches your device
                 settings • <strong>Light:</strong> Always use light mode •{" "}
