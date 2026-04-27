@@ -41,7 +41,14 @@ export function InsufficientStockModal({
 }: InsufficientStockModalProps) {
   const [resolutions, setResolutions] = useState<
     Record<string, DeficitResolutionAction>
-  >({});
+  >(() => {
+    const initial: Record<string, DeficitResolutionAction> = {};
+    items.forEach((item) => {
+      initial[item.product.id] =
+        item.available > 0 ? "use-available" : "remove";
+    });
+    return initial;
+  });
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
   const announcementRef = useRef<HTMLDivElement>(null);
 
@@ -61,16 +68,6 @@ export function InsufficientStockModal({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onCancel]);
-
-  useEffect(() => {
-    // Default all items to "use-available" if possible, else "remove"
-    const initial: Record<string, DeficitResolutionAction> = {};
-    items.forEach((item) => {
-      initial[item.product.id] =
-        item.available > 0 ? "use-available" : "remove";
-    });
-    setResolutions(initial);
-  }, [items]);
 
   // Calculate summary of actions
   const summary = useMemo(() => {
