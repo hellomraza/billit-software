@@ -2,19 +2,20 @@
 
 import { MoneyText } from "@/components/shared/money-text";
 import { QuantityControl } from "@/components/shared/quantity-control";
-import { useBillingItems } from "@/stores/billing-store";
+import type { DraftItem } from "@/types/draft";
 import { ShoppingCart, X } from "lucide-react";
 
 interface BillingCartProps {
+  items: DraftItem[];
   onUpdateQuantity: (productId: string, qty: number) => void;
   onRemoveItem: (productId: string) => void;
 }
 
 export function BillingCart({
+  items,
   onUpdateQuantity,
   onRemoveItem,
 }: BillingCartProps) {
-  const items = useBillingItems();
   if (items.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-muted-foreground h-full min-h-75">

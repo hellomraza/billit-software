@@ -16,11 +16,6 @@ import { InvoiceStockConflictModal } from "@/features/invoices/invoice-stock-con
 import { getStoredOutletId, getStoredTenant } from "@/lib/auth-tokens";
 import { ProductWithStock } from "@/lib/utils/products";
 import { useBillingTabsStore } from "@/store/billing-tabs-store";
-import {
-  useBillingActions,
-  useBillingCustomerDetails,
-  useBillingPaymentMethod,
-} from "@/stores/billing-store";
 import { useIsGstEnabled } from "@/stores/get-store";
 import {
   useInvoiceActions,
@@ -28,7 +23,12 @@ import {
   useInvoiceStore,
 } from "@/stores/invoice-store";
 import { PaymentMethod } from "@/types";
-import type { TabState } from "@/types/draft";
+import type {
+  DraftItem,
+  PaymentMethod as DraftPaymentMethod,
+  LocalDraft,
+  TabState,
+} from "@/types/draft";
 import { openDB } from "idb";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -37,7 +37,13 @@ import { BillingCart } from "./billing-cart";
 import { BillingCustomerDetails } from "./billing-customer-details";
 import { BillingSearch } from "./billing-search";
 import { BillingSummaryPanel } from "./billing-summary-panel";
-import { useBillingCart } from "./use-billing-cart";
+
+type LegacyDraftState = {
+  items?: DraftItem[];
+  customerName?: string;
+  customerPhone?: string;
+  paymentMethod?: PaymentMethod;
+};
 
 interface BillingWorkspaceProps {
   initialProducts: ProductWithStock[];
@@ -45,20 +51,26 @@ interface BillingWorkspaceProps {
     defaultGstRate: number;
     currency: string;
   };
+  activeDraft?: LocalDraft;
+  hideInternalTabBar?: boolean;
+  onUpdateActiveCart?: (items: DraftItem[]) => void;
+  onUpdateActiveCustomer?: (name: string, phone: string) => void;
+  onUpdateActivePayment?: (method: DraftPaymentMethod) => void;
+  onClearActiveTab?: () => void;
 }
 
 export function BillingWorkspace({
   initialProducts,
   tenantSettings,
+  activeDraft,
+  hideInternalTabBar = false,
+  onUpdateActiveCart,
+  onUpdateActiveCustomer,
+  onUpdateActivePayment,
+  onClearActiveTab,
 }: BillingWorkspaceProps) {
-  const billingCart = useBillingCart();
   const gstEnabled = useIsGstEnabled();
   const products = initialProducts;
-  const cart = billingCart.items;
-  const { clearCart, setItems: setBillingItems } = billingCart;
-  const billingActions = useBillingActions();
-  const { customerName, customerPhone } = useBillingCustomerDetails();
-  const paymentMethod = useBillingPaymentMethod();
   const drafts = useBillingTabsStore((state) => state.drafts);
   const openTabIds = useBillingTabsStore((state) => state.openTabIds);
   const activeTabId = useBillingTabsStore((state) => state.activeTabId);
@@ -78,6 +90,47 @@ export function BillingWorkspace({
   const invoiceActions = useInvoiceActions();
   const phase = useInvoicePhase();
   const migrationAttemptedRef = useRef(false);
+  const cart = useMemo<DraftItem[]>(
+    () => activeDraft?.items ?? [],
+    [activeDraft],
+  );
+  const customerName = activeDraft?.customerName ?? "";
+  const customerPhone = activeDraft?.customerPhone ?? "";
+  const paymentMethod = activeDraft?.paymentMethod ?? "";
+  const selectedPaymentMethod: PaymentMethod =
+    paymentMethod === "" ? "CASH" : paymentMethod;
+
+  const updateActiveCart = (nextItems: LocalDraft["items"]) => {
+    if (!activeDraft) {
+      return;
+    }
+
+    onUpdateActiveCart?.(nextItems);
+  };
+
+  const updateActiveCustomer = (name: string, phone: string) => {
+    if (!activeDraft) {
+      return;
+    }
+
+    onUpdateActiveCustomer?.(name, phone);
+  };
+
+  const updateActivePayment = (method: DraftPaymentMethod) => {
+    if (!activeDraft) {
+      return;
+    }
+
+    onUpdateActivePayment?.(method);
+  };
+
+  const handlePaymentMethodChange = (method: DraftPaymentMethod) => {
+    if (!method) {
+      return;
+    }
+
+    updateActivePayment(method);
+  };
 
   const tabStates = useMemo<TabState[]>(() => {
     return drafts
@@ -115,7 +168,7 @@ export function BillingWorkspace({
         return;
       }
 
-      let parsedDraft: any;
+      let parsedDraft: unknown;
       if (typeof rawDraft === "string") {
         try {
           parsedDraft = JSON.parse(rawDraft);
@@ -126,7 +179,11 @@ export function BillingWorkspace({
         parsedDraft = rawDraft;
       }
 
-      const oldState = parsedDraft?.state ?? parsedDraft;
+      const oldState: LegacyDraftState | undefined =
+        typeof parsedDraft === "object" && parsedDraft !== null
+          ? ((parsedDraft as { state?: LegacyDraftState }).state ??
+            (parsedDraft as LegacyDraftState))
+          : undefined;
 
       if (!Array.isArray(oldState?.items) || oldState.items.length === 0) {
         return;
@@ -186,6 +243,10 @@ export function BillingWorkspace({
   const isSubmitting = phase === "submitting";
 
   const handleSelectProduct = (product: ProductWithStock) => {
+    if (!activeDraft) {
+      return;
+    }
+
     const existing = cart.find((item) => item.productId === product._id);
     const requestedQty = existing ? existing.quantity + 1 : 1;
     const availableStock = product.stock || 0;
@@ -196,27 +257,47 @@ export function BillingWorkspace({
       });
     }
 
-    billingActions.addItem({
-      productId: product._id,
-      productName: product.name,
-      unitPrice: product.basePrice,
-      gstRate: product.gstRate,
-      quantity: 1,
-    });
+    updateActiveCart([
+      ...cart.filter((item) => item.productId !== product._id),
+      {
+        productId: product._id,
+        productName: product.name,
+        unitPrice: product.basePrice,
+        gstRate: product.gstRate,
+        quantity: requestedQty,
+      },
+    ]);
   };
 
   const handleUpdateQuantity = (productId: string, quantity: number) => {
+    if (!activeDraft) {
+      return;
+    }
+
     const product = products.find((p) => p._id === productId);
     const availableStock = product?.stock ?? 0;
     if (product && quantity > availableStock) {
       toast.warning(`Insufficient stock for ${product.name}`);
     }
 
-    billingActions.updateQuantity(productId, quantity);
+    if (quantity <= 0) {
+      updateActiveCart(cart.filter((item) => item.productId !== productId));
+      return;
+    }
+
+    updateActiveCart(
+      cart.map((item) =>
+        item.productId === productId ? { ...item, quantity } : item,
+      ),
+    );
   };
 
   const handleRemoveItem = (productId: string) => {
-    billingActions.removeItem(productId);
+    if (!activeDraft) {
+      return;
+    }
+
+    updateActiveCart(cart.filter((item) => item.productId !== productId));
   };
 
   const openFinalizeDialog = () => {
@@ -228,9 +309,6 @@ export function BillingWorkspace({
   };
 
   const syncDraftToInvoiceStore = () => {
-    const normalizedPaymentMethod: PaymentMethod =
-      paymentMethod === "" ? "CASH" : paymentMethod;
-
     invoiceActions.setCart(
       cart.map((item) => ({
         productId: item.productId,
@@ -243,7 +321,7 @@ export function BillingWorkspace({
     );
     invoiceActions.setCustomerName(customerName);
     invoiceActions.setCustomerPhone(customerPhone);
-    invoiceActions.setPaymentMethod(normalizedPaymentMethod);
+    invoiceActions.setPaymentMethod(selectedPaymentMethod);
   };
 
   const handleFinalizeConfirm = async () => {
@@ -253,15 +331,19 @@ export function BillingWorkspace({
     }
 
     syncDraftToInvoiceStore();
-    const result = await invoiceActions.submitInvoice(gstEnabled);
+    const result = await invoiceActions.submitInvoice(
+      gstEnabled,
+      undefined,
+      activeDraft?.clientDraftId,
+    );
 
     if (result.success && result.phase === "success") {
       invoiceActions.resetInvoiceDraft();
-      clearCart();
+      onClearActiveTab?.();
       setIsFinalizeDialogOpen(false);
 
       toast.success(`Invoice #${result.invoice?.invoiceNumber} Created`, {
-        description: `Total ${tenantSettings.currency} ${result.invoice?.grandTotal.toFixed(2)} via ${paymentMethod}`,
+        description: `Total ${tenantSettings.currency} ${result.invoice?.grandTotal.toFixed(2)} via ${selectedPaymentMethod}`,
       });
     } else if (result.phase === "stock_conflict") {
       setIsFinalizeDialogOpen(false);
@@ -315,13 +397,13 @@ export function BillingWorkspace({
       toast.error("All items were removed", {
         description: "Your bill has been cleared. No invoice was created.",
       });
-      clearCart();
+      updateActiveCart([]);
       invoiceActions.resetInvoiceDraft();
       invoiceActions.closeStockModal();
       return;
     }
 
-    setBillingItems(updatedCart);
+    updateActiveCart(updatedCart);
 
     invoiceActions.setCart(
       updatedCart.map((item) => ({
@@ -348,15 +430,19 @@ export function BillingWorkspace({
       }
     });
 
-    const result = await invoiceActions.submitInvoice(gstEnabled, overrides);
+    const result = await invoiceActions.submitInvoice(
+      gstEnabled,
+      overrides,
+      activeDraft?.clientDraftId,
+    );
 
     if (result.success && result.phase === "success") {
       invoiceActions.closeStockModal();
       invoiceActions.resetInvoiceDraft();
-      clearCart();
+      onClearActiveTab?.();
 
       toast.success(`Invoice #${result.invoice?.invoiceNumber} Created`, {
-        description: `Total ${tenantSettings.currency} ${result.invoice?.grandTotal.toFixed(2)} via ${paymentMethod}`,
+        description: `Total ${tenantSettings.currency} ${result.invoice?.grandTotal.toFixed(2)} via ${selectedPaymentMethod}`,
       });
 
       if (removedItems.length > 0) {
@@ -372,31 +458,33 @@ export function BillingWorkspace({
         description: result.message || "Failed to create invoice",
       });
       invoiceActions.closeStockModal();
-      setBillingItems(updatedCart);
+      updateActiveCart(updatedCart);
     }
   };
 
   return (
-    <div className="flex h-full flex-col gap-3 p-4">
-      <BillingTabBar
-        tabs={tabStates}
-        activeTabId={
-          activeTabId || tabStates[0]?.clientDraftId || "placeholder-tab"
-        }
-        onTabClick={(clientDraftId: string) => {
-          if (clientDraftId !== "placeholder-tab") {
-            switchTab(clientDraftId);
+    <div className="flex h-full flex-col gap-3">
+      {!hideInternalTabBar ? (
+        <BillingTabBar
+          tabs={tabStates}
+          activeTabId={
+            activeTabId || tabStates[0]?.clientDraftId || "placeholder-tab"
           }
-        }}
-        onNewTab={handleNewTab}
-        onCloseTab={(clientDraftId: string) => {
-          if (clientDraftId !== "placeholder-tab") {
-            closeTab(clientDraftId);
-          }
-        }}
-        onRenameTab={renameTab}
-        onOpenDraftsPanel={handleOpenDraftsPanel}
-      />
+          onTabClick={(clientDraftId: string) => {
+            if (clientDraftId !== "placeholder-tab") {
+              switchTab(clientDraftId);
+            }
+          }}
+          onNewTab={handleNewTab}
+          onCloseTab={(clientDraftId: string) => {
+            if (clientDraftId !== "placeholder-tab") {
+              closeTab(clientDraftId);
+            }
+          }}
+          onRenameTab={renameTab}
+          onOpenDraftsPanel={handleOpenDraftsPanel}
+        />
+      ) : null}
 
       <div className="relative flex flex-1 flex-col gap-3 md:flex-row lg:flex-row">
         <Card className="py-0 ring-0 flex-1 flex flex-col min-h-0 bg-transparent shadow-none max-h-[40vh] md:max-h-[60vh] lg:max-h-none">
@@ -408,6 +496,7 @@ export function BillingWorkspace({
 
         <Card className="w-full py-0 border-0 md:w-80 lg:w-100 flex flex-col shadow-sm overflow-hidden shrink-0 min-h-auto md:min-h-125 lg:min-h-125 max-h-[calc(100vh-16rem)] md:max-h-[calc(100vh-10rem)] lg:max-h-none sticky bottom-0 md:sticky md:top-4 lg:static bg-background z-10 rounded-t-lg md:rounded-lg">
           <BillingCart
+            items={cart}
             onUpdateQuantity={handleUpdateQuantity}
             onRemoveItem={handleRemoveItem}
           />
@@ -417,6 +506,8 @@ export function BillingWorkspace({
             subtotal={subtotal}
             gstAmount={gstAmount}
             grandTotal={grandTotal}
+            paymentMethod={selectedPaymentMethod}
+            onPaymentMethodChange={handlePaymentMethodChange}
           />
         </Card>
       </div>
@@ -437,7 +528,7 @@ export function BillingWorkspace({
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="rounded-md border p-3">
                 <p className="text-muted-foreground">Payment Method</p>
-                <p className="font-semibold mt-1">{paymentMethod}</p>
+                <p className="font-semibold mt-1">{selectedPaymentMethod}</p>
               </div>
               <div className="rounded-md border p-3">
                 <p className="text-muted-foreground">Tax Mode</p>
@@ -494,7 +585,16 @@ export function BillingWorkspace({
               <p className="text-sm font-medium mb-3">
                 Customer Details (Optional)
               </p>
-              <BillingCustomerDetails />
+              <BillingCustomerDetails
+                customerName={customerName}
+                customerPhone={customerPhone}
+                onCustomerNameChange={(name) =>
+                  updateActiveCustomer(name, customerPhone)
+                }
+                onCustomerPhoneChange={(phone) =>
+                  updateActiveCustomer(customerName, phone)
+                }
+              />
             </div>
           </div>
 
@@ -520,7 +620,9 @@ export function BillingWorkspace({
         isDangerous={true}
         onConfirm={() => {
           invoiceActions.resetInvoiceDraft();
-          clearCart();
+          updateActiveCart([]);
+          updateActiveCustomer("", "");
+          updateActivePayment("");
         }}
         onCancel={invoiceActions.closeClearDialog}
       />
