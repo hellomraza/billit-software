@@ -7,7 +7,7 @@ import { z } from "zod";
 
 // A.1 Signup Schema
 const signupSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: z.email("Please enter a valid email address"),
   password: z
     .string()
     .min(8, "Password must be at least 8 characters")
@@ -28,14 +28,17 @@ export const signupAction = validatedAction(signupSchema, async (data) => {
       accessToken: res.accessToken,
       tenant: res.tenant,
     };
-  } catch (err: any) {
-    return { error: err.message, success: "" };
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      return { error: err.message, success: "" };
+    }
+    return { error: "An unknown error occurred", success: "" };
   }
 });
 
 // A.2 Login Schema
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: z.email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -55,12 +58,12 @@ export const loginAction = validatedAction(loginSchema, async (data) => {
       accessToken: res.accessToken,
       tenant: res.tenant,
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
     // Show generic error for 401 to prevent account enumeration
-    if (err.message && err.message.includes("401")) {
+    if (err instanceof Error && err.message.includes("401")) {
       return { error: "Incorrect email or password." };
     }
-    return { error: err.message, success: "" };
+    return { error: "An unknown error occurred", success: "" };
   }
 });
 
@@ -70,7 +73,7 @@ export const logoutAction = async () => {
     const api = await createServerAxios();
     await api.post("/auth/logout");
     return { success: "Logged out successfully" };
-  } catch (err: any) {
+  } catch {
     // Even if logout fails on server, we still want to clear client-side state
     return { success: "Logged out successfully" };
   }
@@ -103,7 +106,7 @@ export const forgotPasswordAction = validatedAction(
         resetToken: res.token ?? null,
         error: "",
       };
-    } catch (err: any) {
+    } catch {
       // Even on error, show the same success message for security
       return {
         success:
@@ -148,12 +151,12 @@ export const resetPasswordAction = validatedAction(
           "Password reset successfully. A confirmation email has been sent to your registered email address.",
         error: "",
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Check if token is invalid/expired
-      if (err.message && err.message.includes("400")) {
+      if (err instanceof Error && err.message.includes("400")) {
         return { error: "Reset link has expired. Please request a new one." };
       }
-      return { error: err.message };
+      return { error: "An unknown error occurred", success: "" };
     }
   },
 );
