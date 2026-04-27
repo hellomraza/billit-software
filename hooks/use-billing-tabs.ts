@@ -1,7 +1,7 @@
 "use client";
 
 import { getStoredOutletId, getStoredTenant } from "@/lib/auth-tokens";
-import { useBillingTabsStore } from "@/store/billing-tabs-store";
+import { useBillingTabsStore } from "@/stores/billing-tabs-store";
 import type {
   DraftItem,
   LocalDraft,

@@ -15,7 +15,7 @@ import {
 import { InvoiceStockConflictModal } from "@/features/invoices/invoice-stock-conflict-modal";
 import { getStoredOutletId, getStoredTenant } from "@/lib/auth-tokens";
 import { ProductWithStock } from "@/lib/utils/products";
-import { useBillingTabsStore } from "@/store/billing-tabs-store";
+import { useBillingTabsStore } from "@/stores/billing-tabs-store";
 import { useIsGstEnabled } from "@/stores/get-store";
 import {
   useInvoiceActions,
