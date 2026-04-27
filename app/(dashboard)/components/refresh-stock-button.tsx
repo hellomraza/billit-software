@@ -4,7 +4,7 @@ import { RefreshCw } from "lucide-react";
 import React from "react";
 
 const RefreshStockButton = () => {
-  const [isRefreshing, setIsRefreshing] = React.useState(false);
+  const [isRefreshing] = React.useState(false);
   return (
     <Button
       variant="outline"

@@ -34,11 +34,7 @@ interface ProductsScreenProps {
   };
 }
 
-export function ProductsScreen({
-  products,
-  outletId,
-  pagination,
-}: ProductsScreenProps) {
+export function ProductsScreen({ products, outletId }: ProductsScreenProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");

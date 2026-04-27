@@ -1,4 +1,4 @@
-import { Invoice, InvoiceItem } from "@/types";
+import { Invoice } from "@/types";
 
 export type ValidationError = { field: string; message: string };
 

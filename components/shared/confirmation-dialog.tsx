@@ -35,7 +35,6 @@ export function ConfirmationDialog({
   onConfirm,
   onCancel,
 }: ConfirmationDialogProps) {
-  const triggerRef = useRef<HTMLElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
 
   // Handle Escape key and focus management
