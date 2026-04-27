@@ -10,7 +10,7 @@ export default function ForgotPasswordPage() {
       <div className="space-y-2 text-center">
         <h1 className="text-2xl font-bold">Forgot your password?</h1>
         <p className="text-sm text-muted-foreground">
-          Enter your email address and we'll send you a link to reset it.
+          Enter your email address and we&rsquo;ll send you a link to reset it.
         </p>
       </div>
 
@@ -18,7 +18,7 @@ export default function ForgotPasswordPage() {
 
       <div className="text-center space-y-3">
         <p className="text-sm text-muted-foreground">
-          Don't have an account?{" "}
+          Don&rsquo;t have an account?{" "}
           <Link
             href="/signup"
             className="text-primary font-medium hover:underline"

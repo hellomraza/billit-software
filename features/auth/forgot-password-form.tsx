@@ -36,7 +36,7 @@ export function ForgotPasswordForm() {
         </div>
 
         <p className="text-sm text-muted-foreground">
-          Didn't receive an email? Check your spam folder or{" "}
+          Didn&rsquo;t receive an email? Check your spam folder or{" "}
           <button
             onClick={() => window.location.reload()}
             className="text-primary underline hover:no-underline"
