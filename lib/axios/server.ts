@@ -23,7 +23,7 @@ export async function createServerAxios() {
         status: error.response?.status,
         data: error.response?.data,
       });
-      return Promise.reject(new Error(error));
+      return Promise.reject(error);
     },
   );
 
