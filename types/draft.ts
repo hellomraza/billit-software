@@ -77,4 +77,6 @@ export interface BillingTabsState {
   getDraft: (clientDraftId: string) => LocalDraft | undefined;
   getSavedDrafts: () => LocalDraft[];
   getPendingSyncDrafts: () => LocalDraft[];
+  draftsLoadFailed?: boolean;
+  setDraftsLoadFailed?: (failed: boolean) => void;
 }
