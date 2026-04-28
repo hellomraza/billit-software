@@ -12,28 +12,41 @@ import {
 } from "@/components/ui/select";
 import { PAYMENT_METHODS } from "@/lib/constants/defaults";
 import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
+import { useInvoiceFiltersStore } from "@/stores/invoice-filters-store";
 import { X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect } from "react";
 
 export function InvoiceFiltersBar() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [invoiceNumber, setInvoiceNumber] = useState(
-    searchParams.get("invoiceNumber") || "",
+  const invoiceFiltersBar = useInvoiceFiltersStore(
+    (state) => state.invoiceFiltersBar,
   );
-  const [paymentMethod, setPaymentMethod] = useState(
-    searchParams.get("paymentMethod") || "",
-  );
-  const [gstEnabled, setGstEnabled] = useState(
-    searchParams.get("gstEnabled") || "",
-  );
-  const [dateFrom, setDateFrom] = useState(searchParams.get("dateFrom") || "");
-  const [dateTo, setDateTo] = useState(searchParams.get("dateTo") || "");
-  const [productId, setProductId] = useState(
-    searchParams.get("productId") || "",
-  );
+  const {
+    setInvoiceFiltersBar,
+    mergeInvoiceFiltersBar,
+    resetInvoiceFiltersBar,
+  } = useInvoiceFiltersStore((state) => state.actions);
+
+  const invoiceNumber = invoiceFiltersBar.invoiceNumber || "";
+  const paymentMethod = invoiceFiltersBar.paymentMethod || "";
+  const gstEnabled = invoiceFiltersBar.gstEnabled || "";
+  const dateFrom = invoiceFiltersBar.dateFrom || "";
+  const dateTo = invoiceFiltersBar.dateTo || "";
+  const productId = invoiceFiltersBar.productId || "";
+
+  useEffect(() => {
+    setInvoiceFiltersBar({
+      invoiceNumber: searchParams.get("invoiceNumber") || "",
+      paymentMethod: searchParams.get("paymentMethod") || "",
+      gstEnabled: searchParams.get("gstEnabled") || "",
+      dateFrom: searchParams.get("dateFrom") || "",
+      dateTo: searchParams.get("dateTo") || "",
+      productId: searchParams.get("productId") || "",
+    });
+  }, [searchParams, setInvoiceFiltersBar]);
 
   const debouncedInvoiceNumber = useDebouncedValue(invoiceNumber, 300);
   const debouncedProductId = useDebouncedValue(productId, 300);
@@ -69,41 +82,36 @@ export function InvoiceFiltersBar() {
 
   const handlePaymentMethodChange = (value: string | null) => {
     if (!value) {
-      setPaymentMethod("");
+      mergeInvoiceFiltersBar({ paymentMethod: "" });
       updateParams({ paymentMethod: undefined });
       return;
     }
-    setPaymentMethod(value);
+    mergeInvoiceFiltersBar({ paymentMethod: value });
     updateParams({ paymentMethod: value || undefined });
   };
 
   const handleGstEnabledChange = (value: string | null) => {
     if (!value) {
-      setGstEnabled("");
+      mergeInvoiceFiltersBar({ gstEnabled: "" });
       updateParams({ gstEnabled: undefined });
       return;
     }
-    setGstEnabled(value);
+    mergeInvoiceFiltersBar({ gstEnabled: value });
     updateParams({ gstEnabled: value || undefined });
   };
 
   const handleDateFromChange = (value: string) => {
-    setDateFrom(value);
+    mergeInvoiceFiltersBar({ dateFrom: value });
     updateParams({ dateFrom: value || undefined });
   };
 
   const handleDateToChange = (value: string) => {
-    setDateTo(value);
+    mergeInvoiceFiltersBar({ dateTo: value });
     updateParams({ dateTo: value || undefined });
   };
 
   const handleReset = () => {
-    setInvoiceNumber("");
-    setPaymentMethod("");
-    setGstEnabled("");
-    setDateFrom("");
-    setDateTo("");
-    setProductId("");
+    resetInvoiceFiltersBar();
     router.push("?page=1");
   };
 
@@ -126,7 +134,7 @@ export function InvoiceFiltersBar() {
             placeholder="Search invoice #..."
             value={invoiceNumber}
             onChange={(e) => {
-              setInvoiceNumber(e.target.value);
+              mergeInvoiceFiltersBar({ invoiceNumber: e.target.value });
             }}
             onBlur={handleInvoiceNumberChange}
             className="h-10"
@@ -199,7 +207,7 @@ export function InvoiceFiltersBar() {
             placeholder="Search product..."
             value={productId}
             onChange={(e) => {
-              setProductId(e.target.value);
+              mergeInvoiceFiltersBar({ productId: e.target.value });
             }}
             onBlur={handleProductIdChange}
             className="h-10"
