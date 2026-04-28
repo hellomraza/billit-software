@@ -463,7 +463,7 @@ export function BillingWorkspace({
   };
 
   return (
-    <div className="flex h-full flex-col gap-3">
+    <div className="flex h-full flex-col gap-3 max-h-[calc(100%-6rem)]">
       {!hideInternalTabBar ? (
         <BillingTabBar
           tabs={tabStates}
@@ -486,15 +486,15 @@ export function BillingWorkspace({
         />
       ) : null}
 
-      <div className="relative flex flex-1 flex-col gap-3 md:flex-row lg:flex-row">
-        <Card className="py-0 ring-0 flex-1 flex flex-col min-h-0 bg-transparent shadow-none max-h-[40vh] md:max-h-[60vh] lg:max-h-none">
+      <div className="relative flex h-full  flex-col gap-3 md:flex-row">
+        <Card className="py-0 ring-0 flex-1 flex flex-col bg-transparent shadow-none ">
           <BillingSearch
             onSelectProduct={handleSelectProduct}
             initialProducts={initialProducts}
           />
         </Card>
 
-        <Card className="w-full py-0 border-0 md:w-80 lg:w-100 flex flex-col shadow-sm overflow-hidden shrink-0 min-h-auto md:min-h-125 lg:min-h-125 max-h-[calc(100vh-16rem)] md:max-h-[calc(100vh-10rem)] lg:max-h-none sticky bottom-0 md:sticky md:top-4 lg:static bg-background z-10 rounded-t-lg md:rounded-lg">
+        <Card className="w-full h-full py-0 border-0 md:w-80 lg:w-100 flex flex-col shadow-sm overflow-hidden shrink-0  sticky bottom-0 md:sticky md:top-4 lg:static bg-background z-10 rounded-t-lg md:rounded-lg">
           <BillingCart
             items={cart}
             onUpdateQuantity={handleUpdateQuantity}
@@ -628,6 +628,7 @@ export function BillingWorkspace({
       />
 
       <InvoiceStockConflictModal
+        key={isStockModalOpen ? "open" : "closed"} // Force remount to reset internal state
         isOpen={isStockModalOpen}
         onConfirm={handleStockConflictDecision}
         onCancel={invoiceActions.closeStockModal}

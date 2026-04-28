@@ -122,7 +122,7 @@ export function BillingTabBar(props: BillingTabBarProps) {
   }
 
   return (
-    <div className="rounded-xl border bg-background/95 px-3 py-2 shadow-sm backdrop-blur supports-backdrop-filter:bg-background/80">
+    <div className="h-16 rounded-xl border bg-background/95 px-3 py-2 shadow-sm backdrop-blur supports-backdrop-filter:bg-background/80">
       <div className="flex min-w-0 items-center gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto overflow-y-hidden whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {tabs.map((tab) => {
