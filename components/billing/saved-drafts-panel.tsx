@@ -15,21 +15,27 @@ interface SavedDraftsPanelProps {
 }
 
 export default function SavedDraftsPanel({ open, onOpenChange }: SavedDraftsPanelProps) {
-  const drafts = useBillingTabsStore((s) => s.drafts);
-  const openTabIds = useBillingTabsStore((s) => s.openTabIds);
+  // Use the store's canonical getter for saved drafts (all non-deleted, not open)
+  const getSaved = useBillingTabsStore((s) => s.getSavedDrafts);
+  const saved = getSaved();
   const reopenDraft = useBillingTabsStore((s) => s.reopenDraft);
+  const markDraftDeleted = useBillingTabsStore((s) => s.markDraftDeleted);
   const setState = useBillingTabsStore.setState;
-
-  const saved = useMemo(() => {
-    return drafts.filter((d) => !d.isDeleted && !openTabIds.includes(d.clientDraftId));
-  }, [drafts, openTabIds]);
 
   useEffect(() => {
     // noop for now
   }, [open]);
 
   const handleOpen = (clientDraftId: string) => {
+    // Ensure the draft exists locally, then reopen as an active tab
+    const local = useBillingTabsStore.getState().drafts.find((d) => d.clientDraftId === clientDraftId);
+    if (!local) {
+      toast.error("Draft not found locally");
+      return;
+    }
+
     reopenDraft(clientDraftId);
+    toast.success("Draft opened");
     onOpenChange(false);
   };
 
@@ -37,15 +43,20 @@ export default function SavedDraftsPanel({ open, onOpenChange }: SavedDraftsPane
     if (!confirm("Permanently discard this bill? This cannot be undone.")) return;
     try {
       await clientAxios.delete(`/drafts/${clientDraftId}`);
-    } catch (err) {
-      // ignore server errors but notify user
+      // mark deleted locally for consistency
+      markDraftDeleted(clientDraftId);
+      toast.success("Draft discarded");
+    } catch (err: any) {
+      // If server returns 4xx, inform user and do not retry; still remove locally to avoid stale UI.
       console.warn(err);
-      toast.error("Failed to notify server about discard. Proceeding locally.");
+      const status = err?.response?.status;
+      if (status >= 400 && status < 500) {
+        toast.error("Server rejected deletion. Removing locally.");
+      } else {
+        toast.error("Could not contact server. Removing locally.");
+      }
+      setState((state) => ({ drafts: state.drafts.filter((d) => d.clientDraftId !== clientDraftId) }));
     }
-
-    // Remove locally from persisted store
-    setState((state) => ({ drafts: state.drafts.filter((d) => d.clientDraftId !== clientDraftId) }));
-    toast.success("Draft discarded");
   };
 
   return (
