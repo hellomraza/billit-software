@@ -26,7 +26,9 @@ clientAxios.interceptors.response.use(
       error?.response?.data?.error ||
       error?.message ||
       "An unexpected error occurred";
-    return Promise.reject(new Error(message));
+    // Preserve the original axios error object so callers can inspect `error.response`
+    error.message = message;
+    return Promise.reject(error);
   },
 );
 
