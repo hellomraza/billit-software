@@ -32,23 +32,24 @@ export function InvoiceStockConflictModal({
   const items = useInvoiceInsufficientItems();
   const phase = useInvoicePhase();
   const isSubmitting = phase === "submitting";
-  const [decisions, setDecisions] = useState<Record<string, ItemDecision>>({});
+  const [decisions, setDecisions] = useState<Record<string, ItemDecision>>(
+    () => {
+      const initial: Record<string, ItemDecision> = {};
+      items.forEach((item) => {
+        initial[item.productId] =
+          item.currentStock > 0 ? "use-available" : "remove";
+      });
+      return initial;
+    },
+  );
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
   const announcementRef = useRef<HTMLDivElement>(null);
 
   // Initialize decisions
   useEffect(() => {
     if (!isOpen) return;
-    const initial: Record<string, ItemDecision> = {};
-    items.forEach((item) => {
-      initial[item.productId] =
-        item.currentStock > 0 ? "use-available" : "remove";
-    });
-    setDecisions(initial);
-
-    // Focus cancel button when modal opens
     setTimeout(() => cancelButtonRef.current?.focus(), 50);
-  }, [isOpen, items]);
+  }, [isOpen]);
 
   // Calculate summary
   const summary = useMemo(() => {
@@ -99,7 +100,7 @@ export function InvoiceStockConflictModal({
       />
       <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
         <DialogContent
-          className="max-w-2xl max-h-[85vh] flex flex-col"
+          className="sm:max-w-2xl max-h-[85vh] flex flex-col"
           role="alertdialog"
           aria-modal="true"
           aria-labelledby="stock-conflict-title"
@@ -239,6 +240,7 @@ export function InvoiceStockConflictModal({
               onClick={onCancel}
               disabled={isSubmitting}
               ref={cancelButtonRef}
+              autoFocus
             >
               Cancel
             </Button>
