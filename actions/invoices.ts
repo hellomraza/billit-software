@@ -93,7 +93,8 @@ export async function submitInvoiceAction(
         return {
           success: false,
           phase: "stock_conflict",
-          insufficientItems: err.response.data.insufficientItems || [],
+          insufficientItems:
+            err.response.data?.details?.insufficientItems || [],
         };
       }
 
