@@ -62,20 +62,33 @@ export default function SavedDraftsPanel({ open, onOpenChange }: SavedDraftsPane
               <div className="p-8 text-center text-muted-foreground">No saved bills. Bills you close will appear here.</div>
             ) : (
               <div className="grid gap-3">
-                {saved.map((d) => (
-                  <div key={d.clientDraftId} className="flex items-center justify-between p-3 border rounded">
-                    <div className="min-w-0">
-                      <div className="font-medium truncate">{d.tabLabel}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {d.items.length} item{d.items.length !== 1 ? "s" : ""} • Last updated {formatDistanceToNow(new Date(d.localUpdatedAt || d.updatedAt || d.createdAt), { addSuffix: true })}
+                {saved.map((d) => {
+                  const estimatedTotal = d.items.reduce(
+                    (sum, it) => sum + (it.unitPrice || 0) * (it.quantity || 0),
+                    0,
+                  );
+                  const nf = new Intl.NumberFormat("en-IN", {
+                    style: "currency",
+                    currency: "INR",
+                    maximumFractionDigits: 2,
+                  });
+
+                  return (
+                    <div key={d.clientDraftId} className="flex items-center justify-between p-3 border rounded">
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{d.tabLabel}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {d.items.length} item{d.items.length !== 1 ? "s" : ""} • Last updated {formatDistanceToNow(new Date(d.localUpdatedAt || d.updatedAt || d.createdAt), { addSuffix: true })}
+                        </div>
+                        <div className="text-sm font-semibold mt-1">{nf.format(estimatedTotal)}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button onClick={() => handleOpen(d.clientDraftId)}>Open</Button>
+                        <Button variant="destructive" onClick={() => handleDiscard(d.clientDraftId)}>Discard</Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button onClick={() => handleOpen(d.clientDraftId)}>Open</Button>
-                      <Button variant="destructive" onClick={() => handleDiscard(d.clientDraftId)}>Discard</Button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </Card>
