@@ -2,6 +2,7 @@
 
 import { MoneyText } from "@/components/shared/money-text";
 import { QuantityControl } from "@/components/shared/quantity-control";
+import type { StockWarning } from "@/lib/utils/cross-tab-stock";
 import type { DraftItem } from "@/types/draft";
 import { ShoppingCart, X } from "lucide-react";
 
@@ -9,12 +10,14 @@ interface BillingCartProps {
   items: DraftItem[];
   onUpdateQuantity: (productId: string, qty: number) => void;
   onRemoveItem: (productId: string) => void;
+  stockWarnings?: Map<string, StockWarning>;
 }
 
 export function BillingCart({
   items,
   onUpdateQuantity,
   onRemoveItem,
+  stockWarnings,
 }: BillingCartProps) {
   if (items.length === 0) {
     return (
@@ -68,6 +71,20 @@ export function BillingCart({
           </button>
         </div>
       ))}
+      {items.map((item) => {
+        const warning = stockWarnings?.get(item.productId);
+        if (!warning) return null;
+        return (
+          <div
+            key={`warning-${item.productId}`}
+            className="px-4 text-amber-700 text-xs"
+          >
+            ⚠ Total across all bills: {warning.totalRequested} requested,{" "}
+            {warning.availableStock} available across {warning.tabCount} bill
+            {warning.tabCount > 1 ? "s" : ""}
+          </div>
+        );
+      })}
     </div>
   );
 }

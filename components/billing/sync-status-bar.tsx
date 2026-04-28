@@ -1,4 +1,5 @@
 "use client";
+import { useBillingTabsStore } from "@/stores/billing-tabs-store";
 import type { SyncFailureType, TabState } from "@/types/draft";
 
 type Props = {
@@ -15,6 +16,19 @@ export default function SyncStatusBar({ tabs }: Props) {
   );
 
   const anyPending = tabs.some((t) => t.syncStatus === "PENDING_SYNC");
+
+  const draftsLoadFailed = useBillingTabsStore((s) => s.draftsLoadFailed);
+
+  // Show a cached-data warning if server load failed (subtle, amber)
+  if (draftsLoadFailed && !anyServerFail) {
+    return (
+      <div className="sync-status-bar sync-status--cached" role="status">
+        <div className="px-4 py-2 bg-amber-200 text-black text-sm">
+          Could not load latest drafts. Showing cached data.
+        </div>
+      </div>
+    );
+  }
 
   if (anyServerFail) {
     return (

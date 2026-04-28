@@ -40,6 +40,7 @@ export const useBillingTabsStore = create<BillingTabsState>()(
       openTabIds: [],
       activeTabId: "",
       tabCounter: 0,
+      draftsLoadFailed: false,
 
       createTab: (tenantId, outletId) => {
         const counter = get().tabCounter + 1;
@@ -278,6 +279,8 @@ export const useBillingTabsStore = create<BillingTabsState>()(
           (d) => !d.isDeleted && d.syncStatus === "PENDING_SYNC",
         );
       },
+      setDraftsLoadFailed: (failed: boolean) =>
+        set(() => ({ draftsLoadFailed: failed })),
     }),
     {
       name: "billing-tabs-v2",

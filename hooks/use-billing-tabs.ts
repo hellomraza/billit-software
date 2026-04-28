@@ -1,6 +1,7 @@
 "use client";
 
 import { getStoredOutletId, getStoredTenant } from "@/lib/auth-tokens";
+import clientAxios from "@/lib/axios/client";
 import { useBillingTabsStore } from "@/stores/billing-tabs-store";
 import type {
   DraftItem,
@@ -10,6 +11,7 @@ import type {
 } from "@/types/draft";
 import { openDB } from "idb";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
 export interface UseBillingTabsReturn {
@@ -180,6 +182,53 @@ export function useBillingTabs(): UseBillingTabsReturn {
       // Initialization is best-effort; UI can still continue without local cache.
     });
   }, [isHydrated, createStoreTab]);
+
+  // Fetch server drafts on mount and hydrate store. If it fails, fall back to
+  // existing persisted drafts and show a subtle warning.
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchServerDrafts = async () => {
+      const tenantId = getStoredTenant()?._id;
+      const outletId = getStoredOutletId();
+
+      if (!tenantId || !outletId) return;
+
+      try {
+        const res = await clientAxios.get("/drafts");
+        if (cancelled) return;
+        const serverDrafts = res.data as unknown[];
+
+        // Let the store merge/upsert and persist to IndexedDB
+        useBillingTabsStore
+          .getState()
+          .hydrateDraftsFromServer(serverDrafts as any);
+        useBillingTabsStore.getState().setDraftsLoadFailed?.(false);
+
+        // If after hydration there are no non-deleted drafts, create one empty tab
+        const drafts = useBillingTabsStore
+          .getState()
+          .drafts.filter((d) => !d.isDeleted);
+        if (drafts.length === 0) {
+          const tenantId = getStoredTenant()?._id;
+          const outletId = getStoredOutletId();
+          if (tenantId && outletId) {
+            createStoreTab(tenantId, outletId);
+          }
+        }
+      } catch (err) {
+        // Mark load failure so UI can show a subtle banner and fall back to persisted drafts
+        useBillingTabsStore.getState().setDraftsLoadFailed?.(true);
+        toast.error("Could not load latest drafts. Showing cached data.");
+      }
+    };
+
+    void fetchServerDrafts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isHydrated]);
 
   const tabs = useMemo<TabState[]>(() => {
     return drafts

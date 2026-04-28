@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { InvoiceStockConflictModal } from "@/features/invoices/invoice-stock-conflict-modal";
 import { getStoredOutletId, getStoredTenant } from "@/lib/auth-tokens";
+import { computeStockWarnings } from "@/lib/utils/cross-tab-stock";
 import { ProductWithStock } from "@/lib/utils/products";
 import { useBillingTabsStore } from "@/stores/billing-tabs-store";
 import { useIsGstEnabled } from "@/stores/get-store";
@@ -144,6 +145,31 @@ export function BillingWorkspace({
         syncStatus: draft.syncStatus,
       }));
   }, [drafts, openTabIds]);
+
+  // Compute stock warnings based on product stock and all open tabs
+  const stockMap = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const p of products) {
+      m[p._id] = p.stock ?? 0;
+    }
+    return m;
+  }, [products]);
+
+  const stockWarnings = useMemo(() => {
+    return computeStockWarnings(tabStates, stockMap);
+  }, [tabStates, stockMap]);
+
+  // Attach hasStockWarning to tabStates for the tab bar
+  const tabStatesWithWarnings = useMemo<TabState[]>(() => {
+    return tabStates.map((tab) => {
+      const has = (tab.items || []).some((it) =>
+        stockWarnings.has(it.productId),
+      );
+      return { ...tab, hasStockWarning: has } as TabState & {
+        hasStockWarning?: boolean;
+      };
+    });
+  }, [tabStates, stockWarnings]);
 
   useEffect(() => {
     if (migrationAttemptedRef.current || drafts.length > 0) {
@@ -466,7 +492,7 @@ export function BillingWorkspace({
     <div className="flex h-full flex-col gap-3 max-h-[calc(100%-6rem)]">
       {!hideInternalTabBar ? (
         <BillingTabBar
-          tabs={tabStates}
+          tabs={tabStatesWithWarnings}
           activeTabId={
             activeTabId || tabStates[0]?.clientDraftId || "placeholder-tab"
           }
@@ -499,6 +525,7 @@ export function BillingWorkspace({
             items={cart}
             onUpdateQuantity={handleUpdateQuantity}
             onRemoveItem={handleRemoveItem}
+            stockWarnings={stockWarnings}
           />
           <BillingSummaryPanel
             onFinalize={openFinalizeDialog}
