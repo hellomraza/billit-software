@@ -1,4 +1,6 @@
 "use client";
+import clientAxios from "@/lib/axios/client";
+import { useBillingTabsStore } from "@/stores/billing-tabs-store";
 import { openDB } from "idb";
 import { useEffect } from "react";
 
@@ -108,22 +110,76 @@ class DraftSyncManager {
     return this.attemptSync(clientDraftId);
   };
 
-  // Default network sync implementation: POST to /drafts/sync
+  // Default network sync implementation: POST to /drafts/sync using clientAxios
   private async networkSync(draft: LocalDraft) {
-    if (!window || typeof window.fetch !== "function") {
-      throw new Error("fetch unavailable");
-    }
+    if (!window) throw new Error("network unavailable");
 
-    const res = await fetch("/drafts/sync", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(draft),
-    });
-    if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      throw new Error(`sync failed: ${res.status} ${txt}`);
+    // Build payload per server contract — exclude local-only fields
+    const payload = {
+      clientDraftId: draft.clientDraftId,
+      tenantId: draft.tenantId,
+      outletId: draft.outletId,
+      tabLabel: draft.tabLabel,
+      items: draft.items,
+      customerName: draft.customerName,
+      customerPhone: draft.customerPhone,
+      paymentMethod: draft.paymentMethod,
+      isDeleted: draft.isDeleted,
+    };
+
+    try {
+      const res = await clientAxios.post("/drafts/sync", payload);
+      const data = res.data;
+      // Update store sync status to SYNCED
+      try {
+        useBillingTabsStore
+          .getState()
+          .updateSyncStatus(draft.clientDraftId, "SYNCED", null, {
+            id: data.id,
+            syncedAt: data.syncedAt,
+            updatedAt: data.updatedAt,
+          });
+      } catch (e) {
+        // swallow store update errors
+        // eslint-disable-next-line no-console
+        console.warn("useDraftSync: failed to update store on success", e);
+      }
+      return data;
+    } catch (err: any) {
+      // Distinguish network errors vs server 4xx when possible
+      const status = err?.response?.status;
+      if (status && status >= 400 && status < 500) {
+        // Permanent server validation error — mark as SYNC_FAILED (server)
+        try {
+          useBillingTabsStore
+            .getState()
+            .updateSyncStatus(draft.clientDraftId, "SYNC_FAILED", "SERVER");
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.warn(
+            "useDraftSync: failed to update store on server error",
+            e,
+          );
+        }
+        // Do not retry
+        throw err;
+      }
+
+      // Network or unknown error — mark as SYNC_FAILED (network) and allow retry
+      try {
+        useBillingTabsStore
+          .getState()
+          .updateSyncStatus(draft.clientDraftId, "SYNC_FAILED", "NETWORK");
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          "useDraftSync: failed to update store on network error",
+          e,
+        );
+      }
+
+      throw err;
     }
-    return res.json();
   }
 }
 
