@@ -38,6 +38,7 @@ import { BillingCart } from "./billing-cart";
 import { BillingCustomerDetails } from "./billing-customer-details";
 import { BillingSearch } from "./billing-search";
 import { BillingSummaryPanel } from "./billing-summary-panel";
+import SavedDraftsPanel from "@/components/billing/saved-drafts-panel";
 
 type LegacyDraftState = {
   items?: DraftItem[];
@@ -396,8 +397,10 @@ export function BillingWorkspace({
   };
 
   const handleOpenDraftsPanel = () => {
-    toast.info("Saved drafts panel will be added in the next billing story.");
+    setIsSavedDraftsOpen(true);
   };
+
+  const [isSavedDraftsOpen, setIsSavedDraftsOpen] = useState(false);
 
   const handleStockConflictDecision = async (
     decisions: Record<string, "use-available" | "override" | "remove">,
@@ -538,6 +541,8 @@ export function BillingWorkspace({
           />
         </Card>
       </div>
+
+      <SavedDraftsPanel open={isSavedDraftsOpen} onOpenChange={setIsSavedDraftsOpen} />
 
       <Dialog
         open={isFinalizeDialogOpen}
