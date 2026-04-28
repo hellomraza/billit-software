@@ -11,8 +11,8 @@ type SyncHandler = (draft: LocalDraft) => Promise<unknown>;
 class DraftSyncManager {
   private timers = new Map<string, number>();
   private attempts = new Map<string, number>();
-  private maxRetries = 5;
-  private baseDelay = 1000; // ms
+  // attempts map tracks how many attempts have been made for a draft
+  // No hard cap: retry indefinitely while component is mounted per spec
   private defaultHandler: SyncHandler | null = null;
 
   setDefaultHandler(h: SyncHandler) {
@@ -81,24 +81,31 @@ class DraftSyncManager {
       await handler(draft);
       // success: cleanup
       this.attempts.delete(clientDraftId);
-    } catch (err) {
-      // failure: schedule retry with exponential backoff
-      if (attempt >= this.maxRetries) {
+    } catch (err: any) {
+      // If server-side 4xx, do not retry
+      const status = err?.response?.status;
+      if (status && status >= 400 && status < 500) {
         this.attempts.delete(clientDraftId);
-        console.error(
-          "useDraftSync: max retries reached for",
-          clientDraftId,
-          err,
-        );
         return;
       }
 
-      const delay = this.baseDelay * Math.pow(2, attempt - 1);
-      const jitter = Math.round(Math.random() * 300);
-      const nextDelay = delay + jitter;
+      // Network or unknown error: schedule retry using required schedule
+      // Retry schedule: 5s, 10s, 30s, 60s, 60s, ... (repeat 60s)
+      let nextDelayMs: number;
+      if (attempt === 1)
+        nextDelayMs = 5000; // first retry after 5s
+      else if (attempt === 2)
+        nextDelayMs = 10000; // second retry after 10s
+      else if (attempt === 3)
+        nextDelayMs = 30000; // third retry after 30s
+      else nextDelayMs = 60000; // thereafter every 60s
+
+      // small jitter to avoid exact alignment
+      const jitter = Math.round(Math.random() * 1000);
+      const scheduled = nextDelayMs + jitter;
       const id = window.setTimeout(() => {
         void this.attemptSync(clientDraftId);
-      }, nextDelay);
+      }, scheduled);
       this.timers.set(clientDraftId, id);
     }
   }
