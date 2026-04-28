@@ -1,6 +1,7 @@
 "use client";
 
 import { BillingTabBar } from "@/components/billing/billing-tab-bar";
+import SyncStatusBar from "@/components/billing/sync-status-bar";
 import { useBillingTabs } from "@/hooks/use-billing-tabs";
 import type { ProductWithStock } from "@/lib/utils/products";
 import { toast } from "sonner";
@@ -55,6 +56,8 @@ export function BillingShell({
           );
         }}
       />
+
+      <SyncStatusBar tabs={tabs} />
 
       <BillingWorkspace
         initialProducts={initialProducts}
