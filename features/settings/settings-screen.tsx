@@ -31,7 +31,6 @@ export function SettingsScreen({ settings }: SettingsScreenProps) {
   const router = useRouter();
   const [showLogout, setShowLogout] = useState(false);
   const { theme, setTheme } = useTheme();
-  console.log("Current theme:", theme);
 
   const handleLogoutConfirm = async () => {
     setShowLogout(false);
