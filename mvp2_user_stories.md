@@ -1335,25 +1335,20 @@ A "saved draft" in this panel is any `LocalDraft` in IndexedDB where:
 
 ---
 
-- [ ] **ST-07.1.1** Create `components/billing/saved-drafts-panel.tsx` as a `'use client'` component. Implement the drawer/slide-in using the project's existing `Drawer` or `Sheet` component (from shadcn/ui). Add an open/close state controlled by the parent.
+- [x] **ST-07.1.1** Create `components/billing/saved-drafts-panel.tsx` as a `'use client'` component. Implement the drawer/slide-in using the project's existing `Drawer` or `Sheet` component (from shadcn/ui). Add an open/close state controlled by the parent.
   - **Expected output:** Clicking "Drafts" button in the tab bar opens the panel. Clicking × or clicking outside closes it.
 
-- [ ] **ST-07.1.2** Derive the list of saved drafts: filter all drafts from `useBillingTabs`'s awareness (need to read ALL non-deleted IndexedDB drafts, not just the currently open ones). Pass the open `tabs` list and all IndexedDB drafts to the panel; the panel filters out the ones already in tabs.
+- [x] **ST-07.1.2** Derive the list of saved drafts: filter all drafts from `useBillingTabs`'s awareness (need to read ALL non-deleted IndexedDB drafts, not just the currently open ones). Pass the open `tabs` list and all IndexedDB drafts to the panel; the panel filters out the ones already in tabs.
   - **Implementation detail:** In `useBillingTabs`, maintain a separate `allDrafts: LocalDraft[]` state that contains ALL non-deleted drafts (open + closed). `tabs` is the subset that is currently visible in the tab bar. The panel uses `allDrafts.filter(d => !tabs.find(t => t.draft.clientDraftId === d.clientDraftId))`.
   - **Expected output:** A draft that was closed (removed from tab bar) appears in the panel. A draft that is still open does not appear.
 
-- [ ] **ST-07.1.3** Render each saved draft card with label, item count, estimated total, last updated time. Use `formatDistanceToNow` from `date-fns` (or equivalent) for the "X minutes ago" time display.
+- [x] **ST-07.1.3** Render each saved draft card with label, item count, estimated total, last updated time. Use `formatDistanceToNow` from `date-fns` (or equivalent) for the "X minutes ago" time display.
   - **Expected output:** Each card shows correct information. "Last updated 3 minutes ago" format is readable and accurate.
 
-- [ ] **ST-07.1.4** Implement the "Open" button. Clicking it calls a `onOpenDraft(clientDraftId)` callback (provided by `useBillingTabs`). `onOpenDraft` adds the draft back to the `tabs` array, makes it active, and closes the Saved Drafts Panel.
+- [x] **ST-07.1.4** Implement the "Open" button. Clicking it calls a `onOpenDraft(clientDraftId)` callback (provided by `useBillingTabs`). `onOpenDraft` adds the draft back to the `tabs` array, makes it active, and closes the Saved Drafts Panel.
   - **Expected output:** Clicking "Open" on a saved draft adds it as a new active tab in the tab bar. The draft's cart items and customer info are intact.
 
-- [ ] **ST-07.1.5** Implement the "Discard" button. Show a confirmation dialog: "Permanently discard this bill? This cannot be undone." On confirm: call `DELETE /drafts/:clientDraftId` via `clientAxios`, then call `deleteDraftLocally(clientDraftId)` in IndexedDB, then remove from `allDrafts` state. On cancel: dismiss dialog.
- - [x] **ST-07.1.1** Create `components/billing/saved-drafts-panel.tsx` as a `'use client'` component. Implement the drawer/slide-in using the project's existing `Drawer` or `Sheet` component (from shadcn/ui). Add an open/close state controlled by the parent.
- - [x] **ST-07.1.2** Derive the list of saved drafts: filter all drafts from `useBillingTabs`'s awareness (need to read ALL non-deleted IndexedDB drafts, not just the currently open ones). Pass the open `tabs` list and all IndexedDB drafts to the panel; the panel filters out the ones already in tabs.
- - [x] **ST-07.1.3** Render each saved draft card with label, item count, estimated total, last updated time. Use `formatDistanceToNow` from `date-fns` (or equivalent) for the "X minutes ago" time display.
- - [x] **ST-07.1.4** Implement the "Open" button. Clicking it calls a `onOpenDraft(clientDraftId)` callback (provided by `useBillingTabs`). `onOpenDraft` adds the draft back to the `tabs` array, makes it active, and closes the Saved Drafts Panel.
- - [x] **ST-07.1.5** Implement the "Discard" button. Show a confirmation dialog: "Permanently discard this bill? This cannot be undone." On confirm: call `DELETE /drafts/:clientDraftId` via `clientAxios`, then call `deleteDraftLocally(clientDraftId)` in IndexedDB, then remove from `allDrafts` state. On cancel: dismiss dialog.
+- [x] **ST-07.1.5** Implement the "Discard" button. Show a confirmation dialog: "Permanently discard this bill? This cannot be undone." On confirm: call `DELETE /drafts/:clientDraftId` via `clientAxios`, then call `deleteDraftLocally(clientDraftId)` in IndexedDB, then remove from `allDrafts` state. On cancel: dismiss dialog.
   - **Expected output:** Discarded draft disappears from the panel and from IndexedDB. The server soft-delete is called. The draft cannot be reopened after discarding.
 
 ---
