@@ -1,5 +1,6 @@
 "use client";
 
+import SavedDraftsPanel from "@/components/billing/saved-drafts-panel";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { MoneyText } from "@/components/shared/money-text";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,6 @@ import { BillingCart } from "./billing-cart";
 import { BillingCustomerDetails } from "./billing-customer-details";
 import { BillingSearch } from "./billing-search";
 import { BillingSummaryPanel } from "./billing-summary-panel";
-import SavedDraftsPanel from "@/components/billing/saved-drafts-panel";
 
 type LegacyDraftState = {
   items?: DraftItem[];
@@ -542,7 +542,10 @@ export function BillingWorkspace({
         </Card>
       </div>
 
-      <SavedDraftsPanel open={isSavedDraftsOpen} onOpenChange={setIsSavedDraftsOpen} />
+      <SavedDraftsPanel
+        open={isSavedDraftsOpen}
+        onOpenChange={setIsSavedDraftsOpen}
+      />
 
       <Dialog
         open={isFinalizeDialogOpen}
