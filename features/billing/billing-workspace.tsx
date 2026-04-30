@@ -595,7 +595,7 @@ export function BillingWorkspace({
           invoiceActions.resetInvoiceDraft();
           updateActiveCart([]);
           updateActiveCustomer("", "");
-          updateActivePayment("");
+          updateActivePayment("CASH");
         }}
         onCancel={invoiceActions.closeClearDialog}
       />

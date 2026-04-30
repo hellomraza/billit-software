@@ -31,7 +31,7 @@ export interface UseBillingTabsReturn {
 
 type ServerDraftsResponse = {
   drafts: DraftItem[];
-}
+};
 
 function parsePersistedState(rawValue: unknown): Partial<{
   drafts: LocalDraft[];
@@ -198,7 +198,9 @@ export function useBillingTabs(): UseBillingTabsReturn {
       if (!tenantId || !outletId) return;
 
       try {
-        const res = await clientAxios.get<ServerDraftsResponse>(`/tenants/${tenantId}/drafts`);
+        const res = await clientAxios.get<ServerDraftsResponse>(
+          `/tenants/${tenantId}/drafts`,
+        );
         if (cancelled) return;
         const serverDrafts = res.data.drafts;
 
@@ -277,7 +279,7 @@ export function useBillingTabs(): UseBillingTabsReturn {
         items: [],
         customerName: "",
         customerPhone: "",
-        paymentMethod: "",
+        paymentMethod: "CASH",
         isDeleted: false,
         createdAt: now,
         updatedAt: now,
@@ -406,7 +408,7 @@ export function useBillingTabs(): UseBillingTabsReturn {
             items: [],
             customerName: "",
             customerPhone: "",
-            paymentMethod: "",
+            paymentMethod: "CASH",
             isDeleted: false,
             createdAt: now,
             updatedAt: now,
