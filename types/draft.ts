@@ -16,6 +16,7 @@ export interface TabState {
   items: DraftItem[];
   syncStatus: SyncStatus;
   hasStockWarning?: boolean;
+  isReadOnly?: boolean;
 }
 
 export interface LocalDraft {

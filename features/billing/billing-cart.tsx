@@ -11,6 +11,7 @@ interface BillingCartProps {
   onUpdateQuantity: (productId: string, qty: number) => void;
   onRemoveItem: (productId: string) => void;
   stockWarnings?: Map<string, StockWarning>;
+  isReadOnly?: boolean;
 }
 
 export function BillingCart({
@@ -18,6 +19,7 @@ export function BillingCart({
   onUpdateQuantity,
   onRemoveItem,
   stockWarnings,
+  isReadOnly = false,
 }: BillingCartProps) {
   if (items.length === 0) {
     return (
@@ -59,13 +61,15 @@ export function BillingCart({
                 else onUpdateQuantity(item.productId, q);
               }}
               min={0}
+              disabled={isReadOnly}
             />
           </div>
           <button
-            className="p-1 text-muted-foreground hover:text-destructive transition-colors bg-muted aspect-square rounded-full absolute -top-2 -right-2"
+            className={`p-1 text-muted-foreground hover:text-destructive transition-colors bg-muted aspect-square rounded-full absolute -top-2 -right-2 ${isReadOnly ? "opacity-60 pointer-events-none" : ""}`}
             onClick={() => onRemoveItem(item.productId)}
-            title="Remove item"
+            title={isReadOnly ? "Editing paused while offline" : "Remove item"}
             aria-label={`Remove ${item.productName}`}
+            disabled={isReadOnly}
           >
             <X size={16} />
           </button>

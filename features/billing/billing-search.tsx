@@ -20,6 +20,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 interface BillingSearchProps {
   onSelectProduct: (product: ProductWithStock) => void;
   initialProducts: ProductWithStock[];
+  isReadOnly?: boolean;
 }
 
 function HighlightedText({
@@ -62,6 +63,7 @@ function HighlightedText({
 export function BillingSearch({
   onSelectProduct,
   initialProducts,
+  isReadOnly = false,
 }: BillingSearchProps) {
   const { setSearchQuery } = useInvoiceActions();
   const searchQuery = useInvoiceSearchQuery();
@@ -117,19 +119,25 @@ export function BillingSearch({
   return (
     <div className="flex flex-col h-full ">
       <div className="px-4 flex items-center gap-2">
-        <SearchBar
-          ref={searchInputRef}
-          onSearch={setSearchQuery}
-          placeholder="Search products by name or code (Alt+S)"
-          className="max-w-full h-12 text-md flex-1"
-          loading={apiLoading && searchQuery ? true : false}
-        />
+        <div
+          title={isReadOnly ? "Editing paused while offline" : undefined}
+          className={isReadOnly ? "flex-1 opacity-80" : "flex-1"}
+        >
+          <SearchBar
+            ref={searchInputRef}
+            onSearch={setSearchQuery}
+            placeholder="Search products by name or code (Alt+S)"
+            className="max-w-full h-12 text-md flex-1"
+            loading={apiLoading && searchQuery ? true : false}
+            disabled={isReadOnly}
+          />
+        </div>
         <Button
           type="button"
           variant="outline"
           size="sm"
           className="h-12 px-3"
-          disabled={!tenantId || !outletId || refreshing}
+          disabled={!tenantId || !outletId || refreshing || isReadOnly}
           onClick={() => void refresh()}
         >
           {refreshing ? (
@@ -145,8 +153,11 @@ export function BillingSearch({
         {displayedProducts?.map((product) => (
           <Card
             key={product._id}
-            className="cursor-pointer hover:border-primary/50 transition-colors flex flex-col h-25 py-2 px-2 justify-start"
-            onClick={() => onSelectProduct(product)}
+            className={`transition-colors flex flex-col h-25 py-2 px-2 justify-start ${isReadOnly ? "cursor-default opacity-80" : "cursor-pointer hover:border-primary/50"}`}
+            onClick={() => {
+              if (!isReadOnly) onSelectProduct(product);
+            }}
+            aria-disabled={isReadOnly}
           >
             <CardContent className="p-3 flex flex-col justify-between flex-1 text-xs">
               <div className="flex justify-between items-start gap-2">

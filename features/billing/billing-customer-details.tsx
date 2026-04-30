@@ -8,6 +8,7 @@ interface BillingCustomerDetailsProps {
   customerPhone: string;
   onCustomerNameChange: (name: string) => void;
   onCustomerPhoneChange: (phone: string) => void;
+  isReadOnly?: boolean;
 }
 
 export function BillingCustomerDetails({
@@ -15,6 +16,7 @@ export function BillingCustomerDetails({
   customerPhone,
   onCustomerNameChange,
   onCustomerPhoneChange,
+  isReadOnly = false,
 }: BillingCustomerDetailsProps) {
   return (
     <div className="p-4 space-y-3 rounded-lg">
@@ -30,6 +32,7 @@ export function BillingCustomerDetails({
           placeholder="Walk-in customer"
           value={customerName}
           onChange={(e) => onCustomerNameChange(e.target.value)}
+          disabled={isReadOnly}
           className="h-9 text-sm"
         />
       </div>
@@ -47,6 +50,7 @@ export function BillingCustomerDetails({
           placeholder="9876543210"
           value={customerPhone}
           onChange={(e) => onCustomerPhoneChange(e.target.value)}
+          disabled={isReadOnly}
           className="h-9 text-sm"
         />
       </div>

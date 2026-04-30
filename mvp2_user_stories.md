@@ -1396,7 +1396,7 @@ export function useOnlineStatus(): boolean {
 
 ---
 
-- [ ] **ST-08.1.1** Create `hooks/use-online-status.ts` with the implementation above. Export `useOnlineStatus`.
+- [x] **ST-08.1.1** Create `hooks/use-online-status.ts` with the implementation above. Export `useOnlineStatus`.
   - **Expected output:** Hook returns correct value. Toggling "Offline" in browser DevTools changes the value.
 
 ---
@@ -1416,13 +1416,13 @@ export function useOnlineStatus(): boolean {
 
 ---
 
-- [ ] **ST-08.2.1** Create `components/billing/offline-banner.tsx`. A simple full-width amber banner with the offline message. Only renders when `isOnline = false`.
+- [x] **ST-08.2.1** Create `components/billing/offline-banner.tsx`. A simple full-width amber banner with the offline message. Only renders when `isOnline = false`.
   - **Expected output:** Banner appears when DevTools → Offline. Disappears when DevTools → Online.
 
-- [ ] **ST-08.2.2** Modify `useDraftSync`: accept `isOnline: boolean` parameter. When `isOnline = false`, skip scheduling new sync timers (still mark drafts as PENDING_SYNC in IndexedDB, just don't attempt the network call). Cancel all in-flight retry timers while offline.
+- [x] **ST-08.2.2** Modify `useDraftSync`: accept `isOnline: boolean` parameter. When `isOnline = false`, skip scheduling new sync timers (still mark drafts as PENDING_SYNC in IndexedDB, just don't attempt the network call). Cancel all in-flight retry timers while offline.
   - **Expected output:** No network requests to `/drafts/sync` are made while offline. Draft changes are still saved to IndexedDB with `syncStatus = PENDING_SYNC`.
 
-- [ ] **ST-08.2.3** Modify `useDraftSync`: when `isOnline` transitions to `true` (use `useEffect` with `isOnline` as dependency), immediately call `scheduleSync` for all drafts currently in `PENDING_SYNC` or `SYNC_FAILED` state (without the 1-second debounce — call them with 0ms delay).
+- [x] **ST-08.2.3** Modify `useDraftSync`: when `isOnline` transitions to `true` (use `useEffect` with `isOnline` as dependency), immediately call `scheduleSync` for all drafts currently in `PENDING_SYNC` or `SYNC_FAILED` state (without the 1-second debounce — call them with 0ms delay).
   - **Expected output:** After coming back online, all pending drafts sync immediately.
 
 ---
@@ -1451,13 +1451,13 @@ export function useOnlineStatus(): boolean {
 
 ---
 
-- [ ] **ST-08.3.1** Compute `isReadOnly` per tab in `useBillingTabs` or billing page. Pass to the billing workspace.
+- [x] **ST-08.3.1** Compute `isReadOnly` per tab in `useBillingTabs` or billing page. Pass to the billing workspace.
   - **Expected output:** `isReadOnly` is `true` for synced tabs when offline. `false` for offline-created tabs and when online.
 
-- [ ] **ST-08.3.2** Apply `disabled` prop to all interactive billing inputs (search, quantity controls, customer fields, payment method, finalize button, clear bill button) when `isReadOnly = true`.
+- [x] **ST-08.3.2** Apply `disabled` prop to all interactive billing inputs (search, quantity controls, customer fields, payment method, finalize button, clear bill button) when `isReadOnly = true`.
   - **Expected output:** All interactive elements are disabled. User cannot make any changes.
 
-- [ ] **ST-08.3.3** Show the "This bill is view-only while offline" banner within the billing workspace when `isReadOnly = true`. Use the warning/info color (amber). This is a different banner from the global offline banner in T-08.2 — it is inside the billing workspace and specific to the current tab.
+- [x] **ST-08.3.3** Show the "This bill is view-only while offline" banner within the billing workspace when `isReadOnly = true`. Use the warning/info color (amber). This is a different banner from the global offline banner in T-08.2 — it is inside the billing workspace and specific to the current tab.
   - **Expected output:** Banner appears in the billing workspace area below the tab bar when the active tab is read-only.
 
 ---

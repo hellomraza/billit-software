@@ -1,5 +1,6 @@
 "use client";
 
+import { useOnlineStatus } from "@/hooks/use-online-status";
 import { getStoredOutletId, getStoredTenant } from "@/lib/auth-tokens";
 import clientAxios from "@/lib/axios/client";
 import { useBillingTabsStore } from "@/stores/billing-tabs-store";
@@ -80,6 +81,8 @@ export function useBillingTabs(): UseBillingTabsReturn {
   const drafts = useBillingTabsStore((state) => state.drafts);
   const openTabIds = useBillingTabsStore((state) => state.openTabIds);
   const activeTabId = useBillingTabsStore((state) => state.activeTabId);
+
+  const isOnline = useOnlineStatus();
 
   const createStoreTab = useBillingTabsStore((state) => state.createTab);
   const switchStoreTab = useBillingTabsStore((state) => state.switchTab);
@@ -240,8 +243,15 @@ export function useBillingTabs(): UseBillingTabsReturn {
         tabLabel: draft.tabLabel,
         items: draft.items,
         syncStatus: draft.syncStatus,
+        // isReadOnly: true when offline AND the draft was previously synced (has server id)
+        // AND it was not created while offline
+        isReadOnly:
+          !isOnline &&
+          draft.syncStatus !== "PENDING_SYNC" &&
+          !draft.isOfflineCreated &&
+          Boolean(draft.id),
       }));
-  }, [drafts, openTabIds]);
+  }, [drafts, openTabIds, isOnline]);
 
   const activeDraft = useMemo(() => {
     return drafts.find((draft) => draft.clientDraftId === activeTabId);

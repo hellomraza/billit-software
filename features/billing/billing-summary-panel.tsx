@@ -18,6 +18,7 @@ interface BillingSummaryPanelProps {
   grandTotal: number;
   paymentMethod: PaymentMethod;
   onPaymentMethodChange: (method: PaymentMethod) => void;
+  isReadOnly?: boolean;
 }
 
 export function BillingSummaryPanel({
@@ -28,6 +29,7 @@ export function BillingSummaryPanel({
   grandTotal,
   paymentMethod,
   onPaymentMethodChange,
+  isReadOnly = false,
 }: BillingSummaryPanelProps) {
   const phase = useInvoicePhase();
   const isFinalizing = phase === "submitting";
@@ -111,12 +113,15 @@ export function BillingSummaryPanel({
               size="sm"
               className="flex-1 min-w-20 text-xs h-9 sm:h-8"
               onClick={() => {
-                onPaymentMethodChange(method);
-                announceAction(`Payment method changed to ${method}`);
+                if (!isReadOnly) {
+                  onPaymentMethodChange(method);
+                  announceAction(`Payment method changed to ${method}`);
+                }
               }}
               onKeyDown={(e) => handlePaymentKeyDown(e, method)}
               aria-pressed={paymentMethod === method}
               aria-label={`${method} payment method`}
+              disabled={isReadOnly}
             >
               {method}
             </Button>
@@ -125,7 +130,7 @@ export function BillingSummaryPanel({
         <Button
           size="lg"
           className="w-full font-bold text-base  sm:text-base"
-          disabled={!isEnabled || isFinalizing}
+          disabled={!isEnabled || isFinalizing || isReadOnly}
           onClick={() => {
             onFinalize();
             announceAction("Invoice finalized successfully");
@@ -146,6 +151,7 @@ export function BillingSummaryPanel({
             variant="ghost"
             className="w-full text-muted-foreground mt-1 h-9 sm:h-8 text-xs sm:text-sm"
             onClick={openClearDialog}
+            disabled={isReadOnly}
           >
             Clear Bill
           </Button>
