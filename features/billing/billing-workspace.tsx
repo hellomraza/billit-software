@@ -431,6 +431,16 @@ export function BillingWorkspace({
 
       <div className="relative flex h-full  flex-col gap-3 md:flex-row">
         <OfflineBanner isOnline={isOnline} className="mb-2" />
+        {isReadOnly && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="col-span-full rounded-md border border-muted/20 bg-muted/10 text-sm text-muted-foreground px-3 py-1 mb-2"
+            title="This bill is view-only while offline"
+          >
+            This bill is view-only while offline.
+          </div>
+        )}
         <Card className="py-0 ring-0 flex-1 flex flex-col bg-transparent shadow-none ">
           <BillingSearch
             onSelectProduct={handleSelectProduct}

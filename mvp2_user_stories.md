@@ -1454,10 +1454,10 @@ export function useOnlineStatus(): boolean {
 - [x] **ST-08.3.1** Compute `isReadOnly` per tab in `useBillingTabs` or billing page. Pass to the billing workspace.
   - **Expected output:** `isReadOnly` is `true` for synced tabs when offline. `false` for offline-created tabs and when online.
 
-- [ ] **ST-08.3.2** Apply `disabled` prop to all interactive billing inputs (search, quantity controls, customer fields, payment method, finalize button, clear bill button) when `isReadOnly = true`.
+- [x] **ST-08.3.2** Apply `disabled` prop to all interactive billing inputs (search, quantity controls, customer fields, payment method, finalize button, clear bill button) when `isReadOnly = true`.
   - **Expected output:** All interactive elements are disabled. User cannot make any changes.
 
-- [ ] **ST-08.3.3** Show the "This bill is view-only while offline" banner within the billing workspace when `isReadOnly = true`. Use the warning/info color (amber). This is a different banner from the global offline banner in T-08.2 — it is inside the billing workspace and specific to the current tab.
+- [x] **ST-08.3.3** Show the "This bill is view-only while offline" banner within the billing workspace when `isReadOnly = true`. Use the warning/info color (amber). This is a different banner from the global offline banner in T-08.2 — it is inside the billing workspace and specific to the current tab.
   - **Expected output:** Banner appears in the billing workspace area below the tab bar when the active tab is read-only.
 
 ---
