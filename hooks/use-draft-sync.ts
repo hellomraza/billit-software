@@ -65,8 +65,10 @@ class DraftSyncManager {
     try {
       const db = await openDB("billing-app-db", 1);
       const record: any = await db.get("zustand-store", "billing-tabs-v2");
-      if (!record || !record.state) return undefined;
-      const drafts: LocalDraft[] = record.state.drafts ?? [];
+      const parsedRecord =
+        typeof record === "string" ? JSON.parse(record) : record;
+      if (!parsedRecord || !parsedRecord.state) return undefined;
+      const drafts: LocalDraft[] = parsedRecord.state.drafts ?? [];
       return drafts.find((d) => d.clientDraftId === clientDraftId);
     } catch (err) {
       console.warn("useDraftSync: reading IndexedDB failed", err);
@@ -136,18 +138,19 @@ class DraftSyncManager {
     // Build payload per server contract — exclude local-only fields
     const payload = {
       clientDraftId: draft.clientDraftId,
-      tenantId: draft.tenantId,
       outletId: draft.outletId,
       tabLabel: draft.tabLabel,
       items: draft.items,
       customerName: draft.customerName,
       customerPhone: draft.customerPhone,
       paymentMethod: draft.paymentMethod,
-      isDeleted: draft.isDeleted,
     };
 
     try {
-      const res = await clientAxios.post("/drafts/sync", payload);
+      const res = await clientAxios.post(
+        `tenants/${draft.tenantId}/drafts/sync`,
+        payload,
+      );
       const data = res.data;
       // Update store sync status to SYNCED
       try {

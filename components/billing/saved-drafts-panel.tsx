@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { getStoredTenantId } from "@/lib/auth-tokens";
 import clientAxios from "@/lib/axios/client";
 import { useBillingTabsStore } from "@/stores/billing-tabs-store";
 import { useMemo } from "react";
@@ -66,7 +67,13 @@ export default function SavedDraftsPanel({
     if (!confirm("Permanently discard this bill? This cannot be undone."))
       return;
     try {
-      await clientAxios.delete(`/drafts/${clientDraftId}`);
+      const tenantId = getStoredTenantId();
+      if (!tenantId) {
+        toast.error("Tenant ID not found. Removing draft locally.");
+        markDraftDeleted(clientDraftId);
+        return;
+      }
+      await clientAxios.delete(`tenants/${tenantId}/drafts/${clientDraftId}`);
       markDraftDeleted(clientDraftId);
       toast.success("Draft discarded");
     } catch (err: any) {
