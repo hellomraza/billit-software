@@ -35,7 +35,7 @@ export function SettingsScreen({ settings }: SettingsScreenProps) {
   const handleLogoutConfirm = async () => {
     setShowLogout(false);
     await logoutAction();
-    clearAuthSession();
+    await clearAuthSession();
     router.push("/login");
   };
 

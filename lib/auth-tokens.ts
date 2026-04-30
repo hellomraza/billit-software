@@ -19,7 +19,7 @@ export function completeOnboarding() {
     "billit_onboarding_complete=true; path=/; max-age=2592000; SameSite=Lax";
 }
 
-export function clearAuthSession() {
+export async function clearAuthSession() {
   // Clear auth tokens
   localStorage.removeItem("access_token");
   localStorage.removeItem("tenant");
@@ -40,6 +40,12 @@ export function clearAuthSession() {
 
   // Clear UI state filters and preferences
   localStorage.removeItem("billit_invoice_filters");
+
+  // Clear persisted billing draft cache from IndexedDB
+  if (typeof window !== "undefined") {
+    const { indexedDBStorage } = await import("@/lib/indexedDbStorage");
+    await indexedDBStorage.removeItem("billing-tabs-v2");
+  }
 }
 
 export function getStoredTenant(): Tenant | null {
