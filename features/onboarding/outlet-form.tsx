@@ -76,6 +76,8 @@ export function OutletForm() {
         </p>
       </div>
 
+      <Input type="hidden" name="isDefault" value="true" />
+
       {/* Error Message */}
       {"error" in state && state.error && (
         <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">

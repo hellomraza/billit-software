@@ -29,6 +29,10 @@ export interface UseBillingTabsReturn {
   clearActiveTab: () => void;
 }
 
+type ServerDraftsResponse = {
+  drafts: DraftItem[];
+};
+
 function parsePersistedState(rawValue: unknown): Partial<{
   drafts: LocalDraft[];
   openTabIds: string[];
@@ -194,9 +198,11 @@ export function useBillingTabs(): UseBillingTabsReturn {
       if (!tenantId || !outletId) return;
 
       try {
-        const res = await clientAxios.get(`/tenants/${tenantId}/drafts`);
+        const res = await clientAxios.get<ServerDraftsResponse>(
+          `/tenants/${tenantId}/drafts`,
+        );
         if (cancelled) return;
-        const serverDrafts = res.data as unknown[];
+        const serverDrafts = res.data.drafts;
 
         // Let the store merge/upsert and persist to IndexedDB
         useBillingTabsStore
@@ -273,7 +279,7 @@ export function useBillingTabs(): UseBillingTabsReturn {
         items: [],
         customerName: "",
         customerPhone: "",
-        paymentMethod: "",
+        paymentMethod: "CASH",
         isDeleted: false,
         createdAt: now,
         updatedAt: now,
@@ -402,7 +408,7 @@ export function useBillingTabs(): UseBillingTabsReturn {
             items: [],
             customerName: "",
             customerPhone: "",
-            paymentMethod: "",
+            paymentMethod: "CASH",
             isDeleted: false,
             createdAt: now,
             updatedAt: now,

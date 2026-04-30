@@ -28,10 +28,7 @@ const page = async () => {
       <div className="animate-in fade-in duration-500 delay-200 h-[calc(100vh-12rem)] min-h-136">
         <BillingShell
           initialProducts={initialProducts}
-          tenantSettings={{
-            defaultGstRate: 18,
-            currency: "INR",
-          }}
+          tenantSettings={{ currency: "INR" }}
         />
       </div>
       <section className="px-6 py-4">

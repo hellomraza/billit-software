@@ -45,7 +45,6 @@ import { BillingSummaryPanel } from "./billing-summary-panel";
 interface BillingWorkspaceProps {
   initialProducts: ProductWithStock[];
   tenantSettings: {
-    defaultGstRate: number;
     currency: string;
   };
   activeDraft?: LocalDraft;
@@ -290,8 +289,8 @@ export function BillingWorkspace({
         action: {
           label: "View Invoice",
           onClick: () => {
-            if (result.invoice?.id) {
-              router.push(`/invoices/${result.invoice.id}`);
+            if (result.invoice?.invoiceId) {
+              router.push(`/invoices/${result.invoice.invoiceId}`);
             }
           },
         },
@@ -416,7 +415,7 @@ export function BillingWorkspace({
   };
 
   return (
-    <div className="flex h-full flex-col gap-3 max-h-[calc(100%-6rem)]">
+    <div className="flex h-full flex-col gap-3 max-h-[calc(100%-4rem)]">
       {!hideInternalTabBar ? (
         <BillingTabBar
           tabs={tabStatesWithWarnings}
@@ -439,7 +438,7 @@ export function BillingWorkspace({
         />
       ) : null}
 
-      <div className="relative flex h-full  flex-col gap-3 md:flex-row">
+      <div className="relative flex h-full flex-col gap-3 md:flex-row">
         <OfflineBanner isOnline={isOnline} className="mb-2" />
         {isReadOnly && (
           <div
@@ -596,7 +595,7 @@ export function BillingWorkspace({
           invoiceActions.resetInvoiceDraft();
           updateActiveCart([]);
           updateActiveCustomer("", "");
-          updateActivePayment("");
+          updateActivePayment("CASH");
         }}
         onCancel={invoiceActions.closeClearDialog}
       />

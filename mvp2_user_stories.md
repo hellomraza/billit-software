@@ -1615,27 +1615,27 @@ US-06, US-07, US-08, US-09, US-10 can all be worked in parallel once US-03 is do
 
 Before MVP 2 is considered complete, all of the following must be true:
 
-- [ ] Multiple bills can be open simultaneously in tabs on the billing screen
-- [ ] Tabs persist across page refresh (IndexedDB cache)
-- [ ] Tabs are restored from the server on login from a new device
-- [ ] Creating a new tab works and auto-labels correctly (Bill 1, Bill 2, etc.)
-- [ ] Switching tabs instantly shows the correct cart — no loading delay
-- [ ] Closing a tab with items shows a confirmation and moves draft to Saved Drafts
-- [ ] Closing a tab with no items closes immediately without confirmation
-- [ ] Closing the last tab immediately creates a new empty tab
-- [ ] Double-clicking a tab label allows inline rename
-- [ ] The Saved Drafts Panel opens, lists closed drafts, allows reopening, and allows discard with confirmation
-- [ ] Drafts sync to the server with 1-second debounce
-- [ ] Sync failures show the correct status indicator (amber = network, red = server error)
-- [ ] Coming back online after sync failure triggers immediate retry
-- [ ] Stock warnings appear on item rows and tab labels when aggregate quantities exceed stock
-- [ ] Going offline makes previously-synced tabs read-only with a visible indicator
-- [ ] Drafts created while offline are editable and sync when connectivity returns
-- [ ] Finalizing an invoice clears the active tab without closing it
-- [ ] Other open tabs are completely unaffected by another tab's finalization
-- [ ] A success toast with invoice number appears after finalization (no navigation away)
-- [ ] Settings page shows the count of saved (non-deleted) drafts
-- [ ] No MVP 1 features are broken by any MVP 2 changes
+- [x] Multiple bills can be open simultaneously in tabs on the billing screen
+- [x] Tabs persist across page refresh (IndexedDB cache)
+- [x] Tabs are restored from the server on login from a new device
+- [x] Creating a new tab works and auto-labels correctly (Bill 1, Bill 2, etc.)
+- [x] Switching tabs instantly shows the correct cart — no loading delay
+- [x] Closing a tab with items shows a confirmation and moves draft to Saved Drafts
+- [x] Closing a tab with no items closes immediately without confirmation
+- [x] Closing the last tab immediately creates a new empty tab
+- [x] Double-clicking a tab label allows inline rename
+- [x] The Saved Drafts Panel opens, lists closed drafts, allows reopening, and allows discard with confirmation
+- [x] Drafts sync to the server with 1-second debounce
+- [x] Sync failures show the correct status indicator (amber = network, red = server error)
+- [x] Coming back online after sync failure triggers immediate retry
+- [x] Stock warnings appear on item rows and tab labels when aggregate quantities exceed stock
+- [x] Going offline makes previously-synced tabs read-only with a visible indicator
+- [x] Drafts created while offline are editable and sync when connectivity returns
+- [x] Finalizing an invoice clears the active tab without closing it
+- [x] Other open tabs are completely unaffected by another tab's finalization
+- [x] A success toast with invoice number appears after finalization (no navigation away)
+- [x] Settings page shows the count of saved (non-deleted) drafts
+- [x] No MVP 1 features are broken by any MVP 2 changes
 
 ---
 

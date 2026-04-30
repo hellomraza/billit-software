@@ -22,7 +22,7 @@ function makeEmptyDraft(
     items: [],
     customerName: "",
     customerPhone: "",
-    paymentMethod: "",
+    paymentMethod: "CASH",
     isDeleted: false,
     createdAt: now,
     updatedAt: now,

@@ -6,6 +6,7 @@ export function saveAuthSession(accessToken: string, tenant: Tenant) {
   // Save to localStorage for client axios
   localStorage.setItem("access_token", accessToken);
   localStorage.setItem("tenant", JSON.stringify(tenant));
+  localStorage.setItem("tenant_id", tenant._id);
 
   // Save to cookies for server axios (JS-accessible cookie)
   document.cookie = `access_token=${accessToken}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
@@ -19,7 +20,7 @@ export function completeOnboarding() {
     "billit_onboarding_complete=true; path=/; max-age=2592000; SameSite=Lax";
 }
 
-export function clearAuthSession() {
+export async function clearAuthSession() {
   // Clear auth tokens
   localStorage.removeItem("access_token");
   localStorage.removeItem("tenant");
@@ -40,6 +41,12 @@ export function clearAuthSession() {
 
   // Clear UI state filters and preferences
   localStorage.removeItem("billit_invoice_filters");
+
+  // Clear persisted billing draft cache from IndexedDB
+  if (typeof window !== "undefined") {
+    const { indexedDBStorage } = await import("@/lib/indexedDbStorage");
+    await indexedDBStorage.removeItem("billing-tabs-v2");
+  }
 }
 
 export function getStoredTenant(): Tenant | null {
@@ -56,5 +63,11 @@ export function getStoredTenant(): Tenant | null {
 export function getStoredOutletId(): string | null {
   if (typeof window === "undefined") return null;
   const match = document.cookie.match(/(?:^|; )outlet_id=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+export function getStoredTenantId(): string | null {
+  if (typeof window === "undefined") return null;
+  const match = document.cookie.match(/(?:^|; )tenant_id=([^;]+)/);
   return match ? decodeURIComponent(match[1]) : null;
 }

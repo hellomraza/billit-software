@@ -88,6 +88,7 @@ const onboardingOutletSchema = z.object({
       "Abbreviation must be uppercase letters and numbers only",
     )
     .transform((val) => val.toUpperCase()),
+  isDefault: z.boolean().optional().default(false),
 });
 
 // B.3 Update Outlet Information Action
