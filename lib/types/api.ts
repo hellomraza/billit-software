@@ -10,6 +10,7 @@ export interface Tenant {
   abbrLocked: boolean;
   createdAt: string;
   updatedAt: string;
+  savedDraftCount?: number;
 }
 
 // Outlet
