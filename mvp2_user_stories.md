@@ -1553,7 +1553,7 @@ Note: In MVP 2, "saved" drafts and "open" drafts are both `isDeleted = false` on
 
 ---
 
-- [ ] **ST-10.1.1** Modify the `GET /settings` handler to include a count query: `COUNT(Draft) WHERE tenantId = X AND isDeleted = false`. Add the result as `savedDraftCount` in the response.
+- [x] **ST-10.1.1** Modify the `GET /settings` handler to include a count query: `COUNT(Draft) WHERE tenantId = X AND isDeleted = false`. Add the result as `savedDraftCount` in the response.
   - **Expected output:** `GET /settings` response includes `savedDraftCount: number`. Value is correct.
 
 ---
@@ -1576,10 +1576,10 @@ In the Settings page (server component), the `getSettings()` API call already fe
 
 ---
 
-- [ ] **ST-10.2.1** Update `lib/api/settings.ts` to type the `savedDraftCount` field in the settings response type.
+- [x] **ST-10.2.1** Update `lib/api/settings.ts` to type the `savedDraftCount` field in the settings response type.
   - **Expected output:** TypeScript type for settings response includes `savedDraftCount: number`.
 
-- [ ] **ST-10.2.2** Add the "Saved Bills" section to the settings page UI. Show the count. Show "View saved bills" link if count > 0.
+- [x] **ST-10.2.2** Add the "Saved Bills" section to the settings page UI. Show the count. Show "View saved bills" link if count > 0.
   - **Expected output:** Settings page renders the section. Count is 0 for new user. Count increases after creating drafts.
 
 ---

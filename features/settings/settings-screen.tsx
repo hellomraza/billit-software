@@ -17,7 +17,7 @@ import { ChangePasswordForm } from "@/features/settings/change-password-form";
 import { GstSettingsForm } from "@/features/settings/gst-settings-form";
 import { clearAuthSession } from "@/lib/auth-tokens";
 import { Tenant } from "@/lib/types/api";
-import { KeyRound, Laptop, LogOut, Moon, Sun } from "lucide-react";
+import { FileText, KeyRound, Laptop, LogOut, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -165,6 +165,40 @@ export function SettingsScreen({ settings }: SettingsScreenProps) {
                 <strong>Dark:</strong> Always use dark mode
               </p>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Saved Bills Card */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-muted-foreground" />
+              <CardTitle>Saved Bills</CardTitle>
+            </div>
+            <CardDescription>
+              Manage your saved and pending bills.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {(settings?.savedDraftCount ?? 0) > 0 ? (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  You have{" "}
+                  <span className="font-semibold text-foreground">
+                    {settings?.savedDraftCount} saved bill
+                    {(settings?.savedDraftCount ?? 0) !== 1 ? "s" : ""}
+                  </span>{" "}
+                  waiting for you.
+                </p>
+                <Button variant="outline" onClick={() => router.push("/")}>
+                  View Saved Bills
+                </Button>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No saved bills. Bills you close will appear here.
+              </p>
+            )}
           </CardContent>
         </Card>
 
