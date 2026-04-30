@@ -1422,7 +1422,7 @@ export function useOnlineStatus(): boolean {
 - [x] **ST-08.2.2** Modify `useDraftSync`: accept `isOnline: boolean` parameter. When `isOnline = false`, skip scheduling new sync timers (still mark drafts as PENDING_SYNC in IndexedDB, just don't attempt the network call). Cancel all in-flight retry timers while offline.
   - **Expected output:** No network requests to `/drafts/sync` are made while offline. Draft changes are still saved to IndexedDB with `syncStatus = PENDING_SYNC`.
 
-- [] **ST-08.2.3** Modify `useDraftSync`: when `isOnline` transitions to `true` (use `useEffect` with `isOnline` as dependency), immediately call `scheduleSync` for all drafts currently in `PENDING_SYNC` or `SYNC_FAILED` state (without the 1-second debounce — call them with 0ms delay).
+- [x] **ST-08.2.3** Modify `useDraftSync`: when `isOnline` transitions to `true` (use `useEffect` with `isOnline` as dependency), immediately call `scheduleSync` for all drafts currently in `PENDING_SYNC` or `SYNC_FAILED` state (without the 1-second debounce — call them with 0ms delay).
   - **Expected output:** After coming back online, all pending drafts sync immediately.
 
 ---
@@ -1451,7 +1451,7 @@ export function useOnlineStatus(): boolean {
 
 ---
 
-- [ ] **ST-08.3.1** Compute `isReadOnly` per tab in `useBillingTabs` or billing page. Pass to the billing workspace.
+- [x] **ST-08.3.1** Compute `isReadOnly` per tab in `useBillingTabs` or billing page. Pass to the billing workspace.
   - **Expected output:** `isReadOnly` is `true` for synced tabs when offline. `false` for offline-created tabs and when online.
 
 - [ ] **ST-08.3.2** Apply `disabled` prop to all interactive billing inputs (search, quantity controls, customer fields, payment method, finalize button, clear bill button) when `isReadOnly = true`.
