@@ -96,10 +96,6 @@ export function useBillingTabs(): UseBillingTabsReturn {
   const updateDraftPayment = useBillingTabsStore(
     (state) => state.updateDraftPayment,
   );
-  const clearAndResetTab = useBillingTabsStore(
-    (state) => state.clearAndResetTab,
-  );
-
   const [isHydrated, setIsHydrated] = useState(
     useBillingTabsStore.persist?.hasHydrated?.() ?? true,
   );
@@ -219,7 +215,7 @@ export function useBillingTabs(): UseBillingTabsReturn {
             createStoreTab(tenantId, outletId);
           }
         }
-      } catch (err) {
+      } catch {
         // Mark load failure so UI can show a subtle banner and fall back to persisted drafts
         useBillingTabsStore.getState().setDraftsLoadFailed?.(true);
         toast.error("Could not load latest drafts. Showing cached data.");
@@ -231,7 +227,7 @@ export function useBillingTabs(): UseBillingTabsReturn {
     return () => {
       cancelled = true;
     };
-  }, [isHydrated]);
+  }, [createStoreTab, isHydrated]);
 
   const tabs = useMemo<TabState[]>(() => {
     return drafts
@@ -390,12 +386,42 @@ export function useBillingTabs(): UseBillingTabsReturn {
       return;
     }
 
-    clearAndResetTab(
-      activeDraft.clientDraftId,
-      activeDraft.tenantId,
-      activeDraft.outletId,
-    );
-  }, [activeDraft, clearAndResetTab]);
+    useBillingTabsStore.setState((state) => {
+      const counter = state.tabCounter + 1;
+      const now = new Date().toISOString();
+      const newClientDraftId = uuidv4();
+
+      return {
+        drafts: state.drafts
+          .filter((draft) => draft.clientDraftId !== activeDraft.clientDraftId)
+          .concat({
+            clientDraftId: newClientDraftId,
+            tenantId: activeDraft.tenantId,
+            outletId: activeDraft.outletId,
+            tabLabel: `Bill ${counter}`,
+            items: [],
+            customerName: "",
+            customerPhone: "",
+            paymentMethod: "",
+            isDeleted: false,
+            createdAt: now,
+            updatedAt: now,
+            localUpdatedAt: now,
+            syncStatus: "PENDING_SYNC",
+            syncFailureType: null,
+            isOfflineCreated: !navigator.onLine,
+          }),
+        openTabIds: state.openTabIds.map((id) =>
+          id === activeDraft.clientDraftId ? newClientDraftId : id,
+        ),
+        activeTabId:
+          state.activeTabId === activeDraft.clientDraftId
+            ? newClientDraftId
+            : state.activeTabId,
+        tabCounter: counter,
+      };
+    });
+  }, [activeDraft]);
 
   return {
     tabs,
