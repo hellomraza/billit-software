@@ -1,5 +1,6 @@
 "use client";
 
+import OfflineBanner from "@/components/billing/offline-banner";
 import SavedDraftsPanel from "@/components/billing/saved-drafts-panel";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { MoneyText } from "@/components/shared/money-text";
@@ -14,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { InvoiceStockConflictModal } from "@/features/invoices/invoice-stock-conflict-modal";
+import { useOnlineStatus } from "@/hooks/use-online-status";
 import { getStoredOutletId, getStoredTenant } from "@/lib/auth-tokens";
 import { computeStockWarnings } from "@/lib/utils/cross-tab-stock";
 import { ProductWithStock } from "@/lib/utils/products";
@@ -78,6 +80,13 @@ export function BillingWorkspace({
     () => activeDraft?.items ?? [],
     [activeDraft],
   );
+  const isOnline = useOnlineStatus();
+  const isReadOnly =
+    !isOnline &&
+    !!activeDraft &&
+    activeDraft.syncStatus !== "PENDING_SYNC" &&
+    !activeDraft.isOfflineCreated &&
+    Boolean(activeDraft.id);
   const customerName = activeDraft?.customerName ?? "";
   const customerPhone = activeDraft?.customerPhone ?? "";
   const paymentMethod = activeDraft?.paymentMethod ?? "";
@@ -421,10 +430,12 @@ export function BillingWorkspace({
       ) : null}
 
       <div className="relative flex h-full  flex-col gap-3 md:flex-row">
+        <OfflineBanner isOnline={isOnline} className="mb-2" />
         <Card className="py-0 ring-0 flex-1 flex flex-col bg-transparent shadow-none ">
           <BillingSearch
             onSelectProduct={handleSelectProduct}
             initialProducts={initialProducts}
+            isReadOnly={isReadOnly}
           />
         </Card>
 
@@ -434,6 +445,7 @@ export function BillingWorkspace({
             onUpdateQuantity={handleUpdateQuantity}
             onRemoveItem={handleRemoveItem}
             stockWarnings={stockWarnings}
+            isReadOnly={isReadOnly}
           />
           <BillingSummaryPanel
             onFinalize={openFinalizeDialog}
@@ -443,6 +455,7 @@ export function BillingWorkspace({
             grandTotal={grandTotal}
             paymentMethod={selectedPaymentMethod}
             onPaymentMethodChange={handlePaymentMethodChange}
+            isReadOnly={isReadOnly}
           />
         </Card>
       </div>
@@ -534,6 +547,7 @@ export function BillingWorkspace({
                 onCustomerPhoneChange={(phone) =>
                   updateActiveCustomer(customerName, phone)
                 }
+                isReadOnly={isReadOnly}
               />
             </div>
           </div>
