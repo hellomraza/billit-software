@@ -12,8 +12,12 @@ export function OutletBootstrap({ children }: { children: React.ReactNode }) {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
     ensureOutletIdAction()
-      .then(() => {
+      .then(outletId => {
+        localStorage.setItem("outlet_id", outletId ?? ""); // Cache in localStorage for client access
         setIsReady(true);
       })
       .catch((error) => {

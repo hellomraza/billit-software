@@ -6,6 +6,7 @@ export function saveAuthSession(accessToken: string, tenant: Tenant) {
   // Save to localStorage for client axios
   localStorage.setItem("access_token", accessToken);
   localStorage.setItem("tenant", JSON.stringify(tenant));
+  localStorage.setItem("tenant_id", tenant._id);
 
   // Save to cookies for server axios (JS-accessible cookie)
   document.cookie = `access_token=${accessToken}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
