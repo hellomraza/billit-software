@@ -1553,7 +1553,7 @@ Note: In MVP 2, "saved" drafts and "open" drafts are both `isDeleted = false` on
 
 ---
 
-- [ ] **ST-10.1.1** Modify the `GET /settings` handler to include a count query: `COUNT(Draft) WHERE tenantId = X AND isDeleted = false`. Add the result as `savedDraftCount` in the response.
+- [x] **ST-10.1.1** Modify the `GET /settings` handler to include a count query: `COUNT(Draft) WHERE tenantId = X AND isDeleted = false`. Add the result as `savedDraftCount` in the response.
   - **Expected output:** `GET /settings` response includes `savedDraftCount: number`. Value is correct.
 
 ---
