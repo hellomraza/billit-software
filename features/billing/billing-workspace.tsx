@@ -289,8 +289,8 @@ export function BillingWorkspace({
         action: {
           label: "View Invoice",
           onClick: () => {
-            if (result.invoice?.id) {
-              router.push(`/invoices/${result.invoice.id}`);
+            if (result.invoice?.invoiceId) {
+              router.push(`/invoices/${result.invoice.invoiceId}`);
             }
           },
         },

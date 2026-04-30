@@ -1,7 +1,7 @@
 "use server";
 
+import { InvoiceListResponse } from "@/lib/api/invoices";
 import { createServerAxios } from "@/lib/axios/server";
-import { Invoice } from "@/types/invoice";
 import { AxiosError } from "axios";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
@@ -21,7 +21,7 @@ export interface CreateInvoicePayload {
 }
 
 export interface InvoiceCreatedResponse {
-  data: Invoice;
+  data: InvoiceListResponse;
   abbreviationsLocked?: boolean;
 }
 
@@ -39,7 +39,7 @@ export interface InsufficientStockDetail {
 export interface SubmitInvoiceResult {
   success: boolean;
   phase: "success" | "stock_conflict" | "error";
-  invoice?: Invoice;
+  invoice?: InvoiceListResponse;
   insufficientItems?: InsufficientStockDetail[];
   message?: string;
 }
