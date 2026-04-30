@@ -1509,13 +1509,13 @@ Wait — actually, the correct behavior is:
 
 ---
 
-- [ ] **ST-09.1.1** Update `clearActiveTab()` in `useBillingTabs` to: generate a new `clientDraftId`, delete the old IndexedDB record, create a new IndexedDB record with the new ID and empty state, update the tab's `clientDraftId` in `tabs` state.
+- [x] **ST-09.1.1** Update `clearActiveTab()` in `useBillingTabs` to: generate a new `clientDraftId`, delete the old IndexedDB record, create a new IndexedDB record with the new ID and empty state, update the tab's `clientDraftId` in `tabs` state.
   - **Expected output:** After finalization, the active tab's `clientDraftId` is different from what it was before. The old draft record is gone from IndexedDB.
 
-- [ ] **ST-09.1.2** Verify the success navigation: currently MVP 1 navigates to the invoice detail page after finalization. In MVP 2, this navigation should NOT happen — the user stays on the billing screen in the now-cleared tab. Instead, show a success toast: "Invoice {invoiceNumber} created successfully. View invoice →" with a link to the invoice detail page.
+- [x] **ST-09.1.2** Verify the success navigation: currently MVP 1 navigates to the invoice detail page after finalization. In MVP 2, this navigation should NOT happen — the user stays on the billing screen in the now-cleared tab. Instead, show a success toast: "Invoice {invoiceNumber} created successfully. View invoice →" with a link to the invoice detail page.
   - **Expected output:** After finalization, user stays on billing screen. A toast appears with the invoice number. Other tabs are unaffected.
 
-- [ ] **ST-09.1.3** Verify that other open tabs are completely unaffected by finalization of the active tab. Tab 2's cart, customer info, and payment method must be identical before and after Tab 1 finalizes.
+- [x] **ST-09.1.3** Verify that other open tabs are completely unaffected by finalization of the active tab. Tab 2's cart, customer info, and payment method must be identical before and after Tab 1 finalizes.
   - **Expected output:** Manual test: open Tab 1 and Tab 2. Add different products to each. Finalize Tab 1. Tab 2's content is unchanged.
 
 ---

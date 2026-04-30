@@ -215,7 +215,7 @@ export function useBillingTabs(): UseBillingTabsReturn {
             createStoreTab(tenantId, outletId);
           }
         }
-      } catch (err) {
+      } catch {
         // Mark load failure so UI can show a subtle banner and fall back to persisted drafts
         useBillingTabsStore.getState().setDraftsLoadFailed?.(true);
         toast.error("Could not load latest drafts. Showing cached data.");
@@ -227,7 +227,7 @@ export function useBillingTabs(): UseBillingTabsReturn {
     return () => {
       cancelled = true;
     };
-  }, [isHydrated]);
+  }, [createStoreTab, isHydrated]);
 
   const tabs = useMemo<TabState[]>(() => {
     return drafts

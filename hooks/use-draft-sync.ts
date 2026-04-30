@@ -160,7 +160,6 @@ class DraftSyncManager {
           });
       } catch (e) {
         // swallow store update errors
-        // eslint-disable-next-line no-console
         console.warn("useDraftSync: failed to update store on success", e);
       }
       return data;
@@ -174,7 +173,6 @@ class DraftSyncManager {
             .getState()
             .updateSyncStatus(draft.clientDraftId, "SYNC_FAILED", "SERVER");
         } catch (e) {
-          // eslint-disable-next-line no-console
           console.warn(
             "useDraftSync: failed to update store on server error",
             e,
@@ -190,7 +188,6 @@ class DraftSyncManager {
           .getState()
           .updateSyncStatus(draft.clientDraftId, "SYNC_FAILED", "NETWORK");
       } catch (e) {
-        // eslint-disable-next-line no-console
         console.warn(
           "useDraftSync: failed to update store on network error",
           e,
@@ -225,7 +222,6 @@ export function useDraftSync(isOnline: boolean = true) {
         }
       } catch (e) {
         // ignore errors reading store
-        // eslint-disable-next-line no-console
         console.warn("useDraftSync: failed to kick off immediate syncs", e);
       }
     }
