@@ -1396,7 +1396,7 @@ export function useOnlineStatus(): boolean {
 
 ---
 
-- [ ] **ST-08.1.1** Create `hooks/use-online-status.ts` with the implementation above. Export `useOnlineStatus`.
+- [x] **ST-08.1.1** Create `hooks/use-online-status.ts` with the implementation above. Export `useOnlineStatus`.
   - **Expected output:** Hook returns correct value. Toggling "Offline" in browser DevTools changes the value.
 
 ---
