@@ -1416,13 +1416,13 @@ export function useOnlineStatus(): boolean {
 
 ---
 
-- [ ] **ST-08.2.1** Create `components/billing/offline-banner.tsx`. A simple full-width amber banner with the offline message. Only renders when `isOnline = false`.
+- [x] **ST-08.2.1** Create `components/billing/offline-banner.tsx`. A simple full-width amber banner with the offline message. Only renders when `isOnline = false`.
   - **Expected output:** Banner appears when DevTools → Offline. Disappears when DevTools → Online.
 
-- [ ] **ST-08.2.2** Modify `useDraftSync`: accept `isOnline: boolean` parameter. When `isOnline = false`, skip scheduling new sync timers (still mark drafts as PENDING_SYNC in IndexedDB, just don't attempt the network call). Cancel all in-flight retry timers while offline.
+- [x] **ST-08.2.2** Modify `useDraftSync`: accept `isOnline: boolean` parameter. When `isOnline = false`, skip scheduling new sync timers (still mark drafts as PENDING_SYNC in IndexedDB, just don't attempt the network call). Cancel all in-flight retry timers while offline.
   - **Expected output:** No network requests to `/drafts/sync` are made while offline. Draft changes are still saved to IndexedDB with `syncStatus = PENDING_SYNC`.
 
-- [ ] **ST-08.2.3** Modify `useDraftSync`: when `isOnline` transitions to `true` (use `useEffect` with `isOnline` as dependency), immediately call `scheduleSync` for all drafts currently in `PENDING_SYNC` or `SYNC_FAILED` state (without the 1-second debounce — call them with 0ms delay).
+- [] **ST-08.2.3** Modify `useDraftSync`: when `isOnline` transitions to `true` (use `useEffect` with `isOnline` as dependency), immediately call `scheduleSync` for all drafts currently in `PENDING_SYNC` or `SYNC_FAILED` state (without the 1-second debounce — call them with 0ms delay).
   - **Expected output:** After coming back online, all pending drafts sync immediately.
 
 ---

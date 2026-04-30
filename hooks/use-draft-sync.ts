@@ -209,6 +209,27 @@ export function useDraftSync(isOnline: boolean = true) {
   useEffect(() => {
     // inform manager of current connectivity
     manager.setOnline(Boolean(isOnline));
+
+    // When coming back online, immediately sync all drafts that are pending or previously failed.
+    if (isOnline) {
+      try {
+        const drafts = useBillingTabsStore.getState().drafts ?? [];
+        for (const d of drafts) {
+          if (
+            !d.isDeleted &&
+            (d.syncStatus === "PENDING_SYNC" || d.syncStatus === "SYNC_FAILED")
+          ) {
+            // immediateSync bypasses debounce (0ms) and starts retries as needed
+            void manager.immediateSync(d.clientDraftId);
+          }
+        }
+      } catch (e) {
+        // ignore errors reading store
+        // eslint-disable-next-line no-console
+        console.warn("useDraftSync: failed to kick off immediate syncs", e);
+      }
+    }
+
     return () => {
       manager.stopAll();
     };
