@@ -33,6 +33,7 @@ import type {
   LocalDraft,
   TabState,
 } from "@/types/draft";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BillingTabBar } from "../../components/billing/billing-tab-bar";
@@ -65,6 +66,7 @@ export function BillingWorkspace({
   onUpdateActivePayment,
   onClearActiveTab,
 }: BillingWorkspaceProps) {
+  const router = useRouter();
   const gstEnabled = useIsGstEnabled();
   const products = initialProducts;
   const drafts = useBillingTabsStore((state) => state.drafts);
@@ -285,6 +287,14 @@ export function BillingWorkspace({
 
       toast.success(`Invoice #${result.invoice?.invoiceNumber} Created`, {
         description: `Total ${tenantSettings.currency} ${result.invoice?.grandTotal.toFixed(2)} via ${selectedPaymentMethod}`,
+        action: {
+          label: "View Invoice",
+          onClick: () => {
+            if (result.invoice?.id) {
+              router.push(`/invoices/${result.invoice.id}`);
+            }
+          },
+        },
       });
     } else if (result.phase === "stock_conflict") {
       setIsFinalizeDialogOpen(false);
