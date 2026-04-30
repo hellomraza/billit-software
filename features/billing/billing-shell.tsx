@@ -11,7 +11,6 @@ import { BillingWorkspace } from "./billing-workspace";
 interface BillingShellProps {
   initialProducts: ProductWithStock[];
   tenantSettings: {
-    defaultGstRate: number;
     currency: string;
   };
 }

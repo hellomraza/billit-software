@@ -45,7 +45,6 @@ import { BillingSummaryPanel } from "./billing-summary-panel";
 interface BillingWorkspaceProps {
   initialProducts: ProductWithStock[];
   tenantSettings: {
-    defaultGstRate: number;
     currency: string;
   };
   activeDraft?: LocalDraft;
