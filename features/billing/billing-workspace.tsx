@@ -415,7 +415,7 @@ export function BillingWorkspace({
   };
 
   return (
-    <div className="flex h-full flex-col gap-3 max-h-[calc(100%-6rem)]">
+    <div className="flex h-full flex-col gap-3 max-h-[calc(100%-4rem)]">
       {!hideInternalTabBar ? (
         <BillingTabBar
           tabs={tabStatesWithWarnings}
@@ -438,7 +438,7 @@ export function BillingWorkspace({
         />
       ) : null}
 
-      <div className="relative flex h-full  flex-col gap-3 md:flex-row">
+      <div className="relative flex h-full flex-col gap-3 md:flex-row">
         <OfflineBanner isOnline={isOnline} className="mb-2" />
         {isReadOnly && (
           <div

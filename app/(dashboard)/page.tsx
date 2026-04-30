@@ -31,7 +31,7 @@ const page = async () => {
           tenantSettings={{ currency: "INR" }}
         />
       </div>
-      <section className="px-6 py-4 mt-4">
+      <section className="px-6 py-4">
         <div>
           <h2 className="text-2xl font-semibold mb-4 animate-in slide-in-from-left duration-500">
             Latest Invoices

@@ -122,7 +122,7 @@ export function BillingTabBar(props: BillingTabBarProps) {
   }
 
   return (
-    <div className="h-16 rounded-xl border bg-background/95 px-3 py-2 shadow-sm backdrop-blur supports-backdrop-filter:bg-background/80">
+    <div className="h-16 rounded-xl border bg-background/95 px-2 py-2 shadow-sm backdrop-blur supports-backdrop-filter:bg-background/80">
       <div className="flex min-w-0 items-center gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto overflow-y-hidden whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {tabs.map((tab) => {
@@ -135,7 +135,7 @@ export function BillingTabBar(props: BillingTabBarProps) {
               <div
                 key={tab.clientDraftId}
                 className={cn(
-                  "group/tab relative inline-flex shrink-0 items-center rounded-lg border px-1.5 py-1.5 text-sm font-medium transition-colors",
+                  "group/tab relative inline-flex shrink-0 items-center rounded-md border px-1.5 py-1.5 text-sm font-medium transition-colors",
                   isActive
                     ? "border-primary bg-primary text-primary-foreground shadow-sm"
                     : "border-border bg-muted/50 text-muted-foreground hover:border-border/80 hover:bg-muted hover:text-foreground",
@@ -233,11 +233,11 @@ export function BillingTabBar(props: BillingTabBarProps) {
           })}
         </div>
 
-        <div className="flex shrink-0 items-center gap-2 pl-1">
+        <div className="flex h-full items-center gap-2 pl-1">
           <Button
             type="button"
             variant="outline"
-            size="icon-sm"
+            size="icon-lg"
             onClick={props.onNewTab}
             aria-label="Create new tab"
           >
@@ -247,7 +247,7 @@ export function BillingTabBar(props: BillingTabBarProps) {
           <Button
             type="button"
             variant="outline"
-            size="sm"
+            size="lg"
             onClick={props.onOpenDraftsPanel}
             className="gap-2"
           >
