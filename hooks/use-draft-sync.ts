@@ -11,6 +11,7 @@ type SyncHandler = (draft: LocalDraft) => Promise<unknown>;
 class DraftSyncManager {
   private timers = new Map<string, number>();
   private attempts = new Map<string, number>();
+  private online = true;
   // attempts map tracks how many attempts have been made for a draft
   // No hard cap: retry indefinitely while component is mounted per spec
   private defaultHandler: SyncHandler | null = null;
@@ -19,7 +20,18 @@ class DraftSyncManager {
     this.defaultHandler = h;
   }
 
+  setOnline(flag: boolean) {
+    this.online = flag;
+    if (!this.online) {
+      // cancel all pending timers and retry attempts while offline
+      this.stopAll();
+    }
+  }
+
   scheduleSync = (clientDraftId: string) => {
+    // If offline, do not schedule sync timers per offline behavior
+    if (!this.online) return;
+
     // clear any existing timer and schedule a new one for 1s
     this.clearTimer(clientDraftId);
     const id = window.setTimeout(() => {
@@ -193,12 +205,14 @@ class DraftSyncManager {
 const manager = new DraftSyncManager();
 
 // React hook wrapper: registers cleanup on unmount and returns API
-export function useDraftSync() {
+export function useDraftSync(isOnline: boolean = true) {
   useEffect(() => {
+    // inform manager of current connectivity
+    manager.setOnline(Boolean(isOnline));
     return () => {
       manager.stopAll();
     };
-  }, []);
+  }, [isOnline]);
 
   return {
     scheduleSync: manager.scheduleSync,
