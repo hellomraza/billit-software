@@ -1,5 +1,6 @@
 "use client";
 
+import SavedDraftsPanel from "@/components/billing/saved-drafts-panel";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { MoneyText } from "@/components/shared/money-text";
 import { Button } from "@/components/ui/button";
@@ -30,21 +31,13 @@ import type {
   LocalDraft,
   TabState,
 } from "@/types/draft";
-import { openDB } from "idb";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BillingTabBar } from "../../components/billing/billing-tab-bar";
 import { BillingCart } from "./billing-cart";
 import { BillingCustomerDetails } from "./billing-customer-details";
 import { BillingSearch } from "./billing-search";
 import { BillingSummaryPanel } from "./billing-summary-panel";
-
-type LegacyDraftState = {
-  items?: DraftItem[];
-  customerName?: string;
-  customerPhone?: string;
-  paymentMethod?: PaymentMethod;
-};
 
 interface BillingWorkspaceProps {
   initialProducts: ProductWithStock[];
@@ -79,18 +72,8 @@ export function BillingWorkspace({
   const switchTab = useBillingTabsStore((state) => state.switchTab);
   const closeTab = useBillingTabsStore((state) => state.closeTab);
   const renameTab = useBillingTabsStore((state) => state.renameTab);
-  const updateDraftItems = useBillingTabsStore(
-    (state) => state.updateDraftItems,
-  );
-  const updateDraftCustomer = useBillingTabsStore(
-    (state) => state.updateDraftCustomer,
-  );
-  const updateDraftPayment = useBillingTabsStore(
-    (state) => state.updateDraftPayment,
-  );
   const invoiceActions = useInvoiceActions();
   const phase = useInvoicePhase();
-  const migrationAttemptedRef = useRef(false);
   const cart = useMemo<DraftItem[]>(
     () => activeDraft?.items ?? [],
     [activeDraft],
@@ -170,83 +153,6 @@ export function BillingWorkspace({
       };
     });
   }, [tabStates, stockWarnings]);
-
-  useEffect(() => {
-    if (migrationAttemptedRef.current || drafts.length > 0) {
-      return;
-    }
-
-    migrationAttemptedRef.current = true;
-
-    const migrateMVP1Draft = async () => {
-      const tenant = getStoredTenant();
-      const outletId = getStoredOutletId();
-      const tenantId = tenant?._id;
-
-      if (!tenantId || !outletId) {
-        return;
-      }
-
-      const db = await openDB("billing-app-db", 1);
-      const rawDraft = await db.get("zustand-store", "billing-draft");
-
-      if (!rawDraft) {
-        return;
-      }
-
-      let parsedDraft: unknown;
-      if (typeof rawDraft === "string") {
-        try {
-          parsedDraft = JSON.parse(rawDraft);
-        } catch {
-          return;
-        }
-      } else {
-        parsedDraft = rawDraft;
-      }
-
-      const oldState: LegacyDraftState | undefined =
-        typeof parsedDraft === "object" && parsedDraft !== null
-          ? ((parsedDraft as { state?: LegacyDraftState }).state ??
-            (parsedDraft as LegacyDraftState))
-          : undefined;
-
-      if (!Array.isArray(oldState?.items) || oldState.items.length === 0) {
-        return;
-      }
-
-      createTab(tenantId, outletId);
-      const newId = useBillingTabsStore.getState().activeTabId;
-
-      if (!newId) {
-        return;
-      }
-
-      updateDraftItems(newId, oldState.items);
-
-      if (oldState.customerName || oldState.customerPhone) {
-        updateDraftCustomer(
-          newId,
-          oldState.customerName ?? "",
-          oldState.customerPhone ?? "",
-        );
-      }
-
-      if (oldState.paymentMethod) {
-        updateDraftPayment(newId, oldState.paymentMethod);
-      }
-    };
-
-    migrateMVP1Draft().catch(() => {
-      // Non-blocking migration path: ignore and continue with current flow.
-    });
-  }, [
-    drafts.length,
-    createTab,
-    updateDraftItems,
-    updateDraftCustomer,
-    updateDraftPayment,
-  ]);
 
   const subtotal = useMemo(
     () => cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
@@ -396,8 +302,10 @@ export function BillingWorkspace({
   };
 
   const handleOpenDraftsPanel = () => {
-    toast.info("Saved drafts panel will be added in the next billing story.");
+    setIsSavedDraftsOpen(true);
   };
+
+  const [isSavedDraftsOpen, setIsSavedDraftsOpen] = useState(false);
 
   const handleStockConflictDecision = async (
     decisions: Record<string, "use-available" | "override" | "remove">,
@@ -538,6 +446,11 @@ export function BillingWorkspace({
           />
         </Card>
       </div>
+
+      <SavedDraftsPanel
+        open={isSavedDraftsOpen}
+        onOpenChange={setIsSavedDraftsOpen}
+      />
 
       <Dialog
         open={isFinalizeDialogOpen}

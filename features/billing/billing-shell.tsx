@@ -1,10 +1,11 @@
 "use client";
 
 import { BillingTabBar } from "@/components/billing/billing-tab-bar";
+import SavedDraftsPanel from "@/components/billing/saved-drafts-panel";
 import SyncStatusBar from "@/components/billing/sync-status-bar";
 import { useBillingTabs } from "@/hooks/use-billing-tabs";
 import type { ProductWithStock } from "@/lib/utils/products";
-import { toast } from "sonner";
+import { useState } from "react";
 import { BillingWorkspace } from "./billing-workspace";
 
 interface BillingShellProps {
@@ -33,6 +34,8 @@ export function BillingShell({
     clearActiveTab,
   } = useBillingTabs();
 
+  const [draftsOpen, setDraftsOpen] = useState(false);
+
   return (
     <div className="flex h-full flex-col gap-4 p-4">
       <BillingTabBar
@@ -50,14 +53,12 @@ export function BillingShell({
           }
         }}
         onRenameTab={renameTab}
-        onOpenDraftsPanel={() => {
-          toast.info(
-            "Saved drafts panel will be added in the next billing story.",
-          );
-        }}
+        onOpenDraftsPanel={() => setDraftsOpen(true)}
       />
 
       <SyncStatusBar tabs={tabs} />
+
+      <SavedDraftsPanel open={draftsOpen} onOpenChange={setDraftsOpen} />
 
       <BillingWorkspace
         initialProducts={initialProducts}

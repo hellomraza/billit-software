@@ -195,7 +195,7 @@ export function useBillingTabs(): UseBillingTabsReturn {
       if (!tenantId || !outletId) return;
 
       try {
-        const res = await clientAxios.get("/drafts");
+        const res = await clientAxios.get(`/tenants/${tenantId}/drafts`);
         if (cancelled) return;
         const serverDrafts = res.data as unknown[];
 
