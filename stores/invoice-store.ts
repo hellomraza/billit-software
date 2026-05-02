@@ -7,11 +7,8 @@ import {
   type InsufficientStockDetail,
   type SubmitInvoiceResult,
 } from "@/actions/invoices";
-import {
-  type Invoice,
-  type InvoiceItem,
-  type PaymentMethod,
-} from "@/types/invoice";
+import { InvoiceListResponse } from "@/lib/api/invoices";
+import { type InvoiceItem, type PaymentMethod } from "@/types/invoice";
 import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
 import { useShallow } from "zustand/shallow";
@@ -26,7 +23,7 @@ export type Phase =
 export type CartItemInput = Omit<InvoiceItem, "subtotal" | "quantity">;
 
 export interface InvoiceCreatedResponse {
-  invoice: Invoice;
+  invoice: InvoiceListResponse;
   abbreviationsLocked?: boolean;
 }
 
