@@ -56,7 +56,6 @@ const UiSidebar = () => {
                     onClick={() => router.push(item.href)}
                     data-active={isActive ? "true" : "false"}
                     isActive={isActive}
-                    className="active:bg-red-500"
                   >
                     <item.icon
                       className={cn(
