@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { TabState } from "@/types/draft";
-import { AlertTriangle, FolderOpen, Plus } from "lucide-react";
+import { AlertTriangle, FolderOpen, LoaderCircle, Plus } from "lucide-react";
 
 interface BillingTabBarProps {
   tabs: TabState[];
@@ -130,6 +130,7 @@ export function BillingTabBar(props: BillingTabBarProps) {
             const itemCount = tab.items.length;
             const displayLabel = truncateTabLabel(tab.tabLabel);
             const syncIndicator = getSyncIndicator(tab.syncStatus);
+            const isPendingSync = tab.syncStatus === "PENDING_SYNC";
 
             return (
               <div
@@ -224,9 +225,21 @@ export function BillingTabBar(props: BillingTabBarProps) {
                   type="button"
                   onClick={() => requestTabClose(tab)}
                   className="inline-flex h-6 w-6 items-center justify-center rounded-full text-sm leading-none text-current opacity-70 transition-opacity hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  aria-label={`Close ${tab.tabLabel}`}
+                  aria-label={
+                    isPendingSync
+                      ? `Saving ${tab.tabLabel}`
+                      : `Close ${tab.tabLabel}`
+                  }
+                  title={isPendingSync ? "Saving" : "Close tab"}
                 >
-                  ×
+                  {isPendingSync ? (
+                    <LoaderCircle
+                      className="size-3.5 animate-spin"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    "×"
+                  )}
                 </button>
               </div>
             );

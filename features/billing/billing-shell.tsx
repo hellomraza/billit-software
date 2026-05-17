@@ -2,7 +2,6 @@
 
 import { BillingTabBar } from "@/components/billing/billing-tab-bar";
 import SavedDraftsPanel from "@/components/billing/saved-drafts-panel";
-import SyncStatusBar from "@/components/billing/sync-status-bar";
 import { useBillingTabs } from "@/hooks/use-billing-tabs";
 import { useDraftSync } from "@/hooks/use-draft-sync";
 import type { ProductWithStock } from "@/lib/utils/products";
@@ -50,7 +49,7 @@ export function BillingShell({
   }, [activeDraft, scheduleSync]);
 
   return (
-    <div className="flex h-full flex-col gap-4 p-4">
+    <div className="flex h-full flex-col gap-4 p-4 ">
       <BillingTabBar
         tabs={tabs}
         activeTabId={activeTabId || tabs[0]?.clientDraftId || "placeholder-tab"}
@@ -68,8 +67,6 @@ export function BillingShell({
         onRenameTab={renameTab}
         onOpenDraftsPanel={() => setDraftsOpen(true)}
       />
-
-      <SyncStatusBar tabs={tabs} />
 
       <SavedDraftsPanel open={draftsOpen} onOpenChange={setDraftsOpen} />
 
