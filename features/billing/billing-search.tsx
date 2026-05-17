@@ -15,7 +15,7 @@ import {
   useInvoiceSearchQuery,
 } from "@/stores/invoice-store";
 import { Loader2, RefreshCw } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface BillingSearchProps {
   onSelectProduct: (product: ProductWithStock) => void;
@@ -108,13 +108,7 @@ export function BillingSearch({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const displayedProducts = useMemo(() => {
-    const sourceProducts = searchQuery.trim() ? apiResults : initialProducts;
-    return sourceProducts.map((product) => ({
-      ...product,
-      stock: stockMap[product._id] ?? product.stock ?? 0,
-    }));
-  }, [searchQuery, apiResults, initialProducts, stockMap]);
+  const displayedProducts = searchQuery ? apiResults : initialProducts;
 
   return (
     <div className="flex flex-col h-full ">
