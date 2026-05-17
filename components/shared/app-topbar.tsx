@@ -4,7 +4,7 @@ import ToggleSidebarButton from "./sidebar/toggle-sidebar-button";
 
 export function AppTopBar() {
   return (
-    <header className="sticky top-0 z-10 flex h-18 gap-4 border-b px-4 md:px-6 items-center pb-2">
+    <header className="sticky top-0 z-10 flex h-18 gap-4 bg-background border-b px-4 md:px-6 items-center">
       <ToggleSidebarButton />
       <div className="flex-1 flex items-center">
         {/* Responsive Mobile Trigger can go here */}
