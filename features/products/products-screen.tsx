@@ -87,29 +87,27 @@ export function ProductsScreen({ products, outletId }: ProductsScreenProps) {
 
   return (
     <div className="p-4 sm:p-8 space-y-6 h-full flex flex-col">
-      <div>
-        <PageHeader
-          title="Products"
-          actions={[
-            <Link href={ROUTES.PRODUCTS_IMPORT} key="import">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 h-9 px-3 text-xs sm:text-sm"
-              >
-                <Download className=" h-4 w-4" />
-                <span>Import CSV</span>
-              </Button>
-            </Link>,
-            <Link href={ROUTES.PRODUCTS_NEW} key="new">
-              <Button size="sm" className="gap-2 h-9 px-3 text-xs sm:text-sm">
-                <Plus className="h-4 w-4" />
-                <span>Add Product</span>
-              </Button>
-            </Link>,
-          ]}
-        />
-      </div>
+      <PageHeader
+        title="Products"
+        actions={[
+          <Link href={ROUTES.PRODUCTS_IMPORT} key="import">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 h-9 px-3 text-xs sm:text-sm"
+            >
+              <Download className=" h-4 w-4" />
+              <span>Import CSV</span>
+            </Button>
+          </Link>,
+          <Link href={ROUTES.PRODUCTS_NEW} key="new">
+            <Button size="sm" className="gap-2 h-9 px-3 text-xs sm:text-sm">
+              <Plus className="h-4 w-4" />
+              <span>Add Product</span>
+            </Button>
+          </Link>,
+        ]}
+      />
 
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start">
         <SearchBar
