@@ -3,7 +3,6 @@ import { BillingShell } from "@/features/billing/billing-shell";
 import { InvoiceTable } from "@/features/invoices/invoice-table";
 import { getInvoices } from "@/lib/api/invoices";
 import { getProducts } from "@/lib/api/products";
-import RefreshStockButton from "./components/refresh-stock-button";
 
 const page = async () => {
   const [productsResponse, invoicesResponse] = await Promise.all([
@@ -21,7 +20,7 @@ const page = async () => {
           Billing
         </h1>
         <div className="flex items-center gap-2 sm:gap-3">
-          <RefreshStockButton />
+          {/* <RefreshStockButton /> */}
           <GstToggleButton />
         </div>
       </div>
