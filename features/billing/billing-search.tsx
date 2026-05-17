@@ -3,10 +3,8 @@
 import { MoneyText } from "@/components/shared/money-text";
 import { SearchBar } from "@/components/shared/search-bar";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useProductSearch } from "@/features/billing/use-product-search";
-import { useStockRefresh } from "@/features/billing/use-stock-refresh";
 import { getStoredOutletId, getStoredTenant } from "@/lib/auth-tokens";
 import { formatStock } from "@/lib/formatters/quantity";
 import { ProductWithStock } from "@/lib/utils/products";
@@ -14,8 +12,7 @@ import {
   useInvoiceActions,
   useInvoiceSearchQuery,
 } from "@/stores/invoice-store";
-import { Loader2, RefreshCw } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface BillingSearchProps {
   onSelectProduct: (product: ProductWithStock) => void;
@@ -83,10 +80,6 @@ export function BillingSearch({
     loading: apiLoading,
     search,
   } = useProductSearch(tenantId || "", outletId || "");
-  const { stockMap, refresh, refreshing } = useStockRefresh(
-    tenantId || "",
-    outletId || "",
-  );
 
   // Trigger API search when search query changes
   useEffect(() => {
@@ -108,13 +101,7 @@ export function BillingSearch({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const displayedProducts = useMemo(() => {
-    const sourceProducts = searchQuery.trim() ? apiResults : initialProducts;
-    return sourceProducts.map((product) => ({
-      ...product,
-      stock: stockMap[product._id] ?? product.stock ?? 0,
-    }));
-  }, [searchQuery, apiResults, initialProducts, stockMap]);
+  const displayedProducts = searchQuery ? apiResults : initialProducts;
 
   return (
     <div className="flex flex-col h-full ">
@@ -132,21 +119,6 @@ export function BillingSearch({
             disabled={isReadOnly}
           />
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-12 px-3"
-          disabled={!tenantId || !outletId || refreshing || isReadOnly}
-          onClick={() => void refresh()}
-        >
-          {refreshing ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <RefreshCw className="h-4 w-4" />
-          )}
-          <span className="hidden sm:inline">Refresh stock</span>
-        </Button>
       </div>
 
       <div className="flex-1 overflow-auto grid grid-cols-2 sm:grid-cols-3 gap-4 p-4 content-start">
@@ -163,7 +135,7 @@ export function BillingSearch({
               <div className="flex justify-between items-start gap-2">
                 <div className="flex-1 min-w-0">
                   <div
-                    className="font-medium text-sm leading-tight line-clamp-2 wrap-break-word overflow-hidden"
+                    className="font-bold text-lg leading-tight line-clamp-2 wrap-break-word overflow-hidden"
                     title={product.name}
                   >
                     <HighlightedText
@@ -191,7 +163,7 @@ export function BillingSearch({
               </div>
               <MoneyText
                 amount={product.basePrice}
-                className="text-lg font-semibold shrink-0"
+                className="text-sm font-semibold shrink-0"
               />
             </CardContent>
           </Card>

@@ -7,6 +7,7 @@ export interface InvoiceItem {
   quantity: number;
   gstRate: number;
   subtotal: number;
+  gstAmount: number;
 }
 
 export interface Invoice {

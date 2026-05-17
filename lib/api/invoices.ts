@@ -2,7 +2,6 @@
 
 import { createServerAxios } from "@/lib/axios/server";
 import { getTenantId } from "@/lib/get-tenant-id";
-import { Invoice as ApiInvoice } from "@/lib/types/api";
 import { Invoice, InvoiceListItem, PaymentMethod } from "@/types/invoice";
 
 export interface InvoiceFilters {
@@ -60,14 +59,14 @@ function transformInvoice(apiInvoice: InvoiceListResponse): InvoiceListItem {
   };
 }
 
-function transformInvoiceDetail(apiInvoice: ApiInvoice): Invoice {
+function transformInvoiceDetail(apiInvoice: GetInvoiceResponse): Invoice {
   return {
-    id: apiInvoice._id,
+    id: apiInvoice.invoiceId,
     invoiceNumber: apiInvoice.invoiceNumber,
     createdAt: apiInvoice.createdAt,
-    customerName: apiInvoice.customerName,
-    customerPhone: apiInvoice.customerPhone,
-    isGstInvoice: apiInvoice.isGstInvoice,
+    customerName: apiInvoice.customerDetails?.name,
+    customerPhone: apiInvoice.customerDetails?.phone,
+    isGstInvoice: apiInvoice.gstEnabled,
     paymentMethod: apiInvoice.paymentMethod,
     items: apiInvoice.items.map((item) => ({
       productId: item.productId,
@@ -75,10 +74,11 @@ function transformInvoiceDetail(apiInvoice: ApiInvoice): Invoice {
       unitPrice: item.unitPrice,
       quantity: item.quantity,
       gstRate: item.gstRate,
+      gstAmount: item.gstAmount,
       subtotal: item.lineTotal,
     })),
     subtotal: apiInvoice.subtotal,
-    totalGst: apiInvoice.totalGstAmount,
+    totalGst: apiInvoice.gstTotal,
     grandTotal: apiInvoice.grandTotal,
   };
 }
@@ -125,12 +125,48 @@ export async function getInvoices(
   }
 }
 
+type InvoiceItemResponseDto = {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  gstRate: number;
+  gstAmount: number;
+  lineTotal: number;
+};
+
+type GetInvoiceResponse = {
+  invoiceNumber: string;
+  invoiceId: string;
+  createdAt: string;
+  businessName: string;
+  businessAbbr: string;
+  outletName: string;
+  outletAbbr: string;
+  gstEnabled: boolean;
+  tenantGSTNumber?: string;
+  customerDetails?: {
+    name: string;
+    phone: string;
+  };
+  paymentMethod: PaymentMethod;
+  items: InvoiceItemResponseDto[];
+  subtotal: number;
+  gstTotal: number;
+  grandTotal: number;
+  deficitItems: Array<{
+    productId: string;
+    productName: string;
+    quantity: number;
+    currentResolutionStatus: "PENDING" | "RESOLVED";
+  }>;
+};
 export async function getInvoice(invoiceId: string): Promise<Invoice> {
   try {
     const tenantId = await getTenantId();
     const api = await createServerAxios();
 
-    const { data } = await api.get<ApiInvoice>(
+    const { data } = await api.get<GetInvoiceResponse>(
       `/tenants/${tenantId}/invoices/${invoiceId}`,
     );
 

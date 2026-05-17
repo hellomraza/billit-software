@@ -1,7 +1,13 @@
-import React from "react";
-import { InvoiceItem } from "@/types";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MoneyText } from "@/components/shared/money-text";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { InvoiceItem } from "@/types";
 
 interface InvoiceItemsTableProps {
   items: InvoiceItem[];
@@ -17,7 +23,8 @@ export function InvoiceItemsTable({ items, showGst }: InvoiceItemsTableProps) {
             <TableHead className="w-[40%]">Item</TableHead>
             <TableHead className="text-right">Price</TableHead>
             <TableHead className="text-center">Qty</TableHead>
-            {showGst && <TableHead className="text-right">GST</TableHead>}
+            <TableHead className="text-right">Sub Total</TableHead>
+            {showGst && <TableHead className="text-right">Total GST</TableHead>}
             <TableHead className="text-right">Total</TableHead>
           </TableRow>
         </TableHeader>
@@ -33,9 +40,12 @@ export function InvoiceItemsTable({ items, showGst }: InvoiceItemsTableProps) {
               <TableCell className="text-center font-medium">
                 x{item.quantity}
               </TableCell>
+              <TableCell className="text-right font-medium tabular-nums">
+                <MoneyText amount={Number(item.unitPrice) * item.quantity} />
+              </TableCell>
               {showGst && (
                 <TableCell className="text-right text-muted-foreground text-sm">
-                  {item.gstRate}%
+                  <MoneyText amount={item.gstAmount} />
                 </TableCell>
               )}
               <TableCell className="text-right font-medium tabular-nums">

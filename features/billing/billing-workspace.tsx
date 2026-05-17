@@ -207,6 +207,8 @@ export function BillingWorkspace({
         unitPrice: product.basePrice,
         gstRate: product.gstRate,
         quantity: requestedQty,
+        subtotal: product.basePrice * requestedQty,
+        gstAmount: product.basePrice * requestedQty * (product.gstRate / 100),
       },
     ]);
   };
@@ -259,6 +261,7 @@ export function BillingWorkspace({
         gstRate: item.gstRate,
         quantity: item.quantity,
         subtotal: item.unitPrice * item.quantity,
+        gstAmount: item.gstAmount,
       })),
     );
     invoiceActions.setCustomerName(customerName);
@@ -365,6 +368,7 @@ export function BillingWorkspace({
         gstRate: item.gstRate,
         quantity: item.quantity,
         subtotal: item.unitPrice * item.quantity,
+        gstAmount: item.gstAmount,
       })),
     );
 
@@ -415,7 +419,7 @@ export function BillingWorkspace({
   };
 
   return (
-    <div className="flex h-full flex-col gap-3 max-h-[calc(100%-4rem)]">
+    <div className="flex h-full max-h-[calc(100%-4rem)]">
       {!hideInternalTabBar ? (
         <BillingTabBar
           tabs={tabStatesWithWarnings}
@@ -438,7 +442,7 @@ export function BillingWorkspace({
         />
       ) : null}
 
-      <div className="relative flex h-full flex-col gap-3 md:flex-row">
+      <div className="relative flex h-full flex-col gap-2 md:flex-row">
         <OfflineBanner isOnline={isOnline} className="mb-2" />
         {isReadOnly && (
           <div

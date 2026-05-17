@@ -86,21 +86,27 @@ export function ProductsScreen({ products, outletId }: ProductsScreenProps) {
   };
 
   return (
-    <div className="p-4 sm:p-8 space-y-6 h-full flex flex-col max-w-[1400px] mx-auto">
+    <div className="p-4 sm:p-8 space-y-6 h-full flex flex-col">
       <div>
         <PageHeader
           title="Products"
           actions={[
-            <Button key="import" variant="outline">
-              <Link href={ROUTES.PRODUCTS_IMPORT}>
-                <Download className="mr-2 h-4 w-4" /> Import CSV
-              </Link>
-            </Button>,
-            <Button key="new">
-              <Link href={ROUTES.PRODUCTS_NEW}>
-                <Plus className="mr-2 h-4 w-4" /> Add Product
-              </Link>
-            </Button>,
+            <Link href={ROUTES.PRODUCTS_IMPORT} key="import">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 h-9 px-3 text-xs sm:text-sm"
+              >
+                <Download className=" h-4 w-4" />
+                <span>Import CSV</span>
+              </Button>
+            </Link>,
+            <Link href={ROUTES.PRODUCTS_NEW} key="new">
+              <Button size="sm" className="gap-2 h-9 px-3 text-xs sm:text-sm">
+                <Plus className="h-4 w-4" />
+                <span>Add Product</span>
+              </Button>
+            </Link>,
           ]}
         />
       </div>

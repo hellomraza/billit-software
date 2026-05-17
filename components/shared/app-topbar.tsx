@@ -1,9 +1,11 @@
 import { Bell, User } from "lucide-react";
 import { Button } from "../ui/button";
+import ToggleSidebarButton from "./sidebar/toggle-sidebar-button";
 
-export function AppTopbar() {
+export function AppTopBar() {
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6 md:px-8">
+    <header className="sticky top-0 z-10 flex h-18 gap-4 bg-background border-b px-4 md:px-6 items-center">
+      <ToggleSidebarButton />
       <div className="flex-1 flex items-center">
         {/* Responsive Mobile Trigger can go here */}
         <h2 className="text-lg font-semibold md:hidden text-primary">
