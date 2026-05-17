@@ -1,10 +1,6 @@
-export interface DraftItem {
-  productId: string;
-  productName: string;
-  quantity: number;
-  unitPrice: number;
-  gstRate: 0 | 5 | 12 | 18 | 28;
-}
+import { InvoiceItem } from "./invoice";
+
+export type DraftItem = InvoiceItem;
 
 export type SyncStatus = "SYNCED" | "PENDING_SYNC" | "SYNC_FAILED";
 export type SyncFailureType = "NETWORK" | "SERVER" | null;

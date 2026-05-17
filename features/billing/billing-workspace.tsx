@@ -207,6 +207,8 @@ export function BillingWorkspace({
         unitPrice: product.basePrice,
         gstRate: product.gstRate,
         quantity: requestedQty,
+        subtotal: product.basePrice * requestedQty,
+        gstAmount: product.basePrice * requestedQty * (product.gstRate / 100),
       },
     ]);
   };
@@ -259,6 +261,7 @@ export function BillingWorkspace({
         gstRate: item.gstRate,
         quantity: item.quantity,
         subtotal: item.unitPrice * item.quantity,
+        gstAmount: item.gstAmount,
       })),
     );
     invoiceActions.setCustomerName(customerName);
@@ -365,6 +368,7 @@ export function BillingWorkspace({
         gstRate: item.gstRate,
         quantity: item.quantity,
         subtotal: item.unitPrice * item.quantity,
+        gstAmount: item.gstAmount,
       })),
     );
 
