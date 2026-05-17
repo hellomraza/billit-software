@@ -163,7 +163,7 @@ export function BillingSearch({
               <div className="flex justify-between items-start gap-2">
                 <div className="flex-1 min-w-0">
                   <div
-                    className="font-medium text-sm leading-tight line-clamp-2 wrap-break-word overflow-hidden"
+                    className="font-bold text-lg leading-tight line-clamp-2 wrap-break-word overflow-hidden"
                     title={product.name}
                   >
                     <HighlightedText
@@ -191,7 +191,7 @@ export function BillingSearch({
               </div>
               <MoneyText
                 amount={product.basePrice}
-                className="text-lg font-semibold shrink-0"
+                className="text-sm font-semibold shrink-0"
               />
             </CardContent>
           </Card>
