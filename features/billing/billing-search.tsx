@@ -3,10 +3,8 @@
 import { MoneyText } from "@/components/shared/money-text";
 import { SearchBar } from "@/components/shared/search-bar";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useProductSearch } from "@/features/billing/use-product-search";
-import { useStockRefresh } from "@/features/billing/use-stock-refresh";
 import { getStoredOutletId, getStoredTenant } from "@/lib/auth-tokens";
 import { formatStock } from "@/lib/formatters/quantity";
 import { ProductWithStock } from "@/lib/utils/products";
@@ -14,7 +12,6 @@ import {
   useInvoiceActions,
   useInvoiceSearchQuery,
 } from "@/stores/invoice-store";
-import { Loader2, RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface BillingSearchProps {
@@ -83,10 +80,6 @@ export function BillingSearch({
     loading: apiLoading,
     search,
   } = useProductSearch(tenantId || "", outletId || "");
-  const { stockMap, refresh, refreshing } = useStockRefresh(
-    tenantId || "",
-    outletId || "",
-  );
 
   // Trigger API search when search query changes
   useEffect(() => {
@@ -126,21 +119,6 @@ export function BillingSearch({
             disabled={isReadOnly}
           />
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-12 px-3"
-          disabled={!tenantId || !outletId || refreshing || isReadOnly}
-          onClick={() => void refresh()}
-        >
-          {refreshing ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <RefreshCw className="h-4 w-4" />
-          )}
-          <span className="hidden sm:inline">Refresh stock</span>
-        </Button>
       </div>
 
       <div className="flex-1 overflow-auto grid grid-cols-2 sm:grid-cols-3 gap-4 p-4 content-start">
