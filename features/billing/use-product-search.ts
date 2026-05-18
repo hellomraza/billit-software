@@ -18,10 +18,10 @@ export function useProductSearch(tenantId: string, outletId: string) {
         clearTimeout(debounceTimeoutRef.current);
       }
 
-      if (!query.trim()) {
-        setResults([]);
-        return;
-      }
+      // if (!query.trim()) {
+      //   setResults([]);
+      //   return;
+      // }
 
       // Set new timeout for debounced search
       debounceTimeoutRef.current = setTimeout(async () => {

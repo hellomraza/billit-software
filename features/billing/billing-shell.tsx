@@ -3,9 +3,8 @@
 import { BillingTabBar } from "@/components/billing/billing-tab-bar";
 import SavedDraftsPanel from "@/components/billing/saved-drafts-panel";
 import { useBillingTabs } from "@/hooks/use-billing-tabs";
-import { useDraftSync } from "@/hooks/use-draft-sync";
 import type { ProductWithStock } from "@/lib/utils/products";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { BillingWorkspace } from "./billing-workspace";
 
 interface BillingShellProps {
@@ -33,20 +32,7 @@ export function BillingShell({
     clearActiveTab,
   } = useBillingTabs();
 
-  const { scheduleSync } = useDraftSync();
   const [draftsOpen, setDraftsOpen] = useState(false);
-
-  useEffect(() => {
-    if (!activeDraft || activeDraft.isDeleted) {
-      return;
-    }
-
-    if (activeDraft.syncStatus !== "PENDING_SYNC") {
-      return;
-    }
-
-    scheduleSync(activeDraft.clientDraftId);
-  }, [activeDraft, scheduleSync]);
 
   return (
     <div className="flex h-full flex-col gap-4 p-4 ">

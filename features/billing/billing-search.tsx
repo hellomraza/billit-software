@@ -16,7 +16,6 @@ import { useEffect, useRef, useState } from "react";
 
 interface BillingSearchProps {
   onSelectProduct: (product: ProductWithStock) => void;
-  initialProducts: ProductWithStock[];
   isReadOnly?: boolean;
 }
 
@@ -59,12 +58,12 @@ function HighlightedText({
 
 export function BillingSearch({
   onSelectProduct,
-  initialProducts,
   isReadOnly = false,
 }: BillingSearchProps) {
   const { setSearchQuery } = useInvoiceActions();
   const searchQuery = useInvoiceSearchQuery();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [searchResetKey, setSearchResetKey] = useState(0);
   const [tenantId] = useState(() => {
     const tenant = getStoredTenant();
     return tenant?._id || null;
@@ -83,7 +82,7 @@ export function BillingSearch({
 
   // Trigger API search when search query changes
   useEffect(() => {
-    if (tenantId && searchQuery) {
+    if (tenantId && (searchQuery || searchQuery === "")) {
       search(searchQuery);
     }
   }, [searchQuery, tenantId, search]);
@@ -101,7 +100,18 @@ export function BillingSearch({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const displayedProducts = searchQuery ? apiResults : initialProducts;
+  const displayedProducts = apiResults;
+
+  const handleSelectProduct = (product: ProductWithStock) => {
+    if (isReadOnly) {
+      return;
+    }
+
+    onSelectProduct(product);
+    setSearchQuery("");
+    setSearchResetKey((current) => current + 1);
+    searchInputRef.current?.focus();
+  };
 
   return (
     <div className="flex flex-col h-full ">
@@ -117,35 +127,41 @@ export function BillingSearch({
             className="max-w-full h-12 text-md flex-1"
             loading={apiLoading && searchQuery ? true : false}
             disabled={isReadOnly}
+            debounceMs={500}
+            key={searchResetKey}
           />
         </div>
       </div>
 
       <div className="flex-1 overflow-auto grid grid-cols-2 sm:grid-cols-3 gap-4 p-4 content-start">
-        {displayedProducts?.map((product) => (
-          <Card
-            key={product._id}
-            className={`transition-colors flex flex-col h-25 py-2 px-2 justify-start ${isReadOnly ? "cursor-default opacity-80" : "cursor-pointer hover:border-primary/50"}`}
-            onClick={() => {
-              if (!isReadOnly) onSelectProduct(product);
-            }}
-            aria-disabled={isReadOnly}
-          >
-            <CardContent className="p-3 flex flex-col justify-between flex-1 text-xs">
-              <div className="flex justify-between items-start gap-2">
-                <div className="flex-1 min-w-0">
-                  <div
-                    className="font-bold text-lg leading-tight line-clamp-2 wrap-break-word overflow-hidden"
-                    title={product.name}
-                  >
-                    <HighlightedText
-                      text={product.name}
-                      highlight={searchQuery}
-                    />
+        {displayedProducts &&
+          !apiLoading &&
+          displayedProducts.map((product) => (
+            <Card
+              key={product._id}
+              className={`transition-colors flex flex-col h-25 py-2 px-2 justify-start ${isReadOnly ? "cursor-default opacity-80" : "cursor-pointer hover:border-primary/50"}`}
+              onClick={() => handleSelectProduct(product)}
+              aria-disabled={isReadOnly}
+            >
+              <CardContent className="p-3 flex flex-col justify-between flex-1 text-xs">
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div
+                      className="font-bold text-lg leading-tight line-clamp-2 wrap-break-word overflow-hidden"
+                      title={product.name}
+                    >
+                      <HighlightedText
+                        text={product.name}
+                        highlight={searchQuery}
+                      />
+                    </div>
                   </div>
                 </div>
-
-                <div className="shrink-0 flex items-start justify-end">
+                <div className="shrink-0 flex items-start justify-between">
+                  <MoneyText
+                    amount={product.basePrice}
+                    className="text-sm font-semibold shrink-0"
+                  />
                   {product.stock && product.stock > 0 ? (
                     <span className="text-muted-foreground font-medium whitespace-nowrap">
                       {formatStock(product.stock, product.deficitThreshold)}
@@ -160,14 +176,9 @@ export function BillingSearch({
                     </StatusBadge>
                   )}
                 </div>
-              </div>
-              <MoneyText
-                amount={product.basePrice}
-                className="text-sm font-semibold shrink-0"
-              />
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))}
         {searchQuery && !apiLoading && apiResults.length === 0 && tenantId && (
           <div className="col-span-full py-12 text-center text-muted-foreground">
             No products found matching &quot;{searchQuery}&quot;

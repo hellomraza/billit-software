@@ -27,7 +27,7 @@ function makeEmptyDraft(
     createdAt: now,
     updatedAt: now,
     localUpdatedAt: now,
-    syncStatus: "PENDING_SYNC",
+    syncStatus: "SYNCED",
     syncFailureType: null,
     isOfflineCreated,
   };
@@ -88,7 +88,7 @@ export const useBillingTabsStore = create<BillingTabsState>()(
                   ...d,
                   tabLabel: label,
                   localUpdatedAt: new Date().toISOString(),
-                  syncStatus: "PENDING_SYNC",
+                  syncStatus: "SYNCED",
                 }
               : d,
           ),
@@ -102,7 +102,7 @@ export const useBillingTabsStore = create<BillingTabsState>()(
                   ...d,
                   items,
                   localUpdatedAt: new Date().toISOString(),
-                  syncStatus: "PENDING_SYNC",
+                  syncStatus: "SYNCED",
                 }
               : d,
           ),
@@ -117,7 +117,7 @@ export const useBillingTabsStore = create<BillingTabsState>()(
                   customerName: name,
                   customerPhone: phone,
                   localUpdatedAt: new Date().toISOString(),
-                  syncStatus: "PENDING_SYNC",
+                  syncStatus: "SYNCED",
                 }
               : d,
           ),
@@ -131,7 +131,7 @@ export const useBillingTabsStore = create<BillingTabsState>()(
                   ...d,
                   paymentMethod: method,
                   localUpdatedAt: new Date().toISOString(),
-                  syncStatus: "PENDING_SYNC",
+                  syncStatus: "SYNCED",
                 }
               : d,
           ),
@@ -245,7 +245,10 @@ export const useBillingTabsStore = create<BillingTabsState>()(
 
           const serverOpenIds = serverDrafts
             .filter(
-              (s) => !s.isDeleted && !validOpenTabIds.includes(s.clientDraftId),
+              (s) =>
+                !s.isDeleted &&
+                !validOpenTabIds.includes(s.clientDraftId) &&
+                !localIds.has(s.clientDraftId),
             )
             .map((s) => s.clientDraftId);
 

@@ -457,7 +457,6 @@ export function BillingWorkspace({
         <Card className="py-0 ring-0 flex-1 flex flex-col bg-transparent shadow-none ">
           <BillingSearch
             onSelectProduct={handleSelectProduct}
-            initialProducts={initialProducts}
             isReadOnly={isReadOnly}
           />
         </Card>
