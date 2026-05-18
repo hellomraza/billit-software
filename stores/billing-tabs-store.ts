@@ -245,7 +245,10 @@ export const useBillingTabsStore = create<BillingTabsState>()(
 
           const serverOpenIds = serverDrafts
             .filter(
-              (s) => !s.isDeleted && !validOpenTabIds.includes(s.clientDraftId),
+              (s) =>
+                !s.isDeleted &&
+                !validOpenTabIds.includes(s.clientDraftId) &&
+                !localIds.has(s.clientDraftId),
             )
             .map((s) => s.clientDraftId);
 
