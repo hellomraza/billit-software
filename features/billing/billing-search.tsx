@@ -65,6 +65,7 @@ export function BillingSearch({
   const { setSearchQuery } = useInvoiceActions();
   const searchQuery = useInvoiceSearchQuery();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [searchResetKey, setSearchResetKey] = useState(0);
   const [tenantId] = useState(() => {
     const tenant = getStoredTenant();
     return tenant?._id || null;
@@ -83,7 +84,7 @@ export function BillingSearch({
 
   // Trigger API search when search query changes
   useEffect(() => {
-    if (tenantId && searchQuery) {
+    if (tenantId && (searchQuery || searchQuery === "")) {
       search(searchQuery);
     }
   }, [searchQuery, tenantId, search]);
@@ -101,7 +102,18 @@ export function BillingSearch({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const displayedProducts = searchQuery ? apiResults : initialProducts;
+  const displayedProducts = apiResults;
+
+  const handleSelectProduct = (product: ProductWithStock) => {
+    if (isReadOnly) {
+      return;
+    }
+
+    onSelectProduct(product);
+    setSearchQuery("");
+    setSearchResetKey((current) => current + 1);
+    searchInputRef.current?.focus();
+  };
 
   return (
     <div className="flex flex-col h-full ">
@@ -117,6 +129,8 @@ export function BillingSearch({
             className="max-w-full h-12 text-md flex-1"
             loading={apiLoading && searchQuery ? true : false}
             disabled={isReadOnly}
+            debounceMs={500}
+            key={searchResetKey}
           />
         </div>
       </div>
