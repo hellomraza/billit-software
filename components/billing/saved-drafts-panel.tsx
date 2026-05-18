@@ -3,8 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { getStoredTenantId } from "@/lib/auth-tokens";
-import clientAxios from "@/lib/axios/client";
 import { useBillingTabsStore } from "@/stores/billing-tabs-store";
 import { useMemo } from "react";
 import { toast } from "sonner";
@@ -42,7 +40,6 @@ export default function SavedDraftsPanel({
   const openTabIds = useBillingTabsStore((s) => s.openTabIds);
   const reopenDraft = useBillingTabsStore((s) => s.reopenDraft);
   const markDraftDeleted = useBillingTabsStore((s) => s.markDraftDeleted);
-  const setState = useBillingTabsStore.setState;
 
   const saved = useMemo(
     () =>
@@ -66,27 +63,9 @@ export default function SavedDraftsPanel({
   const handleDiscard = async (clientDraftId: string) => {
     if (!confirm("Permanently discard this bill? This cannot be undone."))
       return;
-    try {
-      const tenantId = getStoredTenantId();
-      if (!tenantId) {
-        toast.error("Tenant ID not found. Removing draft locally.");
-        markDraftDeleted(clientDraftId);
-        return;
-      }
-      await clientAxios.delete(`tenants/${tenantId}/drafts/${clientDraftId}`);
-      markDraftDeleted(clientDraftId);
-      toast.success("Draft discarded");
-    } catch (err: any) {
-      console.warn(err);
-      toast.error(
-        err?.response?.status >= 400 && err?.response?.status < 500
-          ? "Server rejected deletion. Removing locally."
-          : "Could not contact server. Removing locally.",
-      );
-      setState((state) => ({
-        drafts: state.drafts.filter((d) => d.clientDraftId !== clientDraftId),
-      }));
-    }
+
+    markDraftDeleted(clientDraftId);
+    toast.success("Draft discarded");
   };
 
   return (

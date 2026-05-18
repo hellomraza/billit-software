@@ -2,7 +2,6 @@
 
 import { useOnlineStatus } from "@/hooks/use-online-status";
 import { getStoredOutletId, getStoredTenant } from "@/lib/auth-tokens";
-import clientAxios from "@/lib/axios/client";
 import { useBillingTabsStore } from "@/stores/billing-tabs-store";
 import type {
   DraftItem,
@@ -10,9 +9,7 @@ import type {
   PaymentMethod,
   TabState,
 } from "@/types/draft";
-import { openDB } from "idb";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
 export interface UseBillingTabsReturn {
@@ -28,10 +25,6 @@ export interface UseBillingTabsReturn {
   updateActivePayment: (method: PaymentMethod) => void;
   clearActiveTab: () => void;
 }
-
-type ServerDraftsResponse = {
-  drafts: DraftItem[];
-};
 
 function parsePersistedState(rawValue: unknown): Partial<{
   drafts: LocalDraft[];
@@ -127,52 +120,6 @@ export function useBillingTabs(): UseBillingTabsReturn {
         return;
       }
 
-      const db = await openDB("billing-app-db", 1);
-      const rawState = await db.get("zustand-store", "billing-tabs-v2");
-      const persistedState = parsePersistedState(rawState);
-      const persistedDrafts = (persistedState.drafts ?? []).filter(
-        (draft) => !draft.isDeleted,
-      );
-
-      if (persistedDrafts.length > 0) {
-        const validOpenTabIds =
-          (persistedState.openTabIds ?? []).filter((id) =>
-            persistedDrafts.some((draft) => draft.clientDraftId === id),
-          ) || [];
-
-        const derivedOpenTabIds =
-          validOpenTabIds.length > 0
-            ? validOpenTabIds
-            : persistedDrafts.map((draft) => draft.clientDraftId);
-
-        const mostRecentlyUpdatedDraft = [...persistedDrafts].sort((a, b) => {
-          const aUpdatedAt = new Date(
-            a.updatedAt ?? a.localUpdatedAt,
-          ).getTime();
-          const bUpdatedAt = new Date(
-            b.updatedAt ?? b.localUpdatedAt,
-          ).getTime();
-          return bUpdatedAt - aUpdatedAt;
-        })[0];
-
-        useBillingTabsStore.setState({
-          drafts: persistedDrafts,
-          openTabIds: derivedOpenTabIds,
-          activeTabId:
-            persistedState.activeTabId &&
-            derivedOpenTabIds.includes(persistedState.activeTabId)
-              ? persistedState.activeTabId
-              : (mostRecentlyUpdatedDraft?.clientDraftId ??
-                derivedOpenTabIds[0] ??
-                ""),
-          tabCounter:
-            persistedState.tabCounter ??
-            Math.max(derivedOpenTabIds.length, persistedDrafts.length),
-        });
-
-        return;
-      }
-
       const tenantId = getStoredTenant()?._id;
       const outletId = getStoredOutletId();
 
@@ -185,55 +132,6 @@ export function useBillingTabs(): UseBillingTabsReturn {
       // Initialization is best-effort; UI can still continue without local cache.
     });
   }, [isHydrated, createStoreTab]);
-
-  // Fetch server drafts on mount and hydrate store. If it fails, fall back to
-  // existing persisted drafts and show a subtle warning.
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchServerDrafts = async () => {
-      const tenantId = getStoredTenant()?._id;
-      const outletId = getStoredOutletId();
-
-      if (!tenantId || !outletId) return;
-
-      try {
-        const res = await clientAxios.get<ServerDraftsResponse>(
-          `/tenants/${tenantId}/drafts`,
-        );
-        if (cancelled) return;
-        const serverDrafts = res.data.drafts;
-
-        // Let the store merge/upsert and persist to IndexedDB
-        useBillingTabsStore
-          .getState()
-          .hydrateDraftsFromServer(serverDrafts as any);
-        useBillingTabsStore.getState().setDraftsLoadFailed?.(false);
-
-        // If after hydration there are no non-deleted drafts, create one empty tab
-        const drafts = useBillingTabsStore
-          .getState()
-          .drafts.filter((d) => !d.isDeleted);
-        if (drafts.length === 0) {
-          const tenantId = getStoredTenant()?._id;
-          const outletId = getStoredOutletId();
-          if (tenantId && outletId) {
-            createStoreTab(tenantId, outletId);
-          }
-        }
-      } catch {
-        // Mark load failure so UI can show a subtle banner and fall back to persisted drafts
-        useBillingTabsStore.getState().setDraftsLoadFailed?.(true);
-        toast.error("Could not load latest drafts. Showing cached data.");
-      }
-    };
-
-    void fetchServerDrafts();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [createStoreTab, isHydrated]);
 
   const tabs = useMemo<TabState[]>(() => {
     return drafts
@@ -284,7 +182,7 @@ export function useBillingTabs(): UseBillingTabsReturn {
         createdAt: now,
         updatedAt: now,
         localUpdatedAt: now,
-        syncStatus: "PENDING_SYNC",
+        syncStatus: "SYNCED",
         syncFailureType: null,
         isOfflineCreated: !navigator.onLine,
       };
@@ -413,7 +311,7 @@ export function useBillingTabs(): UseBillingTabsReturn {
             createdAt: now,
             updatedAt: now,
             localUpdatedAt: now,
-            syncStatus: "PENDING_SYNC",
+            syncStatus: "SYNCED",
             syncFailureType: null,
             isOfflineCreated: !navigator.onLine,
           }),

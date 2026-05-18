@@ -12,12 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { TabState } from "@/types/draft";
 import { AlertTriangle, FolderOpen, LoaderCircle, Plus } from "lucide-react";
@@ -36,7 +30,7 @@ const placeholderTab: TabState = {
   clientDraftId: "placeholder-tab",
   tabLabel: "Bill 1",
   items: [],
-  syncStatus: "PENDING_SYNC",
+  syncStatus: "SYNCED",
 };
 
 const MAX_TAB_LABEL_LENGTH = 20;
@@ -142,7 +136,7 @@ export function BillingTabBar(props: BillingTabBarProps) {
                     : "border-border bg-muted/50 text-muted-foreground hover:border-border/80 hover:bg-muted hover:text-foreground",
                 )}
               >
-                <TooltipProvider>
+                {/* <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger
                       render={
@@ -157,7 +151,7 @@ export function BillingTabBar(props: BillingTabBarProps) {
                     />
                     <TooltipContent>{syncIndicator.label}</TooltipContent>
                   </Tooltip>
-                </TooltipProvider>
+                </TooltipProvider> */}
 
                 <button
                   type="button"
