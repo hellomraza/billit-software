@@ -442,7 +442,7 @@ export function BillingWorkspace({
         />
       ) : null}
 
-      <div className="relative flex h-full flex-col gap-2 md:flex-row">
+      <div className="relative flex h-full flex-col gap-2 md:flex-row flex-1">
         <OfflineBanner isOnline={isOnline} className="mb-2" />
         {isReadOnly && (
           <div
