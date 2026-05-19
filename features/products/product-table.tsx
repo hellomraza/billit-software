@@ -4,6 +4,12 @@ import { DataTable } from "@/components/shared/data-table";
 import { MoneyText } from "@/components/shared/money-text";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { formatDate } from "@/lib/formatters/date";
 import { formatStock } from "@/lib/formatters/quantity";
 import { ROUTES } from "@/lib/routes";
@@ -127,21 +133,43 @@ export function ProductTable({
                 className="h-8 w-8 text-muted-foreground hover:text-foreground"
                 aria-label={`Edit ${row.name}`}
               >
-                <Link href={ROUTES.PRODUCTS_EDIT(row._id)}>
-                  <Edit2 className="h-4 w-4" />
-                </Link>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Link href={ROUTES.PRODUCTS_EDIT(row._id)}>
+                          <Edit2 className="h-4 w-4" />
+                        </Link>
+                      }
+                    />
+                    <TooltipContent>
+                      <p>Edit Product</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </Button>
               {!row.isDeleted && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onUpdateStock(row)}
-                  disabled={isUpdatingStock}
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground disabled:opacity-50"
-                  aria-label={`Update stock for ${row.name}`}
-                >
-                  <Package className="h-4 w-4" />
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onUpdateStock(row)}
+                          disabled={isUpdatingStock}
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground disabled:opacity-50"
+                          aria-label={`Update stock for ${row.name}`}
+                        >
+                          <Package className="h-4 w-4" />
+                        </Button>
+                      }
+                    />
+                    <TooltipContent>
+                      <p>Update Stock</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
               {row.isDeleted ? (
                 <Button
@@ -155,15 +183,26 @@ export function ProductTable({
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               ) : (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onDelete(row)}
-                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  aria-label={`Delete ${row.name}`}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onDelete(row)}
+                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          aria-label={`Delete ${row.name}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      }
+                    />
+                    <TooltipContent>
+                      <p>Delete Product</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
           ),
