@@ -20,14 +20,17 @@ export async function getProducts(
 
   const { page = 1, limit = 50, includeDeleted = false } = filters;
 
-  const { data } = await api.get(`/tenants/${tenantId}/products`, {
-    params: {
-      page,
-      limit,
-      includeDeleted,
-      outletId,
+  const { data } = await api.get<PaginatedResponse<ProductWithStock>>(
+    `/tenants/${tenantId}/products`,
+    {
+      params: {
+        page,
+        limit,
+        includeDeleted,
+        outletId,
+      },
     },
-  });
+  );
 
   return data;
 }
