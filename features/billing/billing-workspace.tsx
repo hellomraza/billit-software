@@ -418,6 +418,64 @@ export function BillingWorkspace({
     }
   };
 
+  const handleStockConflictDecisionWithPreview = async (
+    decisions: Record<string, "use-available" | "override" | "remove">,
+  ) => {
+    let updatedCart = [...cart];
+    const removedItems: string[] = [];
+
+    Object.entries(decisions).forEach(([productId, decision]) => {
+      if (decision === "remove") {
+        const item = updatedCart.find((i) => i.productId === productId);
+        if (item) removedItems.push(item.productName);
+        updatedCart = updatedCart.filter((i) => i.productId !== productId);
+      } else if (decision === "use-available") {
+        const item = updatedCart.find((i) => i.productId === productId);
+        const product = products.find((p) => p._id === productId);
+        if (item && product) {
+          item.quantity = product.stock ?? 0;
+        }
+      }
+    });
+
+    if (updatedCart.length === 0) {
+      toast.error("All items were removed", {
+        description: "Your bill has been cleared. No invoice was created.",
+      });
+      updateActiveCart([]);
+      invoiceActions.resetInvoiceDraft();
+      invoiceActions.closeStockModal();
+      return;
+    }
+
+    // Update cart with the modified items
+    updateActiveCart(updatedCart);
+
+    invoiceActions.setCart(
+      updatedCart.map((item) => ({
+        productId: item.productId,
+        productName: item.productName,
+        unitPrice: item.unitPrice,
+        gstRate: item.gstRate,
+        quantity: item.quantity,
+        subtotal: item.unitPrice * item.quantity,
+        gstAmount: item.gstAmount,
+      })),
+    );
+
+    // Close stock modal and enable preview mode
+    invoiceActions.closeStockModal();
+    invoiceActions.enablePreviewMode();
+
+    openFinalizeDialog()
+
+    // Store decisions for later submission if needed
+    // The user will see the invoice preview and can finalize from there
+    toast.info("Review your updated invoice", {
+      description: `${removedItems.length > 0 ? `Removed: ${removedItems.join(", ")}` : "Items adjusted to available stock"}`,
+    });
+  };
+
   return (
     <div className="flex h-full max-h-[calc(100%-4rem)]">
       {!hideInternalTabBar ? (
@@ -607,6 +665,7 @@ export function BillingWorkspace({
         key={isStockModalOpen ? "open" : "closed"} // Force remount to reset internal state
         isOpen={isStockModalOpen}
         onConfirm={handleStockConflictDecision}
+        onConfirmWithPreview={handleStockConflictDecisionWithPreview}
         onCancel={invoiceActions.closeStockModal}
       />
     </div>

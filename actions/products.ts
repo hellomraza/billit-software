@@ -190,6 +190,7 @@ export const restoreProductAction = async (data: RestoreProductInput) => {
 const updateStockSchema = z.object({
   productId: z.string().min(1, "Product ID is required"),
   outletId: z.string().min(1, "Outlet ID is required"),
+  currentStock: z.coerce.number().int().default(0),
   quantity: z.coerce
     .number({ error: "Quantity must be a number" })
     .int("Quantity must be a whole number")
@@ -204,16 +205,24 @@ export const updateStockAction = validatedAction(
     try {
       const tenantId = await getTenantId();
       const api = await createServerAxios();
+      const currentStock = data.currentStock > 0 ? data.currentStock : 0;
 
+      // Call the incremental add endpoint which increments stock by the provided quantity.
       await api.patch(
-        `/tenants/${tenantId}/products/${data.productId}/stock`,
+        `/tenants/${tenantId}/products/${data.productId}/stock/add`,
         { quantity: data.quantity },
         { params: { outletId: data.outletId } },
       );
 
+      const resultantStock = currentStock + data.quantity;
+
       revalidatePath("/products");
 
-      return { success: "Stock updated successfully" };
+      return {
+        success: `Added ${data.quantity} to stock. Current stock: ${currentStock}. Resultant stock: ${resultantStock}.`,
+        currentStock,
+        resultantStock,
+      };
     } catch (err: unknown) {
       if (err instanceof Error) {
         return { error: err.message || "Failed to update stock" };

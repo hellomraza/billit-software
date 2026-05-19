@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  useInvoiceCarts,
   useInvoiceInsufficientItems,
   useInvoicePhase,
 } from "@/stores/invoice-store";
@@ -21,23 +22,27 @@ type ItemDecision = "use-available" | "override" | "remove";
 interface InvoiceStockConflictModalProps {
   isOpen: boolean;
   onConfirm: (decisions: Record<string, ItemDecision>) => void;
+  onConfirmWithPreview?: (decisions: Record<string, ItemDecision>) => void;
   onCancel: () => void;
 }
 
 export function InvoiceStockConflictModal({
   isOpen,
   onConfirm,
+  onConfirmWithPreview,
   onCancel,
 }: InvoiceStockConflictModalProps) {
   const items = useInvoiceInsufficientItems();
+  const cart = useInvoiceCarts();
+
   const phase = useInvoicePhase();
   const isSubmitting = phase === "submitting";
   const [decisions, setDecisions] = useState<Record<string, ItemDecision>>(
     () => {
       const initial: Record<string, ItemDecision> = {};
       items.forEach((item) => {
-        initial[item.productId] =
-          item.currentStock > 0 ? "use-available" : "remove";
+        // Prioritize "override" (Sell Anyway) as default
+        initial[item.productId] = "override";
       });
       return initial;
     },
@@ -66,8 +71,13 @@ export function InvoiceStockConflictModal({
 
   // Check if cart will be empty
   const cartWillBeEmpty = useMemo(() => {
-    return summary.remove === items.length;
-  }, [summary, items.length]);
+    return summary.remove === cart.length;
+  }, [summary, cart.length]);
+
+  // Check if there are any non-override decisions
+  const hasNonOverrideDecisions = useMemo(() => {
+    return summary.useAvailable > 0 || summary.remove > 0;
+  }, [summary.useAvailable, summary.remove]);
 
   const updateDecision = (productId: string, decision: ItemDecision) => {
     setDecisions((prev) => ({ ...prev, [productId]: decision }));
@@ -80,7 +90,13 @@ export function InvoiceStockConflictModal({
     announceAction(
       `Stock conflict resolved. ${sellCount} item(s) will be processed.`,
     );
-    onConfirm(decisions);
+
+    // If user made non-override decisions and preview callback is provided, show preview first
+    if (hasNonOverrideDecisions && onConfirmWithPreview) {
+      onConfirmWithPreview(decisions);
+    } else {
+      onConfirm(decisions);
+    }
   };
 
   const announceAction = (message: string) => {
@@ -190,7 +206,11 @@ export function InvoiceStockConflictModal({
                         currentDecision === "override" ? "default" : "outline"
                       }
                       size="sm"
-                      className="text-xs h-9"
+                      className={`text-xs h-9 font-semibold ${
+                        currentDecision === "override"
+                          ? "bg-blue-600 hover:bg-blue-700"
+                          : "border-blue-300 hover:bg-blue-50"
+                      }`}
                       onClick={() => updateDecision(item.productId, "override")}
                       disabled={deficitThresholdExceeded || isSubmitting}
                       title={
