@@ -773,7 +773,7 @@ If the user enters 100 as a percentage discount, do not show any confirmation. T
 - [x] **ST-06.2.2** Wire the discount value numeric input to call `setItemDiscount` on every change (debounced 300ms to avoid excessive store updates while typing). Apply clamping on blur.
   - **Expected output:** Typing "30" in the flat discount field calls `setItemDiscount(draftId, productId, 'FLAT', 30)` after a 300ms pause. The item line total updates.
 
-- [ ] **ST-06.2.3** Show the clamping message when a value is clamped. Show "Discount capped at item total." for flat amounts that exceed the item total. The message appears below the input and fades after 3 seconds (or disappears when the input changes).
+- [x] **ST-06.2.3** Show the clamping message when a value is clamped. Show "Discount capped at item total." for flat amounts that exceed the item total. The message appears below the input and fades after 3 seconds (or disappears when the input changes).
   - **Expected output:** Entering ₹1000 on a ₹200 item shows "Discount capped at item total." and the input value updates to 200.
 
 - [x] **ST-06.2.4** Wire "Remove discount" link to call `clearItemDiscount(clientDraftId, productId)` and collapse the discount section.
