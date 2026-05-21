@@ -46,6 +46,9 @@ export interface Invoice {
   refunds?: InvoiceRefundSummary[];
   originalInvoice?: InvoiceOriginalSummary;
   refundReason?: string;
+  billDiscountType?: "NONE" | "PERCENTAGE" | "FLAT";
+  billDiscountValue?: number;
+  billDiscountAmount?: number;
   subtotal: number;
   totalGst: number;
   grandTotal: number;

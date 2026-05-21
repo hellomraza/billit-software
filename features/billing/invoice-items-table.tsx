@@ -32,7 +32,21 @@ export function InvoiceItemsTable({ items, showGst }: InvoiceItemsTableProps) {
           {items.map((item, index) => (
             <TableRow key={index}>
               <TableCell className="font-medium text-sm">
-                {item.productName}
+                <div className="flex flex-col">
+                  <span>{item.productName}</span>
+                  {item.itemDiscountAmount && item.itemDiscountAmount > 0 && (
+                    <span className="text-xs text-muted-foreground mt-1">
+                      {item.itemDiscountType === "PERCENTAGE" ? (
+                        <>
+                          Discount: −{item.itemDiscountValue}% (
+                          <MoneyText amount={-Math.abs(item.itemDiscountAmount)} />)
+                        </>
+                      ) : (
+                        <>Discount: <MoneyText amount={-Math.abs(item.itemDiscountAmount)} /></>
+                      )}
+                    </span>
+                  )}
+                </div>
               </TableCell>
               <TableCell className="text-right tabular-nums text-muted-foreground text-sm">
                 <MoneyText amount={item.unitPrice} />

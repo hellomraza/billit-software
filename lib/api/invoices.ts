@@ -79,6 +79,9 @@ function transformInvoiceDetail(apiInvoice: GetInvoiceResponse): Invoice {
       gstRate: item.gstRate,
       gstAmount: item.gstAmount,
       subtotal: item.lineTotal,
+      itemDiscountType: item.itemDiscountType,
+      itemDiscountValue: item.itemDiscountValue,
+      itemDiscountAmount: item.itemDiscountAmount,
     })),
     refunds: apiInvoice.refunds?.map((refund) => ({
       id: refund.id,
@@ -101,6 +104,9 @@ function transformInvoiceDetail(apiInvoice: GetInvoiceResponse): Invoice {
     refundReason: apiInvoice.refundReason,
     subtotal: apiInvoice.subtotal,
     totalGst: apiInvoice.gstTotal,
+    billDiscountType: apiInvoice.billDiscountType,
+    billDiscountValue: apiInvoice.billDiscountValue,
+    billDiscountAmount: apiInvoice.billDiscountAmount,
     grandTotal: apiInvoice.grandTotal,
   };
 }
@@ -156,6 +162,9 @@ type InvoiceItemResponseDto = {
   gstRate: number;
   gstAmount: number;
   lineTotal: number;
+  itemDiscountType?: "NONE" | "PERCENTAGE" | "FLAT";
+  itemDiscountValue?: number;
+  itemDiscountAmount?: number;
 };
 
 type InvoiceRefundItemResponseDto = {
@@ -194,6 +203,9 @@ type GetInvoiceResponse = {
   };
   paymentMethod: PaymentMethod;
   items: InvoiceItemResponseDto[];
+  billDiscountType?: "NONE" | "PERCENTAGE" | "FLAT";
+  billDiscountValue?: number;
+  billDiscountAmount?: number;
   refunds?: InvoiceRefundResponseDto[];
   originalInvoice?: InvoiceOriginalResponseDto;
   refundReason?: string;

@@ -103,6 +103,16 @@ export function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps) {
                 <MoneyText amount={invoice.totalGst} />
               </div>
             )}
+            {invoice.billDiscountAmount && invoice.billDiscountAmount > 0 && (
+              <div className="flex justify-between text-sm text-rose-600">
+                <span className="text-muted-foreground">
+                  {invoice.billDiscountType === "PERCENTAGE"
+                    ? `Bill discount (${invoice.billDiscountValue?.toFixed(0)}%)`
+                    : "Bill discount"}
+                </span>
+                <MoneyText amount={-Math.abs(invoice.billDiscountAmount)} />
+              </div>
+            )}
             <Separator className="my-2" />
             <div className="flex justify-between items-center grand-total">
               <span className="font-semibold text-lg">Grand Total</span>
