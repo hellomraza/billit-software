@@ -41,6 +41,7 @@ import { BillingCart } from "./billing-cart";
 import { BillingCustomerDetails } from "./billing-customer-details";
 import { BillingSearch } from "./billing-search";
 import { BillingSummaryPanel } from "./billing-summary-panel";
+import { calculateDiscounts } from "@/lib/utils/discount-calculator";
 
 interface BillingWorkspaceProps {
   initialProducts: ProductWithStock[];
@@ -164,20 +165,25 @@ export function BillingWorkspace({
     });
   }, [tabStates, stockWarnings]);
 
-  const subtotal = useMemo(
-    () => cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
-    [cart],
-  );
-  const gstAmount = useMemo(
-    () =>
-      cart.reduce(
-        (sum, item) =>
-          sum + item.unitPrice * item.quantity * (item.gstRate / 100),
-        0,
-      ),
-    [cart],
-  );
-  const grandTotal = gstEnabled ? subtotal + gstAmount : subtotal;
+  const { subtotal, gstAmount, grandTotal } = useMemo(() => {
+    const inputs = cart.map((item) => ({
+      unitPrice: item.unitPrice,
+      quantity: item.quantity,
+      gstRate: item.gstRate,
+      itemDiscountType: (item.itemDiscountType ?? 'NONE') as any,
+      itemDiscountValue: item.itemDiscountValue ?? 0,
+    }));
+
+    const billType = (activeDraft?.billDiscountType ?? 'NONE') as any;
+    const billValue = activeDraft?.billDiscountValue ?? 0;
+
+    const res = calculateDiscounts(inputs, billType, billValue, gstEnabled);
+    return {
+      subtotal: res.subtotal,
+      gstAmount: res.totalGstAmount,
+      grandTotal: res.grandTotal,
+    };
+  }, [cart, activeDraft?.billDiscountType, activeDraft?.billDiscountValue, gstEnabled]);
 
   const { isClearDialogOpen, isStockModalOpen } = useInvoiceStore();
   const [isFinalizeDialogOpen, setIsFinalizeDialogOpen] = useState(false);
