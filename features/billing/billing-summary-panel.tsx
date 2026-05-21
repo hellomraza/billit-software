@@ -171,6 +171,22 @@ export function BillingSummaryPanel({
     [activeBillDiscountType, activeBillDiscountValue, gstEnabled, itemsForCalc],
   );
 
+  const itemDiscountTotal = useMemo(
+    () =>
+      calcResult.items.reduce((sum, item) => sum + item.itemDiscountAmount, 0),
+    [calcResult.items],
+  );
+
+  const subtotalBeforeItemDiscounts = subtotal + itemDiscountTotal;
+  const showItemDiscounts = itemDiscountTotal > 0;
+  const showAfterItemDiscounts = showItemDiscounts;
+  const showGstLine = gstEnabled && Math.abs(gstAmount) > 0;
+  const showBillDiscountLine = calcResult.billDiscountAmount > 0;
+  const billDiscountSummaryLabel =
+    activeBillDiscountType === "PERCENTAGE"
+      ? `Bill discount (${activeBillDiscountValue.toFixed(0)}%)`
+      : "Bill discount";
+
   const handlePaymentKeyDown = (
     e: React.KeyboardEvent,
     method: PaymentMethod,
@@ -298,33 +314,41 @@ export function BillingSummaryPanel({
             </div>
           )}
         </div>
-        {gstEnabled && (
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">GST</span>
-            <MoneyText amount={gstAmount} />
-          </div>
-        )}
         <Separator />
-        {/* Detailed breakdown: show bill discount line when present */}
-        <div className="p-1">
-          {gstEnabled && (
-            <div className="flex justify-between">
+        <div className="p-1 space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Subtotal</span>
+            <MoneyText amount={subtotalBeforeItemDiscounts} />
+          </div>
+
+          {showItemDiscounts && (
+            <>
+              <div className="flex justify-between text-sm text-emerald-700">
+                <span>Item discounts</span>
+                <MoneyText amount={-Math.abs(itemDiscountTotal)} />
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">After item discounts</span>
+                <MoneyText amount={subtotal} />
+              </div>
+            </>
+          )}
+
+          {showGstLine && (
+            <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">GST</span>
               <MoneyText amount={gstAmount} />
             </div>
           )}
-          {calcResult.billDiscountAmount > 0 && (
+
+          {showBillDiscountLine && (
             <div className="flex justify-between text-sm text-amber-700">
-              <span>
-                Bill discount{" "}
-                {activeDraft?.billDiscountType === "PERCENTAGE"
-                  ? `(${(activeDraft?.billDiscountValue ?? 0).toFixed(0)}%)`
-                  : ""}
-              </span>
+              <span>{billDiscountSummaryLabel}</span>
               <MoneyText amount={-Math.abs(calcResult.billDiscountAmount)} />
             </div>
           )}
-          <div className="flex justify-between items-center">
+
+          <div className="flex justify-between items-center pt-1">
             <span className="font-semibold text-base">Grand Total</span>
             <MoneyText
               amount={grandTotal}
