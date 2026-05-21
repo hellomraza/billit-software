@@ -7,7 +7,7 @@ import { getProducts } from "@/lib/api/products";
 const page = async () => {
   const [productsResponse, invoicesResponse] = await Promise.all([
     getProducts(),
-    getInvoices({ page: 1, limit: 20 }),
+    getInvoices({ page: 1, limit: 10 }),
   ]);
 
   const initialProducts = productsResponse?.data;
