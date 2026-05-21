@@ -1,17 +1,17 @@
 "use client";
 
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { MoneyText } from "@/components/shared/money-text";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PAYMENT_METHODS } from "@/lib/constants/defaults";
+import { calculateDiscounts } from "@/lib/utils/discount-calculator";
+import { useBillingTabsStore } from "@/stores/billing-tabs-store";
 import { useIsGstEnabled } from "@/stores/get-store";
 import { useInvoiceActions, useInvoicePhase } from "@/stores/invoice-store";
 import { type PaymentMethod } from "@/types";
 import { Loader2 } from "lucide-react";
-import { useRef, useState, useEffect } from "react";
-import { useBillingTabsStore } from "@/stores/billing-tabs-store";
-import { calculateDiscounts } from "@/lib/utils/discount-calculator";
-import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
+import { useEffect, useRef, useState } from "react";
 
 interface BillingSummaryPanelProps {
   onFinalize: () => void;
@@ -48,9 +48,9 @@ export function BillingSummaryPanel({
   const clearBillDiscount = useBillingTabsStore((s) => s.clearBillDiscount);
 
   const [billDiscountOpen, setBillDiscountOpen] = useState(false);
-  const [localBillType, setLocalBillType] = useState<"NONE" | "PERCENTAGE" | "FLAT">(
-    (activeDraft?.billDiscountType ?? "NONE") as any,
-  );
+  const [localBillType, setLocalBillType] = useState<
+    "NONE" | "PERCENTAGE" | "FLAT"
+  >((activeDraft?.billDiscountType ?? "NONE") as any);
   const [localBillValue, setLocalBillValue] = useState<number>(
     activeDraft?.billDiscountValue ?? 0,
   );
@@ -125,7 +125,8 @@ export function BillingSummaryPanel({
         </div>
         {/* Bill discount input / control */}
         <div>
-          {((activeDraft?.billDiscountType ?? "NONE") === "NONE" && !billDiscountOpen) ? (
+          {(activeDraft?.billDiscountType ?? "NONE") === "NONE" &&
+          !billDiscountOpen ? (
             <button
               className="text-xs text-primary"
               onClick={() => setBillDiscountOpen(true)}
@@ -135,7 +136,8 @@ export function BillingSummaryPanel({
             </button>
           ) : null}
 
-          {(billDiscountOpen || (activeDraft?.billDiscountType ?? "NONE") !== "NONE") && (
+          {(billDiscountOpen ||
+            (activeDraft?.billDiscountType ?? "NONE") !== "NONE") && (
             <div className="mt-2 p-2 bg-muted/20 rounded">
               <div className="flex items-center gap-2 mb-2">
                 <label className="text-sm font-medium">Type</label>
@@ -144,8 +146,15 @@ export function BillingSummaryPanel({
                     className={`px-2 py-1 rounded ${localBillType === "PERCENTAGE" ? "bg-primary text-white" : "bg-transparent"}`}
                     onClick={() => {
                       setLocalBillType("PERCENTAGE");
-                      prevBillRef.current = { type: localBillType, value: localBillValue };
-                      setBillDiscount(activeDraft?.clientDraftId ?? "", "PERCENTAGE", 0);
+                      prevBillRef.current = {
+                        type: localBillType,
+                        value: localBillValue,
+                      };
+                      setBillDiscount(
+                        activeDraft?.clientDraftId ?? "",
+                        "PERCENTAGE",
+                        0,
+                      );
                     }}
                     disabled={isReadOnly}
                   >
@@ -155,8 +164,15 @@ export function BillingSummaryPanel({
                     className={`px-2 py-1 rounded ${localBillType === "FLAT" ? "bg-primary text-white" : "bg-transparent"}`}
                     onClick={() => {
                       setLocalBillType("FLAT");
-                      prevBillRef.current = { type: localBillType, value: localBillValue };
-                      setBillDiscount(activeDraft?.clientDraftId ?? "", "FLAT", 0);
+                      prevBillRef.current = {
+                        type: localBillType,
+                        value: localBillValue,
+                      };
+                      setBillDiscount(
+                        activeDraft?.clientDraftId ?? "",
+                        "FLAT",
+                        0,
+                      );
                     }}
                     disabled={isReadOnly}
                   >
@@ -174,24 +190,44 @@ export function BillingSummaryPanel({
                   onChange={(e) => {
                     const v = Number(e.target.value || 0);
                     setLocalBillValue(v);
-                    if (billDebounceRef.current) window.clearTimeout(billDebounceRef.current);
+                    if (billDebounceRef.current)
+                      window.clearTimeout(billDebounceRef.current);
                     billDebounceRef.current = window.setTimeout(() => {
-                      prevBillRef.current = { type: localBillType, value: activeDraft?.billDiscountValue ?? 0 };
-                      setBillDiscount(activeDraft?.clientDraftId ?? "", localBillType, Math.max(0, v));
+                      prevBillRef.current = {
+                        type: localBillType,
+                        value: activeDraft?.billDiscountValue ?? 0,
+                      };
+                      setBillDiscount(
+                        activeDraft?.clientDraftId ?? "",
+                        localBillType,
+                        Math.max(0, v),
+                      );
                     }, 300) as unknown as number;
                   }}
                   onBlur={() => {
                     // If the proposed discount makes grand total zero, ask for confirmation
                     const proposedType = localBillType;
                     const proposedValue = localBillValue;
-                    const res = calculateDiscounts(itemsForCalc, proposedType as any, proposedValue, useIsGstEnabled());
+                    const res = calculateDiscounts(
+                      itemsForCalc,
+                      proposedType as any,
+                      proposedValue,
+                      useIsGstEnabled(),
+                    );
                     if (res.grandTotal === 0) {
                       // open confirm dialog
                       setConfirmZeroOpen(true);
                     } else {
                       // ensure applied via setBillDiscount (store clamps)
-                      prevBillRef.current = { type: localBillType, value: activeDraft?.billDiscountValue ?? 0 };
-                      setBillDiscount(activeDraft?.clientDraftId ?? "", localBillType, Math.max(0, proposedValue));
+                      prevBillRef.current = {
+                        type: localBillType,
+                        value: activeDraft?.billDiscountValue ?? 0,
+                      };
+                      setBillDiscount(
+                        activeDraft?.clientDraftId ?? "",
+                        localBillType,
+                        Math.max(0, proposedValue),
+                      );
                     }
                   }}
                   disabled={isReadOnly}
@@ -231,7 +267,10 @@ export function BillingSummaryPanel({
           {calcResult.billDiscountAmount > 0 && (
             <div className="flex justify-between text-sm text-amber-700">
               <span>
-                Bill discount {(activeDraft?.billDiscountType === "PERCENTAGE") ? `(${(activeDraft?.billDiscountValue ?? 0).toFixed(0)}%)` : ""}
+                Bill discount{" "}
+                {activeDraft?.billDiscountType === "PERCENTAGE"
+                  ? `(${(activeDraft?.billDiscountValue ?? 0).toFixed(0)}%)`
+                  : ""}
               </span>
               <MoneyText amount={-Math.abs(calcResult.billDiscountAmount)} />
             </div>
@@ -313,7 +352,11 @@ export function BillingSummaryPanel({
         isDangerous={true}
         onConfirm={() => {
           // apply the discount
-          setBillDiscount(activeDraft?.clientDraftId ?? "", localBillType, localBillValue);
+          setBillDiscount(
+            activeDraft?.clientDraftId ?? "",
+            localBillType,
+            localBillValue,
+          );
           setConfirmZeroOpen(false);
         }}
         onCancel={() => {

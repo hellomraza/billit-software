@@ -32,9 +32,13 @@ export function BillingCart({
   >(null);
 
   // Local input state refs for debouncing per item
-  const inputRefs = useRef<Record<string, { timeout?: number; messageTimeout?: number }>>({});
+  const inputRefs = useRef<
+    Record<string, { timeout?: number; messageTimeout?: number }>
+  >({});
 
-  const [clampMessages, setClampMessages] = useState<Record<string, string>>({});
+  const [clampMessages, setClampMessages] = useState<Record<string, string>>(
+    {},
+  );
   if (items.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-muted-foreground h-full min-h-75">
@@ -186,8 +190,14 @@ export function BillingCart({
                         delete ref.messageTimeout;
                       }
                       ref.timeout = window.setTimeout(() => {
-                        const dtype = (item.itemDiscountType ?? "NONE") as DiscountType;
-                        setItemDiscount(activeTabId, item.productId, dtype, Math.max(0, v));
+                        const dtype = (item.itemDiscountType ??
+                          "NONE") as DiscountType;
+                        setItemDiscount(
+                          activeTabId,
+                          item.productId,
+                          dtype,
+                          Math.max(0, v),
+                        );
                       }, 300) as unknown as number;
                     }}
                     onBlur={(e) => {
@@ -196,11 +206,21 @@ export function BillingCart({
                       if ((item.itemDiscountType ?? "NONE") === "FLAT") {
                         const cap = item.unitPrice * item.quantity;
                         const clamped = Math.min(Math.max(0, v), cap);
-                        setItemDiscount(activeTabId, item.productId, "FLAT", clamped);
+                        setItemDiscount(
+                          activeTabId,
+                          item.productId,
+                          "FLAT",
+                          clamped,
+                        );
                         if (clamped < v) {
-                          setClampMessages((s) => ({ ...s, [item.productId]: "Discount capped at item total." }));
-                          const ref = (inputRefs.current[item.productId] = inputRefs.current[item.productId] || {});
-                          if (ref.messageTimeout) window.clearTimeout(ref.messageTimeout);
+                          setClampMessages((s) => ({
+                            ...s,
+                            [item.productId]: "Discount capped at item total.",
+                          }));
+                          const ref = (inputRefs.current[item.productId] =
+                            inputRefs.current[item.productId] || {});
+                          if (ref.messageTimeout)
+                            window.clearTimeout(ref.messageTimeout);
                           ref.messageTimeout = window.setTimeout(() => {
                             setClampMessages((s) => {
                               const copy = { ...s };
@@ -210,13 +230,25 @@ export function BillingCart({
                             delete ref.messageTimeout;
                           }, 3000) as unknown as number;
                         }
-                      } else if ((item.itemDiscountType ?? "NONE") === "PERCENTAGE") {
+                      } else if (
+                        (item.itemDiscountType ?? "NONE") === "PERCENTAGE"
+                      ) {
                         const clamped = Math.min(Math.max(0, v), 100);
-                        setItemDiscount(activeTabId, item.productId, "PERCENTAGE", clamped);
+                        setItemDiscount(
+                          activeTabId,
+                          item.productId,
+                          "PERCENTAGE",
+                          clamped,
+                        );
                         if (clamped < v) {
-                          setClampMessages((s) => ({ ...s, [item.productId]: "Discount capped at 100%." }));
-                          const ref = (inputRefs.current[item.productId] = inputRefs.current[item.productId] || {});
-                          if (ref.messageTimeout) window.clearTimeout(ref.messageTimeout);
+                          setClampMessages((s) => ({
+                            ...s,
+                            [item.productId]: "Discount capped at 100%.",
+                          }));
+                          const ref = (inputRefs.current[item.productId] =
+                            inputRefs.current[item.productId] || {});
+                          if (ref.messageTimeout)
+                            window.clearTimeout(ref.messageTimeout);
                           ref.messageTimeout = window.setTimeout(() => {
                             setClampMessages((s) => {
                               const copy = { ...s };
