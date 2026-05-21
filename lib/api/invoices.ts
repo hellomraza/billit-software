@@ -80,6 +80,25 @@ function transformInvoiceDetail(apiInvoice: GetInvoiceResponse): Invoice {
       gstAmount: item.gstAmount,
       subtotal: item.lineTotal,
     })),
+    refunds: apiInvoice.refunds?.map((refund) => ({
+      id: refund.id,
+      invoiceNumber: refund.invoiceNumber,
+      grandTotal: refund.grandTotal,
+      createdAt: refund.createdAt,
+      itemCount: refund.itemCount,
+      items: refund.items?.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+      })),
+    })),
+    originalInvoice: apiInvoice.originalInvoice
+      ? {
+          id: apiInvoice.originalInvoice.id,
+          invoiceNumber: apiInvoice.originalInvoice.invoiceNumber,
+          createdAt: apiInvoice.originalInvoice.createdAt,
+        }
+      : undefined,
+    refundReason: apiInvoice.refundReason,
     subtotal: apiInvoice.subtotal,
     totalGst: apiInvoice.gstTotal,
     grandTotal: apiInvoice.grandTotal,
@@ -139,6 +158,26 @@ type InvoiceItemResponseDto = {
   lineTotal: number;
 };
 
+type InvoiceRefundItemResponseDto = {
+  productId: string;
+  quantity: number;
+};
+
+type InvoiceRefundResponseDto = {
+  id: string;
+  invoiceNumber: string;
+  grandTotal: number;
+  createdAt: string;
+  itemCount: number;
+  items?: InvoiceRefundItemResponseDto[];
+};
+
+type InvoiceOriginalResponseDto = {
+  id: string;
+  invoiceNumber: string;
+  createdAt: string;
+};
+
 type GetInvoiceResponse = {
   invoiceNumber: string;
   invoiceId: string;
@@ -155,6 +194,9 @@ type GetInvoiceResponse = {
   };
   paymentMethod: PaymentMethod;
   items: InvoiceItemResponseDto[];
+  refunds?: InvoiceRefundResponseDto[];
+  originalInvoice?: InvoiceOriginalResponseDto;
+  refundReason?: string;
   subtotal: number;
   gstTotal: number;
   grandTotal: number;

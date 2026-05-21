@@ -2,22 +2,101 @@
 
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { InvoiceDetailPanel } from "@/features/invoices/invoice-detail-panel";
 import { ROUTES } from "@/lib/routes";
+import { RefundButtonState } from "@/lib/utils/refund-eligibility";
 import { useInvoiceActions, useOsPreviewMode } from "@/stores/invoice-store";
 import { Invoice } from "@/types";
 import { Eye, EyeOff, Printer } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 interface InvoiceDetailViewClientProps {
   invoice: Invoice;
+  refundButtonState: RefundButtonState;
 }
 
 export function InvoiceDetailViewClient({
   invoice,
+  refundButtonState,
 }: InvoiceDetailViewClientProps) {
   const isPreviewMode = useOsPreviewMode();
   const { enablePreviewMode, disablePreviewMode } = useInvoiceActions();
+  const router = useRouter();
+
+  const invoiceLabel = invoice.invoiceNumber?.trim() || "Pending Invoice";
+
+  const refundAction =
+    refundButtonState.kind === "hidden"
+      ? null
+      : refundButtonState.kind === "enabled"
+        ? (
+            <Button
+              key="refund"
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(refundButtonState.href)}
+              className="gap-2"
+            >
+              Process Refund
+            </Button>
+          )
+        : (
+            <TooltipProvider key="refund-tooltip">
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <span className="inline-flex">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled
+                        className="gap-2"
+                      >
+                        Process Refund
+                      </Button>
+                    </span>
+                  }
+                />
+                <TooltipContent>{refundButtonState.reason}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+
+  const pageHeaderActions = [
+    ...(refundAction ? [refundAction] : []),
+    <Button
+      key="preview"
+      variant="outline"
+      size="sm"
+      onClick={() => {
+        enablePreviewMode();
+        toast.success("Preview Mode Enabled", {
+          description: "Showing how invoice will appear when printed",
+        });
+      }}
+      className="gap-2"
+    >
+      <Eye className="h-4 w-4" />
+      Preview
+    </Button>,
+    <Button
+      key="print"
+      variant="outline"
+      size="sm"
+      onClick={() => window.print()}
+      className="gap-2"
+    >
+      <Printer className="h-4 w-4" />
+      Print
+    </Button>,
+  ];
 
   return (
     <div
@@ -26,37 +105,13 @@ export function InvoiceDetailViewClient({
       {!isPreviewMode && (
         <div className="flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-500">
           <PageHeader
-            title={`Invoice ${invoice.invoiceNumber}`}
+            title={`Invoice ${invoiceLabel}`}
             breadcrumbs={[
               { label: "Invoices", href: ROUTES.INVOICES },
-              { label: invoice.invoiceNumber },
+              { label: invoiceLabel },
             ]}
+            actions={pageHeaderActions}
           />
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                enablePreviewMode();
-                toast.success("Preview Mode Enabled", {
-                  description: "Showing how invoice will appear when printed",
-                });
-              }}
-              className="gap-2"
-            >
-              <Eye className="h-4 w-4" />
-              Preview
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.print()}
-              className="gap-2"
-            >
-              <Printer className="h-4 w-4" />
-              Print
-            </Button>
-          </div>
         </div>
       )}
 
