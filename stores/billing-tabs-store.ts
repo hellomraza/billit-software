@@ -1,6 +1,7 @@
 "use client";
 
 import { indexedDBStorage } from "@/lib/indexedDbStorage";
+import { calculateDiscounts } from "@/lib/utils/discount-calculator";
 import type { BillingTabsState, LocalDraft, SyncStatus } from "@/types/draft";
 import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
@@ -146,15 +147,24 @@ export const useBillingTabsStore = create<BillingTabsState>()(
               ? d
               : {
                   ...d,
-                  items: d.items.map((item) =>
-                    item.productId !== productId
-                      ? item
-                      : {
-                          ...item,
-                          itemDiscountType: discountType,
-                          itemDiscountValue: Math.max(0, discountValue),
-                        },
-                  ),
+                  items: d.items.map((item) => {
+                    if (item.productId !== productId) return item;
+                    // Base clamping
+                    let v = Math.max(0, discountValue);
+                    if (discountType === "PERCENTAGE") {
+                      v = Math.min(100, v);
+                    } else if (discountType === "FLAT") {
+                      const cap = item.unitPrice * item.quantity;
+                      v = Math.min(v, cap);
+                    }
+                    // Round to 2 decimals
+                    v = Math.round(v * 100) / 100;
+                    return {
+                      ...item,
+                      itemDiscountType: discountType,
+                      itemDiscountValue: v,
+                    };
+                  }),
                   localUpdatedAt: new Date().toISOString(),
                   syncStatus: "PENDING_SYNC",
                 },
@@ -188,13 +198,23 @@ export const useBillingTabsStore = create<BillingTabsState>()(
           drafts: state.drafts.map((d) =>
             d.clientDraftId !== clientDraftId
               ? d
-              : {
-                  ...d,
-                  billDiscountType: discountType,
-                  billDiscountValue: Math.max(0, discountValue),
-                  localUpdatedAt: new Date().toISOString(),
-                  syncStatus: "PENDING_SYNC",
-                },
+              : (() => {
+                  let v = Math.max(0, discountValue);
+                  if (discountType === "PERCENTAGE") v = Math.min(100, v);
+                  if (discountType === "FLAT") {
+                    // cap flat bill discount to pre-discount grand total (approx)
+                    const pre = d.items.reduce((s, it) => s + it.unitPrice * it.quantity * (1 + it.gstRate / 100), 0);
+                    v = Math.min(v, pre);
+                  }
+                  v = Math.round(v * 100) / 100;
+                  return {
+                    ...d,
+                    billDiscountType: discountType,
+                    billDiscountValue: v,
+                    localUpdatedAt: new Date().toISOString(),
+                    syncStatus: "PENDING_SYNC",
+                  };
+                })(),
           ),
         })),
 
