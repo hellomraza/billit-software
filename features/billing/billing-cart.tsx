@@ -3,8 +3,10 @@
 import { MoneyText } from "@/components/shared/money-text";
 import { QuantityControl } from "@/components/shared/quantity-control";
 import type { StockWarning } from "@/lib/utils/cross-tab-stock";
-import type { DraftItem } from "@/types/draft";
+import type { DraftItem, DiscountType } from "@/types/draft";
 import { ShoppingCart, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useBillingTabsStore } from "@/stores/billing-tabs-store";
 
 interface BillingCartProps {
   items: DraftItem[];
@@ -21,6 +23,15 @@ export function BillingCart({
   stockWarnings,
   isReadOnly = false,
 }: BillingCartProps) {
+  const activeTabId = useBillingTabsStore((s) => s.activeTabId);
+  const setItemDiscount = useBillingTabsStore((s) => s.setItemDiscount);
+  const clearItemDiscount = useBillingTabsStore((s) => s.clearItemDiscount);
+
+  const [expandedDiscountItemId, setExpandedDiscountItemId] =
+    useState<string | null>(null);
+
+  // Local input state refs for debouncing per item
+  const inputRefs = useRef<Record<string, { timeout?: number }>>({});
   if (items.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-muted-foreground h-full min-h-75">
@@ -47,10 +58,32 @@ export function BillingCart({
                 amount={item.unitPrice}
                 className="text-muted-foreground text-xs"
               />
-              <MoneyText
-                amount={item.quantity * item.unitPrice}
-                className="font-semibold text-sm"
-              />
+              <div className="flex items-center gap-3">
+                <MoneyText
+                  amount={item.quantity * item.unitPrice}
+                  className="font-semibold text-sm"
+                />
+                {/* Active discount indicator */}
+                {item.itemDiscountType && item.itemDiscountType !== "NONE" ? (
+                  <span className="text-amber-600 text-xs font-medium">
+                    {item.itemDiscountType === "PERCENTAGE"
+                      ? `−${item.itemDiscountValue}%`
+                      : `−₹${(item.itemDiscountValue ?? 0).toFixed(2)}`}
+                  </span>
+                ) : null}
+                {/* Discount toggle button */}
+                <button
+                  type="button"
+                  className="text-muted-foreground hover:text-primary text-xs px-2 py-1 rounded"
+                  onClick={() =>
+                    setExpandedDiscountItemId((prev) =>
+                      prev === item.productId ? null : item.productId,
+                    )
+                  }
+                >
+                  Discount
+                </button>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -75,6 +108,105 @@ export function BillingCart({
           </button>
         </div>
       ))}
+      {/* Expanded discount panels */}
+      {items.map((item) => {
+        const open = expandedDiscountItemId === item.productId;
+        return (
+          <div key={`discount-${item.productId}`}>
+            {open ? (
+              <div className="p-3 bg-muted/40 rounded-sm mb-2">
+                <div className="flex items-center gap-3 mb-2">
+                  <label className="text-sm font-medium">Type</label>
+                  <div className="flex gap-2">
+                    <button
+                      className={`px-2 py-1 rounded ${
+                        (item.itemDiscountType ?? "NONE") === "PERCENTAGE"
+                          ? "bg-primary text-white"
+                          : "bg-transparent"
+                      }`}
+                      onClick={() =>
+                        setItemDiscount(
+                          activeTabId,
+                          item.productId,
+                          "PERCENTAGE" as DiscountType,
+                          0,
+                        )
+                      }
+                      disabled={isReadOnly}
+                    >
+                      %
+                    </button>
+                    <button
+                      className={`px-2 py-1 rounded ${
+                        (item.itemDiscountType ?? "NONE") === "FLAT"
+                          ? "bg-primary text-white"
+                          : "bg-transparent"
+                      }`}
+                      onClick={() =>
+                        setItemDiscount(
+                          activeTabId,
+                          item.productId,
+                          "FLAT" as DiscountType,
+                          0,
+                        )
+                      }
+                      disabled={isReadOnly}
+                    >
+                      ₹
+                    </button>
+                  </div>
+                </div>
+                <div className="mb-2">
+                  <label className="text-sm font-medium mb-1 block">Value</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    defaultValue={item.itemDiscountValue ?? 0}
+                    onChange={(e) => {
+                      const v = Number(e.target.value || 0);
+                      // debounce updates to store
+                      const ref = (inputRefs.current[item.productId] =
+                        inputRefs.current[item.productId] || {});
+                      if (ref.timeout) window.clearTimeout(ref.timeout);
+                      ref.timeout = window.setTimeout(() => {
+                        const dtype = (item.itemDiscountType ?? "NONE") as DiscountType;
+                        setItemDiscount(activeTabId, item.productId, dtype, Math.max(0, v));
+                      }, 300) as unknown as number;
+                    }}
+                    onBlur={(e) => {
+                      // clamping on blur
+                      const v = Number(e.currentTarget.value || 0);
+                      if ((item.itemDiscountType ?? "NONE") === "FLAT") {
+                        const cap = item.unitPrice * item.quantity;
+                        const clamped = Math.min(Math.max(0, v), cap);
+                        setItemDiscount(activeTabId, item.productId, "FLAT", clamped);
+                      } else if ((item.itemDiscountType ?? "NONE") === "PERCENTAGE") {
+                        const clamped = Math.min(Math.max(0, v), 100);
+                        setItemDiscount(activeTabId, item.productId, "PERCENTAGE", clamped);
+                      }
+                    }}
+                    disabled={isReadOnly}
+                    className="border rounded px-2 py-1 w-32"
+                  />
+                </div>
+                <div>
+                  <button
+                    className="text-sm text-rose-600"
+                    onClick={() => {
+                      clearItemDiscount(activeTabId, item.productId);
+                      setExpandedDiscountItemId(null);
+                    }}
+                    disabled={isReadOnly}
+                  >
+                    Remove discount
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
       {items.map((item) => {
         const warning = stockWarnings?.get(item.productId);
         if (!warning) return null;

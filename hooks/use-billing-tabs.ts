@@ -178,6 +178,8 @@ export function useBillingTabs(): UseBillingTabsReturn {
         customerName: "",
         customerPhone: "",
         paymentMethod: "CASH",
+        billDiscountType: "NONE",
+        billDiscountValue: 0,
         isDeleted: false,
         createdAt: now,
         updatedAt: now,
@@ -290,7 +292,7 @@ export function useBillingTabs(): UseBillingTabsReturn {
       return;
     }
 
-    useBillingTabsStore.setState((state) => {
+      useBillingTabsStore.setState((state) => {
       const counter = state.tabCounter + 1;
       const now = new Date().toISOString();
       const newClientDraftId = uuidv4();
@@ -307,6 +309,8 @@ export function useBillingTabs(): UseBillingTabsReturn {
             customerName: "",
             customerPhone: "",
             paymentMethod: "CASH",
+              billDiscountType: "NONE",
+              billDiscountValue: 0,
             isDeleted: false,
             createdAt: now,
             updatedAt: now,

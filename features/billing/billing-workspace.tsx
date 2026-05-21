@@ -209,6 +209,8 @@ export function BillingWorkspace({
         quantity: requestedQty,
         subtotal: product.basePrice * requestedQty,
         gstAmount: product.basePrice * requestedQty * (product.gstRate / 100),
+        itemDiscountType: 'NONE',
+        itemDiscountValue: 0,
       },
     ]);
   };
@@ -262,6 +264,8 @@ export function BillingWorkspace({
         quantity: item.quantity,
         subtotal: item.unitPrice * item.quantity,
         gstAmount: item.gstAmount,
+        itemDiscountType: item.itemDiscountType ?? 'NONE',
+        itemDiscountValue: item.itemDiscountValue ?? 0,
       })),
     );
     invoiceActions.setCustomerName(customerName);
