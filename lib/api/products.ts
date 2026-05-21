@@ -18,7 +18,7 @@ export async function getProducts(
   const outletId = await getOutletId();
   const api = await createServerAxios();
 
-  const { page = 1, limit = 50, includeDeleted = false } = filters;
+  const { page = 1, limit = 1000, includeDeleted = false } = filters;
 
   const { data } = await api.get<PaginatedResponse<ProductWithStock>>(
     `/tenants/${tenantId}/products`,
