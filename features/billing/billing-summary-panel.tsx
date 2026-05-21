@@ -76,6 +76,73 @@ export function BillingSummaryPanel({
 
   const billDiscountIsActive = activeBillDiscountType !== "NONE";
 
+  const commitBillDiscount = (
+    discountType: "NONE" | "PERCENTAGE" | "FLAT",
+    rawValue: number,
+    immediate = false,
+  ) => {
+    if (!activeDraft?.clientDraftId) {
+      return;
+    }
+
+    const normalizedValue = Math.max(0, rawValue);
+    const applyValue = Math.round(normalizedValue * 100) / 100;
+
+    const apply = () => {
+      setBillDiscount(activeDraft.clientDraftId, discountType, applyValue);
+    };
+
+    if (billDebounceRef.current) {
+      window.clearTimeout(billDebounceRef.current);
+      billDebounceRef.current = null;
+    }
+
+    if (immediate) {
+      apply();
+      return;
+    }
+
+    billDebounceRef.current = window.setTimeout(apply, 300) as unknown as number;
+  };
+
+  const handleBillTypeChange = (
+    nextType: "PERCENTAGE" | "FLAT",
+  ) => {
+    if (isReadOnly) {
+      return;
+    }
+
+    prevBillRef.current = { type: localBillType, value: localBillValue };
+    setLocalBillType(nextType);
+    setLocalBillValue(0);
+    commitBillDiscount(nextType, 0, true);
+  };
+
+  const handleBillValueChange = (nextValue: number) => {
+    if (isReadOnly) {
+      return;
+    }
+
+    const normalizedValue = Math.max(0, nextValue);
+    setLocalBillValue(normalizedValue);
+    commitBillDiscount(localBillType, normalizedValue);
+  };
+
+  const handleBillValueBlur = () => {
+    if (isReadOnly) {
+      return;
+    }
+
+    commitBillDiscount(localBillType, localBillValue, true);
+  };
+
+  const handleBillDiscountRemove = () => {
+    clearBillDiscount(activeDraft?.clientDraftId ?? "");
+    setBillDiscountOpen(false);
+    setLocalBillType("NONE");
+    setLocalBillValue(0);
+  };
+
   useEffect(() => {
     setLocalBillType(activeBillDiscountType);
     setLocalBillValue(activeBillDiscountValue);
@@ -175,10 +242,7 @@ export function BillingSummaryPanel({
                   <button
                     type="button"
                     className="text-rose-600"
-                    onClick={() => {
-                      clearBillDiscount(activeDraft?.clientDraftId ?? "");
-                      setBillDiscountOpen(false);
-                    }}
+                    onClick={handleBillDiscountRemove}
                     disabled={isReadOnly}
                   >
                     Remove
@@ -191,18 +255,7 @@ export function BillingSummaryPanel({
                   <button
                     type="button"
                     className={`px-2 py-1 rounded ${localBillType === "PERCENTAGE" ? "bg-primary text-white" : "bg-transparent"}`}
-                    onClick={() => {
-                      setLocalBillType("PERCENTAGE");
-                      prevBillRef.current = {
-                        type: localBillType,
-                        value: localBillValue,
-                      };
-                      setBillDiscount(
-                        activeDraft?.clientDraftId ?? "",
-                        "PERCENTAGE",
-                        0,
-                      );
-                    }}
+                    onClick={() => handleBillTypeChange("PERCENTAGE")}
                     disabled={isReadOnly}
                   >
                     %
@@ -210,18 +263,7 @@ export function BillingSummaryPanel({
                   <button
                     type="button"
                     className={`px-2 py-1 rounded ${localBillType === "FLAT" ? "bg-primary text-white" : "bg-transparent"}`}
-                    onClick={() => {
-                      setLocalBillType("FLAT");
-                      prevBillRef.current = {
-                        type: localBillType,
-                        value: localBillValue,
-                      };
-                      setBillDiscount(
-                        activeDraft?.clientDraftId ?? "",
-                        "FLAT",
-                        0,
-                      );
-                    }}
+                    onClick={() => handleBillTypeChange("FLAT")}
                     disabled={isReadOnly}
                   >
                     ₹
@@ -236,48 +278,9 @@ export function BillingSummaryPanel({
                   min={0}
                   value={localBillValue}
                   onChange={(e) => {
-                    const v = Number(e.target.value || 0);
-                    setLocalBillValue(v);
-                    if (billDebounceRef.current)
-                      window.clearTimeout(billDebounceRef.current);
-                    billDebounceRef.current = window.setTimeout(() => {
-                      prevBillRef.current = {
-                        type: localBillType,
-                        value: activeDraft?.billDiscountValue ?? 0,
-                      };
-                      setBillDiscount(
-                        activeDraft?.clientDraftId ?? "",
-                        localBillType,
-                        Math.max(0, v),
-                      );
-                    }, 300) as unknown as number;
+                    handleBillValueChange(Number(e.target.value || 0));
                   }}
-                  onBlur={() => {
-                    // If the proposed discount makes grand total zero, ask for confirmation
-                    const proposedType = localBillType;
-                    const proposedValue = localBillValue;
-                    const res = calculateDiscounts(
-                      itemsForCalc,
-                      proposedType as any,
-                      proposedValue,
-                      useIsGstEnabled(),
-                    );
-                    if (res.grandTotal === 0) {
-                      // open confirm dialog
-                      setConfirmZeroOpen(true);
-                    } else {
-                      // ensure applied via setBillDiscount (store clamps)
-                      prevBillRef.current = {
-                        type: localBillType,
-                        value: activeDraft?.billDiscountValue ?? 0,
-                      };
-                      setBillDiscount(
-                        activeDraft?.clientDraftId ?? "",
-                        localBillType,
-                        Math.max(0, proposedValue),
-                      );
-                    }
-                  }}
+                  onBlur={handleBillValueBlur}
                   disabled={isReadOnly}
                   className="border rounded px-2 py-1 w-32"
                 />
@@ -286,10 +289,7 @@ export function BillingSummaryPanel({
                 <button
                   type="button"
                   className="text-sm text-rose-600"
-                  onClick={() => {
-                    clearBillDiscount(activeDraft?.clientDraftId ?? "");
-                    setBillDiscountOpen(false);
-                  }}
+                  onClick={handleBillDiscountRemove}
                   disabled={isReadOnly}
                 >
                   Remove discount
