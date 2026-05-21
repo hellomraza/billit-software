@@ -266,6 +266,10 @@ export function BillingWorkspace({
   };
 
   const syncDraftToInvoiceStore = () => {
+    invoiceActions.setInvoiceDiscount(
+      activeDraft?.billDiscountType ?? "NONE",
+      activeDraft?.billDiscountValue ?? 0,
+    );
     invoiceActions.setCart(
       cart.map((item) => ({
         productId: item.productId,
@@ -384,6 +388,8 @@ export function BillingWorkspace({
         quantity: item.quantity,
         subtotal: item.unitPrice * item.quantity,
         gstAmount: item.gstAmount,
+        itemDiscountType: item.itemDiscountType ?? "NONE",
+        itemDiscountValue: item.itemDiscountValue ?? 0,
       })),
     );
 
@@ -475,6 +481,8 @@ export function BillingWorkspace({
         quantity: item.quantity,
         subtotal: item.unitPrice * item.quantity,
         gstAmount: item.gstAmount,
+        itemDiscountType: item.itemDiscountType ?? "NONE",
+        itemDiscountValue: item.itemDiscountValue ?? 0,
       })),
     );
 

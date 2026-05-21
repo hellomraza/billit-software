@@ -8,6 +8,9 @@ export interface InvoiceItem {
   gstRate: number;
   subtotal: number;
   gstAmount: number;
+  itemDiscountType?: "NONE" | "PERCENTAGE" | "FLAT";
+  itemDiscountValue?: number;
+  itemDiscountAmount?: number;
 }
 
 export interface Invoice {

@@ -175,12 +175,13 @@ export function BillingSummaryPanel({
       return;
     }
 
-    billDebounceRef.current = window.setTimeout(apply, 300) as unknown as number;
+    billDebounceRef.current = window.setTimeout(
+      apply,
+      300,
+    ) as unknown as number;
   };
 
-  const handleBillTypeChange = (
-    nextType: "PERCENTAGE" | "FLAT",
-  ) => {
+  const handleBillTypeChange = (nextType: "PERCENTAGE" | "FLAT") => {
     if (isReadOnly) {
       return;
     }
@@ -427,7 +428,9 @@ export function BillingSummaryPanel({
                 <MoneyText amount={-Math.abs(itemDiscountTotal)} />
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">After item discounts</span>
+                <span className="text-muted-foreground">
+                  After item discounts
+                </span>
                 <MoneyText amount={subtotal} />
               </div>
             </>
@@ -523,27 +526,27 @@ export function BillingSummaryPanel({
         cancelText="Cancel"
         isDangerous={true}
         onConfirm={() => {
-            const pending = pendingBillDiscountRef.current;
-            if (pending && activeDraft?.clientDraftId) {
-              setBillDiscount(
-                activeDraft.clientDraftId,
-                pending.type,
-                pending.value,
-              );
-            }
+          const pending = pendingBillDiscountRef.current;
+          if (pending && activeDraft?.clientDraftId) {
+            setBillDiscount(
+              activeDraft.clientDraftId,
+              pending.type,
+              pending.value,
+            );
+          }
 
-            pendingBillDiscountRef.current = null;
-            clearBillClampMessage();
-            setConfirmZeroOpen(false);
-          }}
-          onCancel={() => {
-            pendingBillDiscountRef.current = null;
-            clearBillClampMessage();
-            setLocalBillType(prevBillRef.current.type as any);
-            setLocalBillValue(prevBillRef.current.value);
-            setConfirmZeroOpen(false);
-          }}
-        />
+          pendingBillDiscountRef.current = null;
+          clearBillClampMessage();
+          setConfirmZeroOpen(false);
+        }}
+        onCancel={() => {
+          pendingBillDiscountRef.current = null;
+          clearBillClampMessage();
+          setLocalBillType(prevBillRef.current.type as any);
+          setLocalBillValue(prevBillRef.current.value);
+          setConfirmZeroOpen(false);
+        }}
+      />
       {/* Hidden live region for screen reader announcements */}
       <div
         ref={announcementRef}
