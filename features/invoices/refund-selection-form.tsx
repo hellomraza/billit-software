@@ -2,9 +2,21 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import clientAxios from "@/lib/axios/client";
+import { v4 as uuidv4 } from "uuid";
+import { AxiosError } from "axios";
 import { Invoice, InvoiceRefundSummary } from "@/types/invoice";
 import { ROUTES } from "@/lib/routes";
-export function RefundSelectionForm({ invoice, existingRefunds }: Props) {
+import { formatDateTime } from "@/lib/formatters/date";
+import { MoneyText } from "@/components/shared/money-text";
+
+interface Props {
+  invoice: Invoice;
+  existingRefunds: InvoiceRefundSummary[];
+  tenantId: string;
+}
+export function RefundSelectionForm({ invoice, existingRefunds, tenantId }: Props) {
   const [quantities, setQuantities] = useState<Record<string, number>>(
     Object.fromEntries(invoice.items.map((it) => [it.productId, 0])),
   );
@@ -52,27 +64,61 @@ export function RefundSelectionForm({ invoice, existingRefunds }: Props) {
     return sum + qty * unit;
   }, 0);
 
-  const handleConfirm = () => {
-    // T-10.3 will implement the network submission. For now show basic validation.
+  const router = useRouter();
+
+  const handleConfirm = async () => {
     setError(null);
     if (totalUnits === 0) {
       setError("Select at least one item to return.");
       return;
     }
+
+    const itemsToRefund = Object.entries(quantities)
+      .filter(([, q]) => q > 0)
+      .map(([productId, quantity]) => ({ productId, quantity }));
+
+    const payload = {
+      clientGeneratedId: uuidv4(),
+      refundReason: refundReason.trim() || null,
+      items: itemsToRefund,
+    };
+
     setSubmitting(true);
-    // stub: simulate a short delay then navigate or callback in future task
-    setTimeout(() => {
+    try {
+      const url = `/tenants/${tenantId}/invoices/${invoice.id}/refund`;
+      // note: tenantId is passed as prop from server page
+      const { data } = await clientAxios.post(url, payload);
+
+      // On success (201) or idempotent 200, navigate to returned invoice
+      const created = data?.data || data;
+      const newId = created?.invoiceId || created?.id || created?._id || created?.invoice_id;
+      if (newId) {
+        router.push(ROUTES.INVOICE_DETAIL(newId));
+      } else {
+        // fallback: go to invoices list
+        router.push(ROUTES.INVOICES);
+      }
+    } catch (err: unknown) {
+      if (err instanceof AxiosError) {
+        const status = err.response?.status;
+        if (status === 400) {
+          // validation errors
+          const details = err.response?.data?.details || err.response?.data;
+          setError(
+            details?.message || "Validation error. Please check the quantities and try again.",
+          );
+        } else if (status === 409) {
+          setError("This invoice has not finished syncing. Please wait.");
+        } else {
+          setError(err.response?.data?.message || "Failed to process refund. Try again.");
+        }
+      } else if (err instanceof Error) {
+        setError(err.message || "Failed to process refund. Try again.");
+      } else {
+        setError("Failed to process refund. Try again.");
+      }
       setSubmitting(false);
-      // In T-10.3 we will perform the API call and redirect to the refund invoice.
-      // eslint-disable-next-line no-console
-      console.log("Refund payload:", {
-        clientGeneratedId: "<generated-later>",
-        refundReason: refundReason || null,
-        items: Object.entries(quantities)
-          .filter(([, q]) => q > 0)
-          .map(([productId, quantity]) => ({ productId, quantity })),
-      });
-    }, 500);
+    }
   };
 
   return (
