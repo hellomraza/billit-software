@@ -61,8 +61,14 @@ export function BillingSummaryPanel({
     activeBillDiscountValue,
   );
   const [confirmZeroOpen, setConfirmZeroOpen] = useState(false);
+  const [billClampMessage, setBillClampMessage] = useState<string | null>(null);
   const prevBillRef = useRef({ type: localBillType, value: localBillValue });
+  const pendingBillDiscountRef = useRef<{
+    type: "PERCENTAGE" | "FLAT";
+    value: number;
+  } | null>(null);
   const billDebounceRef = useRef<number | null>(null);
+  const billClampTimeoutRef = useRef<number | null>(null);
 
   const activeBillDiscountLabel = useMemo(() => {
     if (activeBillDiscountType === "NONE" || activeBillDiscountValue <= 0) {
@@ -76,6 +82,38 @@ export function BillingSummaryPanel({
 
   const billDiscountIsActive = activeBillDiscountType !== "NONE";
 
+  const clearBillClampMessage = () => {
+    if (billClampTimeoutRef.current) {
+      window.clearTimeout(billClampTimeoutRef.current);
+      billClampTimeoutRef.current = null;
+    }
+    setBillClampMessage(null);
+  };
+
+  const normalizeBillDiscountValue = (
+    discountType: "PERCENTAGE" | "FLAT",
+    rawValue: number,
+  ): { value: number; message: string | null } => {
+    let normalizedValue = Math.max(0, rawValue);
+    let message: string | null = null;
+
+    if (discountType === "PERCENTAGE") {
+      normalizedValue = Math.min(100, normalizedValue);
+    } else {
+      const cap = Math.max(0, calcResult.preDiscountGrandTotal);
+
+      if (normalizedValue > cap) {
+        normalizedValue = cap;
+        message = "Discount capped at bill total.";
+      }
+    }
+
+    return {
+      value: Math.round(normalizedValue * 100) / 100,
+      message,
+    };
+  };
+
   const commitBillDiscount = (
     discountType: "NONE" | "PERCENTAGE" | "FLAT",
     rawValue: number,
@@ -85,11 +123,46 @@ export function BillingSummaryPanel({
       return;
     }
 
-    const normalizedValue = Math.max(0, rawValue);
-    const applyValue = Math.round(normalizedValue * 100) / 100;
+    const normalizedResult =
+      discountType === "NONE"
+        ? { value: 0, message: null }
+        : normalizeBillDiscountValue(discountType, rawValue);
+    const normalizedValue = normalizedResult.value;
+    const wouldZeroGrandTotal =
+      discountType !== "NONE" &&
+      calculateDiscounts(
+        itemsForCalc,
+        discountType,
+        normalizedValue,
+        gstEnabled,
+      ).grandTotal === 0;
+    const isSameAsActive =
+      activeBillDiscountType === discountType &&
+      activeBillDiscountValue === normalizedValue;
 
     const apply = () => {
-      setBillDiscount(activeDraft.clientDraftId, discountType, applyValue);
+      if (normalizedResult.message) {
+        setBillClampMessage(normalizedResult.message);
+        if (billClampTimeoutRef.current) {
+          window.clearTimeout(billClampTimeoutRef.current);
+        }
+        billClampTimeoutRef.current = window.setTimeout(
+          clearBillClampMessage,
+          3000,
+        ) as unknown as number;
+      }
+
+      if (discountType !== "NONE" && wouldZeroGrandTotal && !isSameAsActive) {
+        pendingBillDiscountRef.current = {
+          type: discountType,
+          value: normalizedValue,
+        };
+        setConfirmZeroOpen(true);
+        return;
+      }
+
+      pendingBillDiscountRef.current = null;
+      setBillDiscount(activeDraft.clientDraftId, discountType, normalizedValue);
     };
 
     if (billDebounceRef.current) {
@@ -112,7 +185,11 @@ export function BillingSummaryPanel({
       return;
     }
 
-    prevBillRef.current = { type: localBillType, value: localBillValue };
+    prevBillRef.current = {
+      type: activeBillDiscountType,
+      value: activeBillDiscountValue,
+    };
+    clearBillClampMessage();
     setLocalBillType(nextType);
     setLocalBillValue(0);
     commitBillDiscount(nextType, 0, true);
@@ -123,6 +200,7 @@ export function BillingSummaryPanel({
       return;
     }
 
+    clearBillClampMessage();
     const normalizedValue = Math.max(0, nextValue);
     setLocalBillValue(normalizedValue);
     commitBillDiscount(localBillType, normalizedValue);
@@ -133,10 +211,13 @@ export function BillingSummaryPanel({
       return;
     }
 
+    clearBillClampMessage();
     commitBillDiscount(localBillType, localBillValue, true);
   };
 
   const handleBillDiscountRemove = () => {
+    clearBillClampMessage();
+    pendingBillDiscountRef.current = null;
     clearBillDiscount(activeDraft?.clientDraftId ?? "");
     setBillDiscountOpen(false);
     setLocalBillType("NONE");
@@ -147,6 +228,19 @@ export function BillingSummaryPanel({
     setLocalBillType(activeBillDiscountType);
     setLocalBillValue(activeBillDiscountValue);
   }, [activeBillDiscountType, activeBillDiscountValue]);
+
+  useEffect(
+    () => () => {
+      if (billDebounceRef.current) {
+        window.clearTimeout(billDebounceRef.current);
+      }
+
+      if (billClampTimeoutRef.current) {
+        window.clearTimeout(billClampTimeoutRef.current);
+      }
+    },
+    [],
+  );
 
   const itemsForCalc = useMemo(
     () =>
@@ -300,6 +394,11 @@ export function BillingSummaryPanel({
                   disabled={isReadOnly}
                   className="border rounded px-2 py-1 w-32"
                 />
+                {billClampMessage ? (
+                  <p className="mt-1 text-xs text-amber-700">
+                    {billClampMessage}
+                  </p>
+                ) : null}
               </div>
               <div>
                 <button
@@ -424,21 +523,27 @@ export function BillingSummaryPanel({
         cancelText="Cancel"
         isDangerous={true}
         onConfirm={() => {
-          // apply the discount
-          setBillDiscount(
-            activeDraft?.clientDraftId ?? "",
-            localBillType,
-            localBillValue,
-          );
-          setConfirmZeroOpen(false);
-        }}
-        onCancel={() => {
-          // revert to previous
-          setLocalBillType(prevBillRef.current.type as any);
-          setLocalBillValue(prevBillRef.current.value);
-          setConfirmZeroOpen(false);
-        }}
-      />
+            const pending = pendingBillDiscountRef.current;
+            if (pending && activeDraft?.clientDraftId) {
+              setBillDiscount(
+                activeDraft.clientDraftId,
+                pending.type,
+                pending.value,
+              );
+            }
+
+            pendingBillDiscountRef.current = null;
+            clearBillClampMessage();
+            setConfirmZeroOpen(false);
+          }}
+          onCancel={() => {
+            pendingBillDiscountRef.current = null;
+            clearBillClampMessage();
+            setLocalBillType(prevBillRef.current.type as any);
+            setLocalBillValue(prevBillRef.current.value);
+            setConfirmZeroOpen(false);
+          }}
+        />
       {/* Hidden live region for screen reader announcements */}
       <div
         ref={announcementRef}
