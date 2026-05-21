@@ -23,6 +23,8 @@ function makeEmptyDraft(
     customerName: "",
     customerPhone: "",
     paymentMethod: "CASH",
+    billDiscountType: "NONE",
+    billDiscountValue: 0,
     isDeleted: false,
     createdAt: now,
     updatedAt: now,
@@ -134,6 +136,80 @@ export const useBillingTabsStore = create<BillingTabsState>()(
                   syncStatus: "SYNCED",
                 }
               : d,
+          ),
+        })),
+
+      setItemDiscount: (clientDraftId, productId, discountType, discountValue) =>
+        set((state) => ({
+          drafts: state.drafts.map((d) =>
+            d.clientDraftId !== clientDraftId
+              ? d
+              : {
+                  ...d,
+                  items: d.items.map((item) =>
+                    item.productId !== productId
+                      ? item
+                      : {
+                          ...item,
+                          itemDiscountType: discountType,
+                          itemDiscountValue: Math.max(0, discountValue),
+                        },
+                  ),
+                  localUpdatedAt: new Date().toISOString(),
+                  syncStatus: "PENDING_SYNC",
+                },
+          ),
+        })),
+
+      clearItemDiscount: (clientDraftId, productId) =>
+        set((state) => ({
+          drafts: state.drafts.map((d) =>
+            d.clientDraftId !== clientDraftId
+              ? d
+              : {
+                  ...d,
+                  items: d.items.map((item) =>
+                    item.productId !== productId
+                      ? item
+                      : {
+                          ...item,
+                          itemDiscountType: "NONE",
+                          itemDiscountValue: 0,
+                        },
+                  ),
+                  localUpdatedAt: new Date().toISOString(),
+                  syncStatus: "PENDING_SYNC",
+                },
+          ),
+        })),
+
+      setBillDiscount: (clientDraftId, discountType, discountValue) =>
+        set((state) => ({
+          drafts: state.drafts.map((d) =>
+            d.clientDraftId !== clientDraftId
+              ? d
+              : {
+                  ...d,
+                  billDiscountType: discountType,
+                  billDiscountValue: Math.max(0, discountValue),
+                  localUpdatedAt: new Date().toISOString(),
+                  syncStatus: "PENDING_SYNC",
+                },
+          ),
+        })),
+
+      clearBillDiscount: (clientDraftId) =>
+        set((state) => ({
+          drafts: state.drafts.map((d) =>
+            d.clientDraftId !== clientDraftId
+              ? d
+              : {
+                  ...d,
+                  billDiscountType: "NONE",
+                  billDiscountValue: 0,
+                  localUpdatedAt: new Date().toISOString(),
+                  syncStatus: "PENDING_SYNC",
+                },
           ),
         })),
 
