@@ -4,6 +4,7 @@ import { DataTable } from "@/components/shared/data-table";
 import { MoneyText } from "@/components/shared/money-text";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { formatDateTime } from "@/lib/formatters/date";
 import { InvoiceListItem } from "@/types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -64,9 +65,16 @@ export function InvoiceTable({
             id: "invoiceNumber",
             header: "Invoice #",
             cell: (row) => (
-              <span className="font-medium text-primary tabular-nums">
-                {row.invoiceNumber}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-primary tabular-nums">
+                  {row.invoiceNumber}
+                </span>
+                {row.invoiceType === "REFUND" ? (
+                  <Badge className="h-5 border-rose-200 bg-rose-50 text-rose-700">
+                    Refund
+                  </Badge>
+                ) : null}
+              </div>
             ),
           },
           {
@@ -123,7 +131,14 @@ export function InvoiceTable({
             header: "Total",
             align: "right",
             cell: (row) => (
-              <MoneyText amount={row.grandTotal} className="font-semibold" />
+              <MoneyText
+                amount={
+                  row.invoiceType === "REFUND"
+                    ? -Math.abs(row.grandTotal)
+                    : row.grandTotal
+                }
+                className={`font-semibold ${row.invoiceType === "REFUND" ? "text-rose-600" : ""}`}
+              />
             ),
           },
         ]}

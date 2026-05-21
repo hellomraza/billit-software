@@ -28,6 +28,7 @@ export type InvoiceListResponse = {
   invoiceId: string;
   createdAt: string;
   businessName: string;
+  invoiceType?: "SALE" | "REFUND";
   gstEnabled: boolean;
   itemCount: number;
   subtotal: number;
@@ -51,6 +52,7 @@ function transformInvoice(apiInvoice: InvoiceListResponse): InvoiceListItem {
     invoiceNumber: apiInvoice.invoiceNumber,
     createdAt: apiInvoice.createdAt,
     customerName: apiInvoice.customerName,
+    invoiceType: apiInvoice.invoiceType,
     isGstInvoice: apiInvoice.gstEnabled,
     paymentMethod: apiInvoice.paymentMethod,
     subtotal: apiInvoice.subtotal,

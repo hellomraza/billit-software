@@ -19,6 +19,7 @@ export interface Invoice {
   createdAt: string;
   customerName?: string;
   customerPhone?: string;
+  invoiceType?: "SALE" | "REFUND";
   isGstInvoice: boolean;
   paymentMethod: PaymentMethod;
   items: InvoiceItem[];
