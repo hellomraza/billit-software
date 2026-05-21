@@ -3,10 +3,10 @@
 import { MoneyText } from "@/components/shared/money-text";
 import { QuantityControl } from "@/components/shared/quantity-control";
 import type { StockWarning } from "@/lib/utils/cross-tab-stock";
-import type { DraftItem, DiscountType } from "@/types/draft";
-import { ShoppingCart, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
 import { useBillingTabsStore } from "@/stores/billing-tabs-store";
+import type { DiscountType, DraftItem } from "@/types/draft";
+import { ShoppingCart, X } from "lucide-react";
+import { useRef, useState } from "react";
 
 interface BillingCartProps {
   items: DraftItem[];
@@ -27,11 +27,14 @@ export function BillingCart({
   const setItemDiscount = useBillingTabsStore((s) => s.setItemDiscount);
   const clearItemDiscount = useBillingTabsStore((s) => s.clearItemDiscount);
 
-  const [expandedDiscountItemId, setExpandedDiscountItemId] =
-    useState<string | null>(null);
+  const [expandedDiscountItemId, setExpandedDiscountItemId] = useState<
+    string | null
+  >(null);
 
   // Local input state refs for debouncing per item
-  const inputRefs = useRef<Record<string, { timeout?: number }>>({});
+  const inputRefs = useRef<Record<string, { timeout?: number; messageTimeout?: number }>>({});
+
+  const [clampMessages, setClampMessages] = useState<Record<string, string>>({});
   if (items.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-muted-foreground h-full min-h-75">
@@ -157,7 +160,9 @@ export function BillingCart({
                   </div>
                 </div>
                 <div className="mb-2">
-                  <label className="text-sm font-medium mb-1 block">Value</label>
+                  <label className="text-sm font-medium mb-1 block">
+                    Value
+                  </label>
                   <input
                     type="number"
                     step="0.01"
@@ -165,10 +170,21 @@ export function BillingCart({
                     defaultValue={item.itemDiscountValue ?? 0}
                     onChange={(e) => {
                       const v = Number(e.target.value || 0);
+                      // clear any clamp message while typing
+                      setClampMessages((s) => {
+                        if (!s[item.productId]) return s;
+                        const copy = { ...s };
+                        delete copy[item.productId];
+                        return copy;
+                      });
                       // debounce updates to store
                       const ref = (inputRefs.current[item.productId] =
                         inputRefs.current[item.productId] || {});
                       if (ref.timeout) window.clearTimeout(ref.timeout);
+                      if (ref.messageTimeout) {
+                        window.clearTimeout(ref.messageTimeout);
+                        delete ref.messageTimeout;
+                      }
                       ref.timeout = window.setTimeout(() => {
                         const dtype = (item.itemDiscountType ?? "NONE") as DiscountType;
                         setItemDiscount(activeTabId, item.productId, dtype, Math.max(0, v));
@@ -181,15 +197,46 @@ export function BillingCart({
                         const cap = item.unitPrice * item.quantity;
                         const clamped = Math.min(Math.max(0, v), cap);
                         setItemDiscount(activeTabId, item.productId, "FLAT", clamped);
+                        if (clamped < v) {
+                          setClampMessages((s) => ({ ...s, [item.productId]: "Discount capped at item total." }));
+                          const ref = (inputRefs.current[item.productId] = inputRefs.current[item.productId] || {});
+                          if (ref.messageTimeout) window.clearTimeout(ref.messageTimeout);
+                          ref.messageTimeout = window.setTimeout(() => {
+                            setClampMessages((s) => {
+                              const copy = { ...s };
+                              delete copy[item.productId];
+                              return copy;
+                            });
+                            delete ref.messageTimeout;
+                          }, 3000) as unknown as number;
+                        }
                       } else if ((item.itemDiscountType ?? "NONE") === "PERCENTAGE") {
                         const clamped = Math.min(Math.max(0, v), 100);
                         setItemDiscount(activeTabId, item.productId, "PERCENTAGE", clamped);
+                        if (clamped < v) {
+                          setClampMessages((s) => ({ ...s, [item.productId]: "Discount capped at 100%." }));
+                          const ref = (inputRefs.current[item.productId] = inputRefs.current[item.productId] || {});
+                          if (ref.messageTimeout) window.clearTimeout(ref.messageTimeout);
+                          ref.messageTimeout = window.setTimeout(() => {
+                            setClampMessages((s) => {
+                              const copy = { ...s };
+                              delete copy[item.productId];
+                              return copy;
+                            });
+                            delete ref.messageTimeout;
+                          }, 3000) as unknown as number;
+                        }
                       }
                     }}
                     disabled={isReadOnly}
                     className="border rounded px-2 py-1 w-32"
                   />
                 </div>
+                {clampMessages[item.productId] ? (
+                  <div className="text-xs text-amber-700 mt-1">
+                    {clampMessages[item.productId]}
+                  </div>
+                ) : null}
                 <div>
                   <button
                     className="text-sm text-rose-600"

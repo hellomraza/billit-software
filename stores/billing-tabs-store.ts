@@ -1,7 +1,6 @@
 "use client";
 
 import { indexedDBStorage } from "@/lib/indexedDbStorage";
-import { calculateDiscounts } from "@/lib/utils/discount-calculator";
 import type { BillingTabsState, LocalDraft, SyncStatus } from "@/types/draft";
 import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
@@ -140,7 +139,12 @@ export const useBillingTabsStore = create<BillingTabsState>()(
           ),
         })),
 
-      setItemDiscount: (clientDraftId, productId, discountType, discountValue) =>
+      setItemDiscount: (
+        clientDraftId,
+        productId,
+        discountType,
+        discountValue,
+      ) =>
         set((state) => ({
           drafts: state.drafts.map((d) =>
             d.clientDraftId !== clientDraftId
@@ -203,7 +207,11 @@ export const useBillingTabsStore = create<BillingTabsState>()(
                   if (discountType === "PERCENTAGE") v = Math.min(100, v);
                   if (discountType === "FLAT") {
                     // cap flat bill discount to pre-discount grand total (approx)
-                    const pre = d.items.reduce((s, it) => s + it.unitPrice * it.quantity * (1 + it.gstRate / 100), 0);
+                    const pre = d.items.reduce(
+                      (s, it) =>
+                        s + it.unitPrice * it.quantity * (1 + it.gstRate / 100),
+                      0,
+                    );
                     v = Math.min(v, pre);
                   }
                   v = Math.round(v * 100) / 100;

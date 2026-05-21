@@ -1,14 +1,14 @@
 /**
  * Discount Calculation Engine
- * 
+ *
  * Pure utility function for computing item and bill discounts.
  * Used identically on both client and server to ensure discrepancy-free calculations.
- * 
+ *
  * All monetary values are rounded to 2 decimal places at each step using:
  * Math.round(value × 100) / 100
  */
 
-export type DiscountType = 'NONE' | 'PERCENTAGE' | 'FLAT';
+export type DiscountType = "NONE" | "PERCENTAGE" | "FLAT";
 
 export interface ItemInput {
   unitPrice: number;
@@ -44,7 +44,7 @@ function roundToTwo(value: number): number {
 
 /**
  * Calculate all discount amounts for a list of items and a bill-level discount.
- * 
+ *
  * @param items - Array of cart items with discount inputs
  * @param billDiscountType - Type of bill-level discount
  * @param billDiscountValue - Bill discount value
@@ -64,11 +64,11 @@ export function calculateDiscounts(
 
     // Step 2: Calculate item discount amount
     let itemDiscountAmount = 0;
-    if (item.itemDiscountType === 'PERCENTAGE') {
+    if (item.itemDiscountType === "PERCENTAGE") {
       itemDiscountAmount = roundToTwo(
         baseLineTotal * (item.itemDiscountValue / 100),
       );
-    } else if (item.itemDiscountType === 'FLAT') {
+    } else if (item.itemDiscountType === "FLAT") {
       itemDiscountAmount = roundToTwo(item.itemDiscountValue);
     }
     // if NONE, itemDiscountAmount stays 0
@@ -79,9 +79,7 @@ export function calculateDiscounts(
     );
 
     // Step 4: Calculate discounted subtotal
-    const discountedSubtotal = roundToTwo(
-      baseLineTotal - itemDiscountAmount,
-    );
+    const discountedSubtotal = roundToTwo(baseLineTotal - itemDiscountAmount);
 
     // Step 5: Calculate GST amount
     const gstAmount = gstEnabled
@@ -115,11 +113,11 @@ export function calculateDiscounts(
 
   // Step 10: Calculate bill discount amount
   let billDiscountAmount = 0;
-  if (billDiscountType === 'PERCENTAGE') {
+  if (billDiscountType === "PERCENTAGE") {
     billDiscountAmount = roundToTwo(
       preDiscountGrandTotal * (billDiscountValue / 100),
     );
-  } else if (billDiscountType === 'FLAT') {
+  } else if (billDiscountType === "FLAT") {
     billDiscountAmount = roundToTwo(billDiscountValue);
   }
 

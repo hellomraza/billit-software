@@ -18,6 +18,7 @@ import { InvoiceStockConflictModal } from "@/features/invoices/invoice-stock-con
 import { useOnlineStatus } from "@/hooks/use-online-status";
 import { getStoredOutletId, getStoredTenant } from "@/lib/auth-tokens";
 import { computeStockWarnings } from "@/lib/utils/cross-tab-stock";
+import { calculateDiscounts } from "@/lib/utils/discount-calculator";
 import { ProductWithStock } from "@/lib/utils/products";
 import { useBillingTabsStore } from "@/stores/billing-tabs-store";
 import { useIsGstEnabled } from "@/stores/get-store";
@@ -41,7 +42,6 @@ import { BillingCart } from "./billing-cart";
 import { BillingCustomerDetails } from "./billing-customer-details";
 import { BillingSearch } from "./billing-search";
 import { BillingSummaryPanel } from "./billing-summary-panel";
-import { calculateDiscounts } from "@/lib/utils/discount-calculator";
 
 interface BillingWorkspaceProps {
   initialProducts: ProductWithStock[];
@@ -170,11 +170,11 @@ export function BillingWorkspace({
       unitPrice: item.unitPrice,
       quantity: item.quantity,
       gstRate: item.gstRate,
-      itemDiscountType: (item.itemDiscountType ?? 'NONE') as any,
+      itemDiscountType: (item.itemDiscountType ?? "NONE") as any,
       itemDiscountValue: item.itemDiscountValue ?? 0,
     }));
 
-    const billType = (activeDraft?.billDiscountType ?? 'NONE') as any;
+    const billType = (activeDraft?.billDiscountType ?? "NONE") as any;
     const billValue = activeDraft?.billDiscountValue ?? 0;
 
     const res = calculateDiscounts(inputs, billType, billValue, gstEnabled);
@@ -183,7 +183,12 @@ export function BillingWorkspace({
       gstAmount: res.totalGstAmount,
       grandTotal: res.grandTotal,
     };
-  }, [cart, activeDraft?.billDiscountType, activeDraft?.billDiscountValue, gstEnabled]);
+  }, [
+    cart,
+    activeDraft?.billDiscountType,
+    activeDraft?.billDiscountValue,
+    gstEnabled,
+  ]);
 
   const { isClearDialogOpen, isStockModalOpen } = useInvoiceStore();
   const [isFinalizeDialogOpen, setIsFinalizeDialogOpen] = useState(false);
@@ -215,7 +220,7 @@ export function BillingWorkspace({
         quantity: requestedQty,
         subtotal: product.basePrice * requestedQty,
         gstAmount: product.basePrice * requestedQty * (product.gstRate / 100),
-        itemDiscountType: 'NONE',
+        itemDiscountType: "NONE",
         itemDiscountValue: 0,
       },
     ]);
@@ -270,7 +275,7 @@ export function BillingWorkspace({
         quantity: item.quantity,
         subtotal: item.unitPrice * item.quantity,
         gstAmount: item.gstAmount,
-        itemDiscountType: item.itemDiscountType ?? 'NONE',
+        itemDiscountType: item.itemDiscountType ?? "NONE",
         itemDiscountValue: item.itemDiscountValue ?? 0,
       })),
     );
@@ -477,7 +482,7 @@ export function BillingWorkspace({
     invoiceActions.closeStockModal();
     invoiceActions.enablePreviewMode();
 
-    openFinalizeDialog()
+    openFinalizeDialog();
 
     // Store decisions for later submission if needed
     // The user will see the invoice preview and can finalize from there
