@@ -10,6 +10,7 @@ export interface InvoiceFilters {
   dateFrom?: string;
   dateTo?: string;
   invoiceNumber?: string;
+  invoiceType?: "SALE" | "REFUND";
   paymentMethod?: "CASH" | "CARD" | "UPI";
   gstEnabled?: boolean;
   outletId?: string;
@@ -103,6 +104,7 @@ export async function getInvoices(
           ...(filters.invoiceNumber && {
             invoiceNumber: filters.invoiceNumber,
           }),
+          ...(filters.invoiceType && { invoiceType: filters.invoiceType }),
           ...(filters.paymentMethod && {
             paymentMethod: filters.paymentMethod,
           }),
