@@ -11,7 +11,7 @@ import { useIsGstEnabled } from "@/stores/get-store";
 import { useInvoiceActions, useInvoicePhase } from "@/stores/invoice-store";
 import { type PaymentMethod } from "@/types";
 import { Loader2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface BillingSummaryPanelProps {
   onFinalize: () => void;
@@ -48,34 +48,60 @@ export function BillingSummaryPanel({
   const clearBillDiscount = useBillingTabsStore((s) => s.clearBillDiscount);
 
   const [billDiscountOpen, setBillDiscountOpen] = useState(false);
+  const activeBillDiscountType = (activeDraft?.billDiscountType ?? "NONE") as
+    | "NONE"
+    | "PERCENTAGE"
+    | "FLAT";
+  const activeBillDiscountValue = activeDraft?.billDiscountValue ?? 0;
+
   const [localBillType, setLocalBillType] = useState<
     "NONE" | "PERCENTAGE" | "FLAT"
-  >((activeDraft?.billDiscountType ?? "NONE") as any);
+  >(activeBillDiscountType);
   const [localBillValue, setLocalBillValue] = useState<number>(
-    activeDraft?.billDiscountValue ?? 0,
+    activeBillDiscountValue,
   );
   const [confirmZeroOpen, setConfirmZeroOpen] = useState(false);
   const prevBillRef = useRef({ type: localBillType, value: localBillValue });
   const billDebounceRef = useRef<number | null>(null);
 
+  const activeBillDiscountLabel = useMemo(() => {
+    if (activeBillDiscountType === "NONE" || activeBillDiscountValue <= 0) {
+      return null;
+    }
+
+    return activeBillDiscountType === "PERCENTAGE"
+      ? `−${activeBillDiscountValue.toFixed(0)}%`
+      : `−₹${activeBillDiscountValue.toFixed(2)}`;
+  }, [activeBillDiscountType, activeBillDiscountValue]);
+
+  const billDiscountIsActive = activeBillDiscountType !== "NONE";
+
   useEffect(() => {
-    setLocalBillType((activeDraft?.billDiscountType ?? "NONE") as any);
-    setLocalBillValue(activeDraft?.billDiscountValue ?? 0);
-  }, [activeDraft?.billDiscountType, activeDraft?.billDiscountValue]);
+    setLocalBillType(activeBillDiscountType);
+    setLocalBillValue(activeBillDiscountValue);
+  }, [activeBillDiscountType, activeBillDiscountValue]);
 
-  const itemsForCalc = (activeDraft?.items ?? []).map((it) => ({
-    unitPrice: it.unitPrice,
-    quantity: it.quantity,
-    gstRate: it.gstRate,
-    itemDiscountType: (it.itemDiscountType ?? "NONE") as any,
-    itemDiscountValue: it.itemDiscountValue ?? 0,
-  }));
+  const itemsForCalc = useMemo(
+    () =>
+      (activeDraft?.items ?? []).map((it) => ({
+        unitPrice: it.unitPrice,
+        quantity: it.quantity,
+        gstRate: it.gstRate,
+        itemDiscountType: (it.itemDiscountType ?? "NONE") as any,
+        itemDiscountValue: it.itemDiscountValue ?? 0,
+      })),
+    [activeDraft?.items],
+  );
 
-  const calcResult = calculateDiscounts(
-    itemsForCalc,
-    (activeDraft?.billDiscountType ?? "NONE") as any,
-    activeDraft?.billDiscountValue ?? 0,
-    useIsGstEnabled(),
+  const calcResult = useMemo(
+    () =>
+      calculateDiscounts(
+        itemsForCalc,
+        activeBillDiscountType,
+        activeBillDiscountValue,
+        gstEnabled,
+      ),
+    [activeBillDiscountType, activeBillDiscountValue, gstEnabled, itemsForCalc],
   );
 
   const handlePaymentKeyDown = (
@@ -128,6 +154,7 @@ export function BillingSummaryPanel({
           {(activeDraft?.billDiscountType ?? "NONE") === "NONE" &&
           !billDiscountOpen ? (
             <button
+              type="button"
               className="text-xs text-primary"
               onClick={() => setBillDiscountOpen(true)}
               disabled={isReadOnly}
@@ -139,10 +166,30 @@ export function BillingSummaryPanel({
           {(billDiscountOpen ||
             (activeDraft?.billDiscountType ?? "NONE") !== "NONE") && (
             <div className="mt-2 p-2 bg-muted/20 rounded">
+              {billDiscountIsActive && activeBillDiscountLabel ? (
+                <div className="mb-3 flex items-center justify-between rounded-md border bg-background/70 px-3 py-2 text-xs">
+                  <span className="text-muted-foreground">Active discount</span>
+                  <span className="font-semibold text-amber-700">
+                    {activeBillDiscountLabel}
+                  </span>
+                  <button
+                    type="button"
+                    className="text-rose-600"
+                    onClick={() => {
+                      clearBillDiscount(activeDraft?.clientDraftId ?? "");
+                      setBillDiscountOpen(false);
+                    }}
+                    disabled={isReadOnly}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : null}
               <div className="flex items-center gap-2 mb-2">
                 <label className="text-sm font-medium">Type</label>
                 <div className="flex gap-2">
                   <button
+                    type="button"
                     className={`px-2 py-1 rounded ${localBillType === "PERCENTAGE" ? "bg-primary text-white" : "bg-transparent"}`}
                     onClick={() => {
                       setLocalBillType("PERCENTAGE");
@@ -161,6 +208,7 @@ export function BillingSummaryPanel({
                     %
                   </button>
                   <button
+                    type="button"
                     className={`px-2 py-1 rounded ${localBillType === "FLAT" ? "bg-primary text-white" : "bg-transparent"}`}
                     onClick={() => {
                       setLocalBillType("FLAT");
@@ -236,6 +284,7 @@ export function BillingSummaryPanel({
               </div>
               <div>
                 <button
+                  type="button"
                   className="text-sm text-rose-600"
                   onClick={() => {
                     clearBillDiscount(activeDraft?.clientDraftId ?? "");
