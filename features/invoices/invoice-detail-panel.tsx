@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { InvoiceItemsTable } from "@/features/billing/invoice-items-table";
 import { formatDateTime } from "@/lib/formatters/date";
+import Link from "next/link";
+import { ROUTES } from "@/lib/routes";
 import { Invoice } from "@/types";
 
 interface InvoiceDetailPanelProps {
@@ -89,6 +91,46 @@ export function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps) {
           />
         </CardContent>
       </Card>
+
+      {invoice.refunds && invoice.refunds.length > 0 && (
+        <Card className="animate-in fade-in slide-in-from-bottom duration-500 delay-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm text-muted-foreground uppercase tracking-wider">
+              Returns
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-3">
+              {invoice.refunds.map((r) => (
+                <div
+                  key={r.id}
+                  className="flex items-center justify-between border rounded-md p-3 bg-background"
+                >
+                  <div>
+                    <Link
+                      href={ROUTES.INVOICE_DETAIL(r.id)}
+                      className="font-medium text-primary tabular-nums"
+                    >
+                      {r.invoiceNumber}
+                    </Link>
+                    <div className="text-sm text-muted-foreground">
+                      {formatDateTime(r.createdAt)}
+                    </div>
+                  </div>
+
+                  <div className="text-sm text-muted-foreground mr-4">
+                    {r.itemCount} items
+                  </div>
+
+                  <div className="text-right font-medium text-rose-600">
+                    <MoneyText amount={-Math.abs(r.grandTotal)} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="bg-muted/10 border-dashed animate-in fade-in slide-in-from-bottom duration-500 delay-150 grand-total-section invoice-summary">
         <CardContent className="p-6">
