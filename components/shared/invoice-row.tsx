@@ -1,10 +1,9 @@
-import React from "react";
-import { Invoice } from "@/types";
-import { TableRow, TableCell } from "@/components/ui/table";
-import { StatusBadge } from "@/components/shared/status-badge";
 import { MoneyText } from "@/components/shared/money-text";
-import { formatDateTime } from "@/lib/formatters/date";
+import { StatusBadge } from "@/components/shared/status-badge";
 import { Badge } from "@/components/ui/badge";
+import { TableCell, TableRow } from "@/components/ui/table";
+import { formatDateTime } from "@/lib/formatters/date";
+import { Invoice } from "@/types";
 
 interface InvoiceRowProps {
   invoice: Invoice;
@@ -13,9 +12,11 @@ interface InvoiceRowProps {
 
 export function InvoiceRow({ invoice, onClick }: InvoiceRowProps) {
   return (
-    <TableRow 
+    <TableRow
       onClick={onClick}
-      className={onClick ? "cursor-pointer hover:bg-muted/50 transition-colors" : ""}
+      className={
+        onClick ? "cursor-pointer hover:bg-muted/50 transition-colors" : ""
+      }
     >
       <TableCell className="font-medium text-primary tabular-nums">
         <div className="flex items-center gap-2">
@@ -40,9 +41,17 @@ export function InvoiceRow({ invoice, onClick }: InvoiceRowProps) {
       </TableCell>
       <TableCell>
         {invoice.isGstInvoice ? (
-          <StatusBadge status="info" variant="secondary" className="text-[10px]">GST</StatusBadge>
+          <StatusBadge
+            status="info"
+            variant="secondary"
+            className="text-[10px]"
+          >
+            GST
+          </StatusBadge>
         ) : (
-          <span className="text-muted-foreground text-xs font-mono">NON-GST</span>
+          <span className="text-muted-foreground text-xs font-mono">
+            NON-GST
+          </span>
         )}
       </TableCell>
       <TableCell className="text-right bg-muted/10 font-medium">

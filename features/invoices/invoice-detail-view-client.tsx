@@ -33,41 +33,33 @@ export function InvoiceDetailViewClient({
   const invoiceLabel = invoice.invoiceNumber?.trim() || "Pending Invoice";
 
   const refundAction =
-    refundButtonState.kind === "hidden"
-      ? null
-      : refundButtonState.kind === "enabled"
-        ? (
-            <Button
-              key="refund"
-              variant="outline"
-              size="sm"
-              onClick={() => router.push(refundButtonState.href)}
-              className="gap-2"
-            >
-              Process Refund
-            </Button>
-          )
-        : (
-            <TooltipProvider key="refund-tooltip">
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <span className="inline-flex">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled
-                        className="gap-2"
-                      >
-                        Process Refund
-                      </Button>
-                    </span>
-                  }
-                />
-                <TooltipContent>{refundButtonState.reason}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          );
+    refundButtonState.kind === "hidden" ? null : refundButtonState.kind ===
+      "enabled" ? (
+      <Button
+        key="refund"
+        variant="outline"
+        size="sm"
+        onClick={() => router.push(refundButtonState.href)}
+        className="gap-2"
+      >
+        Process Refund
+      </Button>
+    ) : (
+      <TooltipProvider key="refund-tooltip">
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <span className="inline-flex">
+                <Button variant="outline" size="sm" disabled className="gap-2">
+                  Process Refund
+                </Button>
+              </span>
+            }
+          />
+          <TooltipContent>{refundButtonState.reason}</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
 
   const pageHeaderActions = [
     ...(refundAction ? [refundAction] : []),

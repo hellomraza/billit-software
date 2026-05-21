@@ -1,10 +1,14 @@
 import { RefundSelectionForm } from "@/features/invoices/refund-selection-form";
 import { getInvoice } from "@/lib/api/invoices";
+import { getTenantId } from "@/lib/get-tenant-id";
 import { ROUTES } from "@/lib/routes";
 import { redirect } from "next/navigation";
-import { getTenantId } from "@/lib/get-tenant-id";
 
-export default async function RefundPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function RefundPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
   let invoice;
 

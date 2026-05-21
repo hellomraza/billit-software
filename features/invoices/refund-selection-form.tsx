@@ -1,22 +1,26 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import { MoneyText } from "@/components/shared/money-text";
+import clientAxios from "@/lib/axios/client";
+import { formatDateTime } from "@/lib/formatters/date";
+import { ROUTES } from "@/lib/routes";
+import { Invoice, InvoiceRefundSummary } from "@/types/invoice";
+import { AxiosError } from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import clientAxios from "@/lib/axios/client";
+import { useMemo, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { AxiosError } from "axios";
-import { Invoice, InvoiceRefundSummary } from "@/types/invoice";
-import { ROUTES } from "@/lib/routes";
-import { formatDateTime } from "@/lib/formatters/date";
-import { MoneyText } from "@/components/shared/money-text";
 
 interface Props {
   invoice: Invoice;
   existingRefunds: InvoiceRefundSummary[];
   tenantId: string;
 }
-export function RefundSelectionForm({ invoice, existingRefunds, tenantId }: Props) {
+export function RefundSelectionForm({
+  invoice,
+  existingRefunds,
+  tenantId,
+}: Props) {
   const [quantities, setQuantities] = useState<Record<string, number>>(
     Object.fromEntries(invoice.items.map((it) => [it.productId, 0])),
   );
@@ -58,11 +62,14 @@ export function RefundSelectionForm({ invoice, existingRefunds, tenantId }: Prop
 
   const totalUnits = Object.values(quantities).reduce((a, b) => a + b, 0);
 
-  const totalRefundAmount = Object.entries(quantities).reduce((sum, [pid, qty]) => {
-    const it = invoice.items.find((i) => i.productId === pid)!;
-    const unit = it.quantity > 0 ? it.subtotal / it.quantity : 0;
-    return sum + qty * unit;
-  }, 0);
+  const totalRefundAmount = Object.entries(quantities).reduce(
+    (sum, [pid, qty]) => {
+      const it = invoice.items.find((i) => i.productId === pid)!;
+      const unit = it.quantity > 0 ? it.subtotal / it.quantity : 0;
+      return sum + qty * unit;
+    },
+    0,
+  );
 
   const router = useRouter();
 
@@ -91,7 +98,11 @@ export function RefundSelectionForm({ invoice, existingRefunds, tenantId }: Prop
 
       // On success (201) or idempotent 200, navigate to returned invoice
       const created = data?.data || data;
-      const newId = created?.invoiceId || created?.id || created?._id || created?.invoice_id;
+      const newId =
+        created?.invoiceId ||
+        created?.id ||
+        created?._id ||
+        created?.invoice_id;
       if (newId) {
         router.push(ROUTES.INVOICE_DETAIL(newId));
       } else {
@@ -105,12 +116,16 @@ export function RefundSelectionForm({ invoice, existingRefunds, tenantId }: Prop
           // validation errors
           const details = err.response?.data?.details || err.response?.data;
           setError(
-            details?.message || "Validation error. Please check the quantities and try again.",
+            details?.message ||
+              "Validation error. Please check the quantities and try again.",
           );
         } else if (status === 409) {
           setError("This invoice has not finished syncing. Please wait.");
         } else {
-          setError(err.response?.data?.message || "Failed to process refund. Try again.");
+          setError(
+            err.response?.data?.message ||
+              "Failed to process refund. Try again.",
+          );
         }
       } else if (err instanceof Error) {
         setError(err.message || "Failed to process refund. Try again.");
@@ -127,7 +142,8 @@ export function RefundSelectionForm({ invoice, existingRefunds, tenantId }: Prop
         <div>
           <h2 className="text-xl font-semibold">Process Return</h2>
           <div className="text-sm text-muted-foreground">
-            Invoice {invoice.invoiceNumber} • {formatDateTime(invoice.createdAt)}
+            Invoice {invoice.invoiceNumber} •{" "}
+            {formatDateTime(invoice.createdAt)}
           </div>
         </div>
 
@@ -141,7 +157,8 @@ export function RefundSelectionForm({ invoice, existingRefunds, tenantId }: Prop
       <div className="space-y-4">
         {invoice.items.map((item) => {
           const max = maxReturnable(item.productId, item.quantity);
-          const unitPrice = item.quantity > 0 ? item.subtotal / item.quantity : 0;
+          const unitPrice =
+            item.quantity > 0 ? item.subtotal / item.quantity : 0;
           const qty = quantities[item.productId] || 0;
           return (
             <div key={item.productId} className="p-4 border rounded-md">
@@ -149,7 +166,8 @@ export function RefundSelectionForm({ invoice, existingRefunds, tenantId }: Prop
                 <div>
                   <div className="font-medium">{item.productName}</div>
                   <div className="text-sm text-muted-foreground">
-                    Sold: {item.quantity} • Already returned: {alreadyRefunded[item.productId] || 0}
+                    Sold: {item.quantity} • Already returned:{" "}
+                    {alreadyRefunded[item.productId] || 0}
                   </div>
                 </div>
 
@@ -161,22 +179,32 @@ export function RefundSelectionForm({ invoice, existingRefunds, tenantId }: Prop
 
               <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                 <div>
-                  <label className="text-sm text-muted-foreground block">Return quantity</label>
+                  <label className="text-sm text-muted-foreground block">
+                    Return quantity
+                  </label>
                   <input
                     type="number"
                     min={0}
                     max={max}
                     value={qty}
-                    onChange={(e) => handleQuantityChange(item.productId, e.target.value)}
+                    onChange={(e) =>
+                      handleQuantityChange(item.productId, e.target.value)
+                    }
                     onBlur={() => handleQuantityBlur(item.productId)}
                     className="w-24 input"
                     disabled={max === 0 || submitting}
                   />
-                  {max === 0 && <div className="text-xs text-muted-foreground">Already returned</div>}
+                  {max === 0 && (
+                    <div className="text-xs text-muted-foreground">
+                      Already returned
+                    </div>
+                  )}
                 </div>
 
                 <div className="md:col-span-2 text-right">
-                  <div className="text-sm text-muted-foreground">Line refund</div>
+                  <div className="text-sm text-muted-foreground">
+                    Line refund
+                  </div>
                   <div className="font-medium text-rose-600">
                     <MoneyText amount={-(qty * unitPrice)} />
                   </div>
@@ -188,7 +216,9 @@ export function RefundSelectionForm({ invoice, existingRefunds, tenantId }: Prop
       </div>
 
       <div className="p-4 border rounded-md">
-        <label className="text-sm text-muted-foreground">Reason for return (optional)</label>
+        <label className="text-sm text-muted-foreground">
+          Reason for return (optional)
+        </label>
         <textarea
           maxLength={500}
           value={refundReason}
@@ -197,7 +227,9 @@ export function RefundSelectionForm({ invoice, existingRefunds, tenantId }: Prop
           rows={4}
           disabled={submitting}
         />
-        <div className="text-sm text-muted-foreground mt-1">{refundReason.length}/500</div>
+        <div className="text-sm text-muted-foreground mt-1">
+          {refundReason.length}/500
+        </div>
 
         <div className="flex justify-between items-center mt-4">
           <div>

@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { InvoiceItemsTable } from "@/features/billing/invoice-items-table";
 import { formatDateTime } from "@/lib/formatters/date";
-import Link from "next/link";
 import { ROUTES } from "@/lib/routes";
 import { Invoice } from "@/types";
+import Link from "next/link";
 
 interface InvoiceDetailPanelProps {
   invoice: Invoice;
@@ -25,10 +25,15 @@ export function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps) {
           </CardHeader>
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <Link href={ROUTES.INVOICE_DETAIL(invoice.originalInvoice.id)} className="font-medium text-primary tabular-nums">
+              <Link
+                href={ROUTES.INVOICE_DETAIL(invoice.originalInvoice.id)}
+                className="font-medium text-primary tabular-nums"
+              >
                 {invoice.originalInvoice.invoiceNumber}
               </Link>
-              <div className="text-sm text-muted-foreground">{formatDateTime(invoice.originalInvoice.createdAt)}</div>
+              <div className="text-sm text-muted-foreground">
+                {formatDateTime(invoice.originalInvoice.createdAt)}
+              </div>
             </div>
             <div className="text-sm text-muted-foreground">Refund</div>
           </CardContent>
@@ -104,10 +109,10 @@ export function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps) {
         </CardHeader>
         <CardContent className="p-0 sm:p-6 sm:pt-0 invoice-items-table">
           <InvoiceItemsTable
-              items={invoice.items}
-              showGst={invoice.isGstInvoice}
-              isRefund={invoice.invoiceType === "REFUND"}
-            />
+            items={invoice.items}
+            showGst={invoice.isGstInvoice}
+            isRefund={invoice.invoiceType === "REFUND"}
+          />
         </CardContent>
       </Card>
 
@@ -153,32 +158,56 @@ export function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps) {
 
       <Card className="bg-muted/10 border-dashed animate-in fade-in slide-in-from-bottom duration-500 delay-150 grand-total-section invoice-summary">
         <CardContent className="p-6">
-            <div className="space-y-2 max-w-sm ml-auto">
+          <div className="space-y-2 max-w-sm ml-auto">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Subtotal</span>
-              <MoneyText amount={invoice.invoiceType === "REFUND" ? -Math.abs(invoice.subtotal) : invoice.subtotal} />
+              <MoneyText
+                amount={
+                  invoice.invoiceType === "REFUND"
+                    ? -Math.abs(invoice.subtotal)
+                    : invoice.subtotal
+                }
+              />
             </div>
             {invoice.isGstInvoice && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Total GST</span>
-                <MoneyText amount={invoice.invoiceType === "REFUND" ? -Math.abs(invoice.totalGst) : invoice.totalGst} />
+                <MoneyText
+                  amount={
+                    invoice.invoiceType === "REFUND"
+                      ? -Math.abs(invoice.totalGst)
+                      : invoice.totalGst
+                  }
+                />
               </div>
             )}
             {invoice.billDiscountAmount && invoice.billDiscountAmount > 0 && (
-              <div className={`flex justify-between text-sm ${invoice.invoiceType === "REFUND" ? "text-rose-600" : "text-rose-600"}`}>
+              <div
+                className={`flex justify-between text-sm ${invoice.invoiceType === "REFUND" ? "text-rose-600" : "text-rose-600"}`}
+              >
                 <span className="text-muted-foreground">
                   {invoice.billDiscountType === "PERCENTAGE"
                     ? `Bill discount (${invoice.billDiscountValue?.toFixed(0)}%)`
                     : "Bill discount"}
                 </span>
-                <MoneyText amount={invoice.invoiceType === "REFUND" ? -Math.abs(invoice.billDiscountAmount) : -Math.abs(invoice.billDiscountAmount)} />
+                <MoneyText
+                  amount={
+                    invoice.invoiceType === "REFUND"
+                      ? -Math.abs(invoice.billDiscountAmount)
+                      : -Math.abs(invoice.billDiscountAmount)
+                  }
+                />
               </div>
             )}
             <Separator className="my-2" />
             <div className="flex justify-between items-center grand-total">
               <span className="font-semibold text-lg">Grand Total</span>
               <MoneyText
-                amount={invoice.invoiceType === "REFUND" ? -Math.abs(invoice.grandTotal) : invoice.grandTotal}
+                amount={
+                  invoice.invoiceType === "REFUND"
+                    ? -Math.abs(invoice.grandTotal)
+                    : invoice.grandTotal
+                }
                 className={`text-2xl font-bold ${invoice.invoiceType === "REFUND" ? "text-rose-600" : "text-primary"}`}
               />
             </div>
@@ -189,7 +218,9 @@ export function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps) {
       {invoice.invoiceType === "REFUND" && invoice.refundReason && (
         <Card className="animate-in fade-in slide-in-from-bottom duration-500 delay-200">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm text-muted-foreground uppercase tracking-wider">Reason</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground uppercase tracking-wider">
+              Reason
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <div className="text-sm">{invoice.refundReason}</div>
