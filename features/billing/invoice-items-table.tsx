@@ -12,9 +12,10 @@ import { InvoiceItem } from "@/types";
 interface InvoiceItemsTableProps {
   items: InvoiceItem[];
   showGst: boolean;
+  isRefund?: boolean;
 }
 
-export function InvoiceItemsTable({ items, showGst }: InvoiceItemsTableProps) {
+export function InvoiceItemsTable({ items, showGst, isRefund = false }: InvoiceItemsTableProps) {
   return (
     <div className="border rounded-md overflow-hidden bg-background">
       <Table>
@@ -33,7 +34,10 @@ export function InvoiceItemsTable({ items, showGst }: InvoiceItemsTableProps) {
             <TableRow key={index}>
               <TableCell className="font-medium text-sm">
                 <div className="flex flex-col">
-                  <span>{item.productName}</span>
+                  <span>
+                    {item.productName}
+                    {isRefund && <span className="text-sm text-muted-foreground"> × {item.quantity} returned</span>}
+                  </span>
                   {item.itemDiscountAmount && item.itemDiscountAmount > 0 && (
                     <span className="text-xs text-muted-foreground mt-1">
                       {item.itemDiscountType === "PERCENTAGE" ? (
@@ -51,19 +55,17 @@ export function InvoiceItemsTable({ items, showGst }: InvoiceItemsTableProps) {
               <TableCell className="text-right tabular-nums text-muted-foreground text-sm">
                 <MoneyText amount={item.unitPrice} />
               </TableCell>
-              <TableCell className="text-center font-medium">
-                x{item.quantity}
-              </TableCell>
-              <TableCell className="text-right font-medium tabular-nums">
-                <MoneyText amount={Number(item.unitPrice) * item.quantity} />
+              <TableCell className="text-center font-medium">x{item.quantity}</TableCell>
+              <TableCell className={`text-right font-medium tabular-nums ${isRefund ? "text-rose-600" : ""}`}>
+                <MoneyText amount={isRefund ? -Math.abs(Number(item.unitPrice) * item.quantity) : Number(item.unitPrice) * item.quantity} />
               </TableCell>
               {showGst && (
-                <TableCell className="text-right text-muted-foreground text-sm">
-                  <MoneyText amount={item.gstAmount} />
+                <TableCell className={`text-right text-muted-foreground text-sm ${isRefund ? "text-rose-600" : ""}`}>
+                  <MoneyText amount={isRefund ? -Math.abs(item.gstAmount) : item.gstAmount} />
                 </TableCell>
               )}
-              <TableCell className="text-right font-medium tabular-nums">
-                <MoneyText amount={item.subtotal} />
+              <TableCell className={`text-right font-medium tabular-nums ${isRefund ? "text-rose-600" : ""}`}>
+                <MoneyText amount={isRefund ? -Math.abs(item.subtotal) : item.subtotal} />
               </TableCell>
             </TableRow>
           ))}
