@@ -78,7 +78,7 @@ describe("refund eligibility", () => {
 
     expect(getRefundButtonState(invoice)).toEqual({
       kind: "disabled",
-      reason: "All items have already been returned.",
+      reason: "This bill has already been fully refunded.",
     });
   });
 
