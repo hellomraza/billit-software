@@ -144,6 +144,8 @@ class DraftSyncManager {
       customerName: draft.customerName,
       customerPhone: draft.customerPhone,
       paymentMethod: draft.paymentMethod,
+      billDiscountType: draft.billDiscountType ?? "NONE",
+      billDiscountValue: draft.billDiscountValue ?? 0,
     };
 
     try {

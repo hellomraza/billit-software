@@ -1,6 +1,11 @@
 import { InvoiceItem } from "./invoice";
 
-export type DraftItem = InvoiceItem;
+export type DiscountType = "NONE" | "PERCENTAGE" | "FLAT";
+
+export interface DraftItem extends InvoiceItem {
+  itemDiscountType?: DiscountType;
+  itemDiscountValue?: number;
+}
 
 export type SyncStatus = "SYNCED" | "PENDING_SYNC" | "SYNC_FAILED";
 export type SyncFailureType = "NETWORK" | "SERVER" | null;
@@ -25,6 +30,8 @@ export interface LocalDraft {
   customerName: string;
   customerPhone: string;
   paymentMethod: PaymentMethod;
+  billDiscountType?: DiscountType;
+  billDiscountValue?: number;
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
@@ -51,6 +58,19 @@ export interface BillingTabsState {
     phone: string,
   ) => void;
   updateDraftPayment: (clientDraftId: string, method: PaymentMethod) => void;
+  setItemDiscount: (
+    clientDraftId: string,
+    productId: string,
+    discountType: DiscountType,
+    discountValue: number,
+  ) => void;
+  clearItemDiscount: (clientDraftId: string, productId: string) => void;
+  setBillDiscount: (
+    clientDraftId: string,
+    discountType: DiscountType,
+    discountValue: number,
+  ) => void;
+  clearBillDiscount: (clientDraftId: string) => void;
   clearAndResetTab: (
     clientDraftId: string,
     tenantId: string,

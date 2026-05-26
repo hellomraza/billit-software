@@ -11,6 +11,7 @@ export default async function InvoicesPage({
     dateFrom?: string;
     dateTo?: string;
     invoiceNumber?: string;
+    invoiceType?: string;
     paymentMethod?: string;
     gstEnabled?: string;
     productId?: string;
@@ -23,6 +24,11 @@ export default async function InvoicesPage({
     dateFrom: searchParamValues.dateFrom,
     dateTo: searchParamValues.dateTo,
     invoiceNumber: searchParamValues.invoiceNumber,
+    invoiceType:
+      searchParamValues.invoiceType === "SALE" ||
+      searchParamValues.invoiceType === "REFUND"
+        ? searchParamValues.invoiceType
+        : undefined,
     paymentMethod: searchParamValues.paymentMethod as
       | "CASH"
       | "CARD"

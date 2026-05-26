@@ -1,6 +1,9 @@
 "use client";
 
-import { importProductsAction } from "@/actions/products";
+import {
+  downloadProductsTemplateAction,
+  importProductsAction,
+} from "@/actions/products";
 import { SectionCard } from "@/components/shared/section-card";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/lib/routes";
@@ -13,7 +16,6 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useActionState, useRef, useState } from "react";
-import { toast } from "sonner";
 
 const getHasResults = (
   state: Awaited<ReturnType<typeof importProductsAction>>,
@@ -55,18 +57,16 @@ export function ProductImportForm() {
   const handleDownloadTemplate = async () => {
     try {
       // Call API to download template directly via GET /products/import/template
-      const response = await fetch("/api/products/import/template");
-      if (!response.ok) {
-        toast.error("Failed to download template");
-        return;
-      }
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "billit_import_template.csv";
-      a.click();
-      URL.revokeObjectURL(url);
+      const { data } = await downloadProductsTemplateAction();
+
+      const url = window.URL.createObjectURL(new Blob([data]));
+      console.log("Generated blob URL:", url);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "products_import_template.csv");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
     } catch {
       // Fallback: generate template locally if API is not available
       const csv =

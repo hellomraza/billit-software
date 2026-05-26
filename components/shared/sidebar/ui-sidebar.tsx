@@ -33,9 +33,9 @@ const UiSidebar = () => {
   const pathname = usePathname();
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader>
-        <div className="flex h-16 items-center border-b  transition-all duration-300 ">
-          <div className="flex items-center justify-start gap-2 font-bold text-xl text-primary px-2">
+      <SidebarHeader className="border-b">
+        <div className="flex items-center transition-all duration-300 ">
+          <div className="flex items-center justify-start gap-2 font-bold text-xl text-primary px-2 h-9">
             <Package2 className="h-6 w-6" />
             <span className="group-data-[collapsible=icon]:opacity-0 transition-opacity transition-discrete block duration-200 group-data-[collapsible=icon]:delay-0 ease-linear">
               BillIt MVP
@@ -75,7 +75,7 @@ const UiSidebar = () => {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <div className="p-4 border-t text-sm text-muted-foreground">
+        <div className="p-4 border-t text-sm text-muted-foreground group-data-[collapsible=icon]:opacity-0 transition-opacity transition-discrete block duration-200 group-data-[collapsible=icon]:delay-0 ease-linear">
           <p>SMC Branch</p>
         </div>
       </SidebarFooter>

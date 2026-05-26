@@ -13,10 +13,14 @@ export interface CreateInvoicePayload {
   customerName?: string;
   customerPhone?: string;
   gstEnabled: boolean;
+  billDiscountType?: "NONE" | "PERCENTAGE" | "FLAT";
+  billDiscountValue?: number;
   items: Array<{
     productId: string;
     quantity: number;
     override?: boolean;
+    itemDiscountType?: "NONE" | "PERCENTAGE" | "FLAT";
+    itemDiscountValue?: number;
   }>;
 }
 

@@ -1,5 +1,6 @@
 import { InvoiceDetailViewClient } from "@/features/invoices/invoice-detail-view-client";
 import { getInvoice } from "@/lib/api/invoices";
+import { getRefundButtonState } from "@/lib/utils/refund-eligibility";
 import { notFound } from "next/navigation";
 
 export default async function InvoiceDetailPage({
@@ -16,5 +17,12 @@ export default async function InvoiceDetailPage({
     notFound();
   }
 
-  return <InvoiceDetailViewClient invoice={invoice} />;
+  const refundButtonState = getRefundButtonState(invoice);
+
+  return (
+    <InvoiceDetailViewClient
+      invoice={invoice}
+      refundButtonState={refundButtonState}
+    />
+  );
 }

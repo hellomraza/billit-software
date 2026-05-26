@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import type { TabState } from "@/types/draft";
-import { AlertTriangle, FolderOpen, LoaderCircle, Plus } from "lucide-react";
+import { AlertTriangle, FolderOpen, LoaderCircle, Plus, X } from "lucide-react";
 
 interface BillingTabBarProps {
   tabs: TabState[];
@@ -215,10 +215,12 @@ export function BillingTabBar(props: BillingTabBarProps) {
                   )}
                 </button>
 
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => requestTabClose(tab)}
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-full text-sm leading-none text-current opacity-70 transition-opacity hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="rounded-full"
                   aria-label={
                     isPendingSync
                       ? `Saving ${tab.tabLabel}`
@@ -232,9 +234,9 @@ export function BillingTabBar(props: BillingTabBarProps) {
                       aria-hidden="true"
                     />
                   ) : (
-                    "×"
+                    <X className="size-3.5" aria-hidden="true" />
                   )}
-                </button>
+                </Button>
               </div>
             );
           })}

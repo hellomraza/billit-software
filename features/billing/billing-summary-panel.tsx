@@ -1,14 +1,18 @@
 "use client";
 
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { MoneyText } from "@/components/shared/money-text";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PAYMENT_METHODS } from "@/lib/constants/defaults";
+import { calculateDiscounts } from "@/lib/utils/discount-calculator";
+import { useBillingTabsStore } from "@/stores/billing-tabs-store";
 import { useIsGstEnabled } from "@/stores/get-store";
 import { useInvoiceActions, useInvoicePhase } from "@/stores/invoice-store";
 import { type PaymentMethod } from "@/types";
 import { Loader2 } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { DiscountHoverCard } from "./discount-hover-card";
 
 interface BillingSummaryPanelProps {
   onFinalize: () => void;
@@ -38,37 +42,85 @@ export function BillingSummaryPanel({
   const announcementRef = useRef<HTMLDivElement>(null);
   const { openClearDialog } = useInvoiceActions();
 
-  const handlePaymentKeyDown = (
-    e: React.KeyboardEvent,
-    method: PaymentMethod,
-  ) => {
-    const buttons = Array.from(
-      paymentButtonsRef.current?.querySelectorAll("button") || [],
-    );
-    const currentIndex = buttons.findIndex((btn) =>
-      btn.textContent?.includes(method),
-    );
+  const activeDraft = useBillingTabsStore((s) =>
+    s.drafts.find((d) => d.clientDraftId === s.activeTabId),
+  );
+  const setBillDiscount = useBillingTabsStore((s) => s.setBillDiscount);
+  const clearBillDiscount = useBillingTabsStore((s) => s.clearBillDiscount);
 
-    let nextIndex = currentIndex;
-    if (e.key === "ArrowRight") {
-      e.preventDefault();
-      nextIndex = (currentIndex + 1) % buttons.length;
-    } else if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      nextIndex = (currentIndex - 1 + buttons.length) % buttons.length;
-    } else {
-      return;
+  const [confirmZeroOpen, setConfirmZeroOpen] = useState(false);
+  const [billDiscountOpen, setBillDiscountOpen] = useState(false);
+  const pendingBillDiscountRef = useRef<{
+    type: "PERCENTAGE" | "FLAT";
+    value: number;
+  } | null>(null);
+  const billDebounceRef = useRef<number | null>(null);
+
+  const activeBillDiscountType = (activeDraft?.billDiscountType ?? "NONE") as
+    | "NONE"
+    | "PERCENTAGE"
+    | "FLAT";
+  const activeBillDiscountValue = activeDraft?.billDiscountValue ?? 0;
+
+  const activeBillDiscountLabel = useMemo(() => {
+    if (activeBillDiscountType === "NONE" || activeBillDiscountValue <= 0) {
+      return null;
     }
 
-    const nextButton = buttons[nextIndex] as HTMLButtonElement;
-    nextButton?.focus();
-    const nextMethod = nextButton?.textContent?.trim() as
-      | PaymentMethod
-      | undefined;
-    if (nextMethod) {
-      onPaymentMethodChange(nextMethod);
-    }
-  };
+    return activeBillDiscountType === "PERCENTAGE"
+      ? `−${activeBillDiscountValue.toFixed(0)}%`
+      : `−₹${activeBillDiscountValue.toFixed(2)}`;
+  }, [activeBillDiscountType, activeBillDiscountValue]);
+
+  const billDiscountIsActive = activeBillDiscountType !== "NONE";
+
+  const itemsForCalc = useMemo(
+    () =>
+      (activeDraft?.items ?? []).map((it) => ({
+        unitPrice: it.unitPrice,
+        quantity: it.quantity,
+        gstRate: it.gstRate,
+        itemDiscountType: (it.itemDiscountType ?? "NONE") as any,
+        itemDiscountValue: it.itemDiscountValue ?? 0,
+      })),
+    [activeDraft?.items],
+  );
+
+  const preDiscountGrandTotal = useMemo(
+    () =>
+      (activeDraft?.items ?? []).reduce(
+        (sum, item) =>
+          sum + item.unitPrice * item.quantity * (1 + item.gstRate / 100),
+        0,
+      ),
+    [activeDraft?.items],
+  );
+
+  const calcResult = useMemo(
+    () =>
+      calculateDiscounts(
+        itemsForCalc,
+        activeBillDiscountType,
+        activeBillDiscountValue,
+        gstEnabled,
+      ),
+    [activeBillDiscountType, activeBillDiscountValue, gstEnabled, itemsForCalc],
+  );
+
+  const itemDiscountTotal = useMemo(
+    () =>
+      calcResult.items.reduce((sum, item) => sum + item.itemDiscountAmount, 0),
+    [calcResult.items],
+  );
+
+  const subtotalBeforeItemDiscounts = subtotal + itemDiscountTotal;
+  const showItemDiscounts = itemDiscountTotal > 0;
+  const showGstLine = gstEnabled && Math.abs(gstAmount) > 0;
+  const showBillDiscountLine = calcResult.billDiscountAmount > 0;
+  const billDiscountSummaryLabel =
+    activeBillDiscountType === "PERCENTAGE"
+      ? `Bill discount (${activeBillDiscountValue.toFixed(0)}%)`
+      : "Bill discount";
 
   const announceAction = (message: string) => {
     if (announcementRef.current) {
@@ -76,26 +128,247 @@ export function BillingSummaryPanel({
     }
   };
 
+  const clearPendingBillDiscount = () => {
+    pendingBillDiscountRef.current = null;
+    if (billDebounceRef.current) {
+      window.clearTimeout(billDebounceRef.current);
+      billDebounceRef.current = null;
+    }
+  };
+
+  const normalizeBillDiscountValue = (
+    discountType: "PERCENTAGE" | "FLAT",
+    rawValue: number,
+  ) => {
+    const normalizedValue = Math.max(0, rawValue);
+
+    if (discountType === "PERCENTAGE") {
+      return Math.round(Math.min(100, normalizedValue) * 100) / 100;
+    }
+
+    return (
+      Math.round(Math.min(preDiscountGrandTotal, normalizedValue) * 100) / 100
+    );
+  };
+
+  const commitBillDiscount = (
+    discountType: "NONE" | "PERCENTAGE" | "FLAT",
+    rawValue: number,
+    immediate = false,
+  ) => {
+    if (!activeDraft?.clientDraftId) {
+      return;
+    }
+
+    const normalizedValue =
+      discountType === "NONE"
+        ? 0
+        : normalizeBillDiscountValue(discountType, rawValue);
+    const wouldZeroGrandTotal =
+      discountType !== "NONE" &&
+      calculateDiscounts(
+        itemsForCalc,
+        discountType,
+        normalizedValue,
+        gstEnabled,
+      ).grandTotal === 0;
+    const isSameAsActive =
+      activeBillDiscountType === discountType &&
+      activeBillDiscountValue === normalizedValue;
+
+    const apply = () => {
+      if (discountType !== "NONE" && wouldZeroGrandTotal && !isSameAsActive) {
+        pendingBillDiscountRef.current = {
+          type: discountType,
+          value: normalizedValue,
+        };
+        setConfirmZeroOpen(true);
+        return;
+      }
+
+      clearPendingBillDiscount();
+      setBillDiscount(activeDraft.clientDraftId, discountType, normalizedValue);
+    };
+
+    if (billDebounceRef.current) {
+      window.clearTimeout(billDebounceRef.current);
+      billDebounceRef.current = null;
+    }
+
+    if (immediate) {
+      apply();
+      return;
+    }
+
+    billDebounceRef.current = window.setTimeout(
+      apply,
+      300,
+    ) as unknown as number;
+  };
+
+  const handleBillDiscountRemove = () => {
+    clearPendingBillDiscount();
+    clearBillDiscount(activeDraft?.clientDraftId ?? "");
+    setBillDiscountOpen(false);
+  };
+
+  const openBillDiscountEditor = () => {
+    setBillDiscountOpen(true);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (billDebounceRef.current) {
+        window.clearTimeout(billDebounceRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div className="border-t bg-muted/30 shrink-0">
       <div className="p-4 space-y-3 text-sm">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Subtotal</span>
-          <MoneyText amount={subtotal} />
+        <div>
+          {billDiscountIsActive ? (
+            <div className="flex items-center justify-between gap-3 rounded-md border bg-background/70 px-3 py-2 text-xs">
+              <div className="min-w-0">
+                <div className="text-muted-foreground">Bill discount</div>
+                <div className="truncate font-semibold text-amber-700">
+                  {activeBillDiscountLabel}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  onClick={openBillDiscountEditor}
+                  disabled={isReadOnly}
+                  className="h-7 px-2 text-xs"
+                >
+                  Edit
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  onClick={handleBillDiscountRemove}
+                  disabled={isReadOnly}
+                  className="h-7 px-2 text-xs text-rose-600 hover:text-rose-700"
+                >
+                  Remove
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <DiscountHoverCard
+              open={billDiscountOpen}
+              onOpenChange={setBillDiscountOpen}
+              title="Bill discount"
+              subjectLabel={activeDraft?.tabLabel ?? "Current bill"}
+              triggerLabel="Add bill discount"
+              currentType={activeBillDiscountType}
+              currentValue={activeBillDiscountValue}
+              amountCap={preDiscountGrandTotal}
+              currentSummary={activeBillDiscountLabel}
+              isReadOnly={isReadOnly}
+              quickPicks={[]}
+              footerNote="Applies to this bill only"
+              percentageClampMessage="Discount capped at 100%."
+              amountClampMessage="Discount capped at bill total."
+              onValueChange={(
+                discountType: "PERCENTAGE" | "FLAT",
+                discountValue: number,
+              ) => {
+                commitBillDiscount(discountType, discountValue);
+              }}
+              onValueCommit={(
+                discountType: "PERCENTAGE" | "FLAT",
+                discountValue: number,
+              ) => {
+                commitBillDiscount(discountType, discountValue, true);
+              }}
+              onRemove={handleBillDiscountRemove}
+            />
+          )}
+
+          {billDiscountIsActive ? (
+            <DiscountHoverCard
+              open={billDiscountOpen}
+              onOpenChange={setBillDiscountOpen}
+              title="Bill discount"
+              subjectLabel={activeDraft?.tabLabel ?? "Current bill"}
+              triggerLabel="Edit bill discount"
+              hideTrigger={true}
+              currentType={activeBillDiscountType}
+              currentValue={activeBillDiscountValue}
+              amountCap={preDiscountGrandTotal}
+              currentSummary={activeBillDiscountLabel}
+              isReadOnly={isReadOnly}
+              quickPicks={[]}
+              footerNote="Applies to this bill only"
+              percentageClampMessage="Discount capped at 100%."
+              amountClampMessage="Discount capped at bill total."
+              onValueChange={(
+                discountType: "PERCENTAGE" | "FLAT",
+                discountValue: number,
+              ) => {
+                commitBillDiscount(discountType, discountValue);
+              }}
+              onValueCommit={(
+                discountType: "PERCENTAGE" | "FLAT",
+                discountValue: number,
+              ) => {
+                commitBillDiscount(discountType, discountValue, true);
+              }}
+              onRemove={handleBillDiscountRemove}
+            />
+          ) : null}
         </div>
-        {gstEnabled && (
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">GST</span>
-            <MoneyText amount={gstAmount} />
-          </div>
-        )}
+
         <Separator />
-        <div className="flex justify-between items-center">
-          <span className="font-semibold text-base">Grand Total</span>
-          <MoneyText
-            amount={grandTotal}
-            className="text-xl font-bold text-primary"
-          />
+        <div className="p-1 space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Subtotal</span>
+            <MoneyText amount={subtotalBeforeItemDiscounts} />
+          </div>
+
+          {showItemDiscounts && (
+            <>
+              <div className="flex justify-between text-sm text-emerald-700">
+                <span>Item discounts</span>
+                <MoneyText amount={-Math.abs(itemDiscountTotal)} />
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">
+                  After item discounts
+                </span>
+                <MoneyText amount={subtotal} />
+              </div>
+            </>
+          )}
+
+          {showGstLine && (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">GST</span>
+              <MoneyText amount={gstAmount} />
+            </div>
+          )}
+
+          {showBillDiscountLine && (
+            <div className="flex justify-between text-sm text-amber-700">
+              <span>{billDiscountSummaryLabel}</span>
+              <MoneyText amount={-Math.abs(calcResult.billDiscountAmount)} />
+            </div>
+          )}
+
+          <div className="flex justify-between items-center pt-1">
+            <span className="font-semibold text-base">Grand Total</span>
+            <MoneyText
+              amount={grandTotal}
+              className="text-xl font-bold text-primary"
+            />
+          </div>
         </div>
       </div>
 
@@ -118,7 +391,35 @@ export function BillingSummaryPanel({
                   announceAction(`Payment method changed to ${method}`);
                 }
               }}
-              onKeyDown={(e) => handlePaymentKeyDown(e, method)}
+              onKeyDown={(e) => {
+                const buttons = Array.from(
+                  paymentButtonsRef.current?.querySelectorAll("button") || [],
+                );
+                const currentIndex = buttons.findIndex((btn) =>
+                  btn.textContent?.includes(method),
+                );
+
+                let nextIndex = currentIndex;
+                if (e.key === "ArrowRight") {
+                  e.preventDefault();
+                  nextIndex = (currentIndex + 1) % buttons.length;
+                } else if (e.key === "ArrowLeft") {
+                  e.preventDefault();
+                  nextIndex =
+                    (currentIndex - 1 + buttons.length) % buttons.length;
+                } else {
+                  return;
+                }
+
+                const nextButton = buttons[nextIndex] as HTMLButtonElement;
+                nextButton?.focus();
+                const nextMethod = nextButton?.textContent?.trim() as
+                  | PaymentMethod
+                  | undefined;
+                if (nextMethod) {
+                  onPaymentMethodChange(nextMethod);
+                }
+              }}
               aria-pressed={paymentMethod === method}
               aria-label={`${method} payment method`}
               disabled={isReadOnly}
@@ -157,7 +458,31 @@ export function BillingSummaryPanel({
           </Button>
         )}
       </div>
-      {/* Hidden live region for screen reader announcements */}
+      <ConfirmationDialog
+        isOpen={confirmZeroOpen}
+        title="Apply 100% Discount?"
+        description="This makes the bill total ₹0. Continue?"
+        confirmText="Apply"
+        cancelText="Cancel"
+        isDangerous={true}
+        onConfirm={() => {
+          const pending = pendingBillDiscountRef.current;
+          if (pending && activeDraft?.clientDraftId) {
+            setBillDiscount(
+              activeDraft.clientDraftId,
+              pending.type,
+              pending.value,
+            );
+          }
+
+          pendingBillDiscountRef.current = null;
+          setConfirmZeroOpen(false);
+        }}
+        onCancel={() => {
+          pendingBillDiscountRef.current = null;
+          setConfirmZeroOpen(false);
+        }}
+      />
       <div
         ref={announcementRef}
         aria-live="polite"

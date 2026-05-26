@@ -18,6 +18,7 @@ import { InvoiceStockConflictModal } from "@/features/invoices/invoice-stock-con
 import { useOnlineStatus } from "@/hooks/use-online-status";
 import { getStoredOutletId, getStoredTenant } from "@/lib/auth-tokens";
 import { computeStockWarnings } from "@/lib/utils/cross-tab-stock";
+import { calculateDiscounts } from "@/lib/utils/discount-calculator";
 import { ProductWithStock } from "@/lib/utils/products";
 import { useBillingTabsStore } from "@/stores/billing-tabs-store";
 import { useIsGstEnabled } from "@/stores/get-store";
@@ -164,20 +165,30 @@ export function BillingWorkspace({
     });
   }, [tabStates, stockWarnings]);
 
-  const subtotal = useMemo(
-    () => cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
-    [cart],
-  );
-  const gstAmount = useMemo(
-    () =>
-      cart.reduce(
-        (sum, item) =>
-          sum + item.unitPrice * item.quantity * (item.gstRate / 100),
-        0,
-      ),
-    [cart],
-  );
-  const grandTotal = gstEnabled ? subtotal + gstAmount : subtotal;
+  const { subtotal, gstAmount, grandTotal } = useMemo(() => {
+    const inputs = cart.map((item) => ({
+      unitPrice: item.unitPrice,
+      quantity: item.quantity,
+      gstRate: item.gstRate,
+      itemDiscountType: (item.itemDiscountType ?? "NONE") as any,
+      itemDiscountValue: item.itemDiscountValue ?? 0,
+    }));
+
+    const billType = (activeDraft?.billDiscountType ?? "NONE") as any;
+    const billValue = activeDraft?.billDiscountValue ?? 0;
+
+    const res = calculateDiscounts(inputs, billType, billValue, gstEnabled);
+    return {
+      subtotal: res.subtotal,
+      gstAmount: res.totalGstAmount,
+      grandTotal: res.grandTotal,
+    };
+  }, [
+    cart,
+    activeDraft?.billDiscountType,
+    activeDraft?.billDiscountValue,
+    gstEnabled,
+  ]);
 
   const { isClearDialogOpen, isStockModalOpen } = useInvoiceStore();
   const [isFinalizeDialogOpen, setIsFinalizeDialogOpen] = useState(false);
@@ -209,6 +220,8 @@ export function BillingWorkspace({
         quantity: requestedQty,
         subtotal: product.basePrice * requestedQty,
         gstAmount: product.basePrice * requestedQty * (product.gstRate / 100),
+        itemDiscountType: "NONE",
+        itemDiscountValue: 0,
       },
     ]);
   };
@@ -253,6 +266,10 @@ export function BillingWorkspace({
   };
 
   const syncDraftToInvoiceStore = () => {
+    invoiceActions.setInvoiceDiscount(
+      activeDraft?.billDiscountType ?? "NONE",
+      activeDraft?.billDiscountValue ?? 0,
+    );
     invoiceActions.setCart(
       cart.map((item) => ({
         productId: item.productId,
@@ -262,6 +279,8 @@ export function BillingWorkspace({
         quantity: item.quantity,
         subtotal: item.unitPrice * item.quantity,
         gstAmount: item.gstAmount,
+        itemDiscountType: item.itemDiscountType ?? "NONE",
+        itemDiscountValue: item.itemDiscountValue ?? 0,
       })),
     );
     invoiceActions.setCustomerName(customerName);
@@ -369,6 +388,8 @@ export function BillingWorkspace({
         quantity: item.quantity,
         subtotal: item.unitPrice * item.quantity,
         gstAmount: item.gstAmount,
+        itemDiscountType: item.itemDiscountType ?? "NONE",
+        itemDiscountValue: item.itemDiscountValue ?? 0,
       })),
     );
 
@@ -460,6 +481,8 @@ export function BillingWorkspace({
         quantity: item.quantity,
         subtotal: item.unitPrice * item.quantity,
         gstAmount: item.gstAmount,
+        itemDiscountType: item.itemDiscountType ?? "NONE",
+        itemDiscountValue: item.itemDiscountValue ?? 0,
       })),
     );
 
@@ -467,7 +490,7 @@ export function BillingWorkspace({
     invoiceActions.closeStockModal();
     invoiceActions.enablePreviewMode();
 
-    openFinalizeDialog()
+    openFinalizeDialog();
 
     // Store decisions for later submission if needed
     // The user will see the invoice preview and can finalize from there
@@ -519,7 +542,7 @@ export function BillingWorkspace({
           />
         </Card>
 
-        <Card className="w-full h-full py-0 border-0 md:w-80 lg:w-100 flex flex-col shadow-sm overflow-hidden shrink-0  sticky bottom-0 md:sticky md:top-4 lg:static bg-background z-10 rounded-t-lg md:rounded-lg">
+        <Card className="w-full h-full py-0 border-0 md:w-80 lg:w-5/12 flex flex-col shadow-sm overflow-hidden shrink-0  sticky bottom-0 md:sticky md:top-4 lg:static bg-background z-10 rounded-t-lg md:rounded-lg">
           <BillingCart
             items={cart}
             onUpdateQuantity={handleUpdateQuantity}

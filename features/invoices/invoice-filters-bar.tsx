@@ -36,6 +36,7 @@ export function InvoiceFiltersBar() {
   const dateFrom = invoiceFiltersBar.dateFrom || "";
   const dateTo = invoiceFiltersBar.dateTo || "";
   const productId = invoiceFiltersBar.productId || "";
+  const invoiceType = invoiceFiltersBar.invoiceType || "";
 
   useEffect(() => {
     setInvoiceFiltersBar({
@@ -45,6 +46,7 @@ export function InvoiceFiltersBar() {
       dateFrom: searchParams.get("dateFrom") || "",
       dateTo: searchParams.get("dateTo") || "",
       productId: searchParams.get("productId") || "",
+      invoiceType: searchParams.get("invoiceType") || "",
     });
   }, [searchParams, setInvoiceFiltersBar]);
 
@@ -110,6 +112,17 @@ export function InvoiceFiltersBar() {
     updateParams({ dateTo: value || undefined });
   };
 
+  const handleInvoiceTypeChange = (value: string | null) => {
+    if (!value || value === "ALL") {
+      mergeInvoiceFiltersBar({ invoiceType: "" });
+      updateParams({ invoiceType: undefined });
+      return;
+    }
+
+    mergeInvoiceFiltersBar({ invoiceType: value });
+    updateParams({ invoiceType: value });
+  };
+
   const handleReset = () => {
     resetInvoiceFiltersBar();
     router.push("?page=1");
@@ -121,7 +134,8 @@ export function InvoiceFiltersBar() {
     gstEnabled ||
     dateFrom ||
     dateTo ||
-    productId;
+    productId ||
+    invoiceType;
 
   return (
     <div className="space-y-4">
@@ -212,6 +226,21 @@ export function InvoiceFiltersBar() {
             onBlur={handleProductIdChange}
             className="h-10"
           />
+        </div>
+
+        {/* Invoice Type */}
+        <div className="space-y-2">
+          <Label htmlFor="invoiceType">Invoice Type</Label>
+          <Select value={invoiceType} onValueChange={handleInvoiceTypeChange}>
+            <SelectTrigger id="invoiceType" className="h-10">
+              <SelectValue placeholder="All invoices" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All</SelectItem>
+              <SelectItem value="SALE">Sales only</SelectItem>
+              <SelectItem value="REFUND">Refunds only</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

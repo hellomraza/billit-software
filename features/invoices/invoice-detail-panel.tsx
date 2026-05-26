@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { InvoiceItemsTable } from "@/features/billing/invoice-items-table";
 import { formatDateTime } from "@/lib/formatters/date";
+import { ROUTES } from "@/lib/routes";
 import { Invoice } from "@/types";
+import Link from "next/link";
 
 interface InvoiceDetailPanelProps {
   invoice: Invoice;
@@ -14,6 +16,29 @@ interface InvoiceDetailPanelProps {
 export function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps) {
   return (
     <div className="space-y-6 invoice-details">
+      {invoice.invoiceType === "REFUND" && invoice.originalInvoice && (
+        <Card className="animate-in fade-in slide-in-from-top duration-500">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm text-muted-foreground uppercase tracking-wider">
+              Refund for
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <Link
+                href={ROUTES.INVOICE_DETAIL(invoice.originalInvoice.id)}
+                className="font-medium text-primary tabular-nums"
+              >
+                {invoice.originalInvoice.invoiceNumber}
+              </Link>
+              <div className="text-sm text-muted-foreground">
+                {formatDateTime(invoice.originalInvoice.createdAt)}
+              </div>
+            </div>
+            <div className="text-sm text-muted-foreground">Refund</div>
+          </CardContent>
+        </Card>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="animate-in fade-in slide-in-from-left duration-500">
           <CardHeader className="pb-3">
@@ -86,34 +111,124 @@ export function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps) {
           <InvoiceItemsTable
             items={invoice.items}
             showGst={invoice.isGstInvoice}
+            isRefund={invoice.invoiceType === "REFUND"}
           />
         </CardContent>
       </Card>
+
+      {invoice.refunds && invoice.refunds.length > 0 && (
+        <Card className="animate-in fade-in slide-in-from-bottom duration-500 delay-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm text-muted-foreground uppercase tracking-wider">
+              Refunds
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-3">
+              {invoice.refunds.map((r) => (
+                <div
+                  key={r.id}
+                  className="flex items-center justify-between border rounded-md p-3 bg-background"
+                >
+                  <div>
+                    <Link
+                      href={ROUTES.INVOICE_DETAIL(r.id)}
+                      className="font-medium text-primary tabular-nums"
+                    >
+                      {r.invoiceNumber}
+                    </Link>
+                    <div className="text-sm text-muted-foreground">
+                      {formatDateTime(r.createdAt)}
+                    </div>
+                  </div>
+
+                  <div className="text-sm text-muted-foreground mr-4">
+                    {r.itemCount > 0
+                      ? `${r.itemCount} item${r.itemCount === 1 ? "" : "s"} refunded`
+                      : "Full refund"}
+                  </div>
+
+                  <div className="text-right font-medium text-rose-600">
+                    <MoneyText amount={-Math.abs(r.grandTotal)} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="bg-muted/10 border-dashed animate-in fade-in slide-in-from-bottom duration-500 delay-150 grand-total-section invoice-summary">
         <CardContent className="p-6">
           <div className="space-y-2 max-w-sm ml-auto">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Subtotal</span>
-              <MoneyText amount={invoice.subtotal} />
+              <MoneyText
+                amount={
+                  invoice.invoiceType === "REFUND"
+                    ? -Math.abs(invoice.subtotal)
+                    : invoice.subtotal
+                }
+              />
             </div>
             {invoice.isGstInvoice && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Total GST</span>
-                <MoneyText amount={invoice.totalGst} />
+                <MoneyText
+                  amount={
+                    invoice.invoiceType === "REFUND"
+                      ? -Math.abs(invoice.totalGst)
+                      : invoice.totalGst
+                  }
+                />
+              </div>
+            )}
+            {invoice.billDiscountAmount && invoice.billDiscountAmount > 0 && (
+              <div
+                className={`flex justify-between text-sm ${invoice.invoiceType === "REFUND" ? "text-rose-600" : "text-rose-600"}`}
+              >
+                <span className="text-muted-foreground">
+                  {invoice.billDiscountType === "PERCENTAGE"
+                    ? `Bill discount (${invoice.billDiscountValue?.toFixed(0)}%)`
+                    : "Bill discount"}
+                </span>
+                <MoneyText
+                  amount={
+                    invoice.invoiceType === "REFUND"
+                      ? -Math.abs(invoice.billDiscountAmount)
+                      : -Math.abs(invoice.billDiscountAmount)
+                  }
+                />
               </div>
             )}
             <Separator className="my-2" />
             <div className="flex justify-between items-center grand-total">
               <span className="font-semibold text-lg">Grand Total</span>
               <MoneyText
-                amount={invoice.grandTotal}
-                className="text-2xl font-bold text-primary"
+                amount={
+                  invoice.invoiceType === "REFUND"
+                    ? -Math.abs(invoice.grandTotal)
+                    : invoice.grandTotal
+                }
+                className={`text-2xl font-bold ${invoice.invoiceType === "REFUND" ? "text-rose-600" : "text-primary"}`}
               />
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {invoice.invoiceType === "REFUND" && invoice.refundReason && (
+        <Card className="animate-in fade-in slide-in-from-bottom duration-500 delay-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm text-muted-foreground uppercase tracking-wider">
+              Reason
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="text-sm">{invoice.refundReason}</div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

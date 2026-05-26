@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",
@@ -30,14 +32,19 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/uuid": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
+    "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1",
     "knip": "^6.7.0",
     "tailwindcss": "^4",
+    "ts-jest": "^29.4.10",
     "typescript": "^5"
   }
 }

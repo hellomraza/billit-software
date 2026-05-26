@@ -10,6 +10,7 @@ export interface InvoiceFilters {
   dateFrom?: string;
   dateTo?: string;
   invoiceNumber?: string;
+  invoiceType?: "SALE" | "REFUND";
   paymentMethod?: "CASH" | "CARD" | "UPI";
   gstEnabled?: boolean;
   outletId?: string;
@@ -28,6 +29,7 @@ export type InvoiceListResponse = {
   invoiceId: string;
   createdAt: string;
   businessName: string;
+  invoiceType?: "SALE" | "REFUND";
   gstEnabled: boolean;
   itemCount: number;
   subtotal: number;
@@ -51,6 +53,7 @@ function transformInvoice(apiInvoice: InvoiceListResponse): InvoiceListItem {
     invoiceNumber: apiInvoice.invoiceNumber,
     createdAt: apiInvoice.createdAt,
     customerName: apiInvoice.customerName,
+    invoiceType: apiInvoice.invoiceType,
     isGstInvoice: apiInvoice.gstEnabled,
     paymentMethod: apiInvoice.paymentMethod,
     subtotal: apiInvoice.subtotal,
@@ -76,9 +79,34 @@ function transformInvoiceDetail(apiInvoice: GetInvoiceResponse): Invoice {
       gstRate: item.gstRate,
       gstAmount: item.gstAmount,
       subtotal: item.lineTotal,
+      itemDiscountType: item.itemDiscountType,
+      itemDiscountValue: item.itemDiscountValue,
+      itemDiscountAmount: item.itemDiscountAmount,
     })),
+    refunds: apiInvoice.refunds?.map((refund) => ({
+      id: refund.id,
+      invoiceNumber: refund.invoiceNumber,
+      grandTotal: refund.grandTotal,
+      createdAt: refund.createdAt,
+      itemCount: refund.itemCount,
+      items: refund.items?.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+      })),
+    })),
+    originalInvoice: apiInvoice.originalInvoice
+      ? {
+          id: apiInvoice.originalInvoice.id,
+          invoiceNumber: apiInvoice.originalInvoice.invoiceNumber,
+          createdAt: apiInvoice.originalInvoice.createdAt,
+        }
+      : undefined,
+    refundReason: apiInvoice.refundReason,
     subtotal: apiInvoice.subtotal,
     totalGst: apiInvoice.gstTotal,
+    billDiscountType: apiInvoice.billDiscountType,
+    billDiscountValue: apiInvoice.billDiscountValue,
+    billDiscountAmount: apiInvoice.billDiscountAmount,
     grandTotal: apiInvoice.grandTotal,
   };
 }
@@ -101,6 +129,7 @@ export async function getInvoices(
           ...(filters.invoiceNumber && {
             invoiceNumber: filters.invoiceNumber,
           }),
+          ...(filters.invoiceType && { invoiceType: filters.invoiceType }),
           ...(filters.paymentMethod && {
             paymentMethod: filters.paymentMethod,
           }),
@@ -133,6 +162,29 @@ type InvoiceItemResponseDto = {
   gstRate: number;
   gstAmount: number;
   lineTotal: number;
+  itemDiscountType?: "NONE" | "PERCENTAGE" | "FLAT";
+  itemDiscountValue?: number;
+  itemDiscountAmount?: number;
+};
+
+type InvoiceRefundItemResponseDto = {
+  productId: string;
+  quantity: number;
+};
+
+type InvoiceRefundResponseDto = {
+  id: string;
+  invoiceNumber: string;
+  grandTotal: number;
+  createdAt: string;
+  itemCount: number;
+  items?: InvoiceRefundItemResponseDto[];
+};
+
+type InvoiceOriginalResponseDto = {
+  id: string;
+  invoiceNumber: string;
+  createdAt: string;
 };
 
 type GetInvoiceResponse = {
@@ -151,6 +203,12 @@ type GetInvoiceResponse = {
   };
   paymentMethod: PaymentMethod;
   items: InvoiceItemResponseDto[];
+  billDiscountType?: "NONE" | "PERCENTAGE" | "FLAT";
+  billDiscountValue?: number;
+  billDiscountAmount?: number;
+  refunds?: InvoiceRefundResponseDto[];
+  originalInvoice?: InvoiceOriginalResponseDto;
+  refundReason?: string;
   subtotal: number;
   gstTotal: number;
   grandTotal: number;

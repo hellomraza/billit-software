@@ -29,6 +29,8 @@ export interface InvoiceCreatedResponse {
 
 type InvoiceStoreState = {
   cart: InvoiceItem[];
+  billDiscountType: "NONE" | "PERCENTAGE" | "FLAT";
+  billDiscountValue: number;
   searchQuery: string;
   paymentMethod: PaymentMethod;
   customerName: string;
@@ -47,6 +49,10 @@ type InvoiceStoreState = {
     setCustomerName: (name: string) => void;
     setCustomerPhone: (phone: string) => void;
     setCart: (items: InvoiceItem[]) => void;
+    setInvoiceDiscount: (
+      billDiscountType: "NONE" | "PERCENTAGE" | "FLAT",
+      billDiscountValue: number,
+    ) => void;
     addCartItem: (item: CartItemInput, quantity?: number) => void;
     updateCartItemQuantity: (productId: string, quantity: number) => void;
     removeCartItem: (productId: string) => void;
@@ -69,6 +75,8 @@ type InvoiceStoreState = {
 
 const createDraftState = () => ({
   cart: [] as InvoiceItem[],
+  billDiscountType: "NONE" as "NONE" | "PERCENTAGE" | "FLAT",
+  billDiscountValue: 0,
   searchQuery: "",
   paymentMethod: "CASH" as PaymentMethod,
   customerName: "",
@@ -91,6 +99,8 @@ export const useInvoiceStore = create<InvoiceStoreState>((set, get) => ({
     setCustomerName: (name) => set({ customerName: name }),
     setCustomerPhone: (phone) => set({ customerPhone: phone }),
     setCart: (items) => set({ cart: items }),
+    setInvoiceDiscount: (billDiscountType, billDiscountValue) =>
+      set({ billDiscountType, billDiscountValue }),
     addCartItem: (item, quantity = 1) =>
       set((state) => {
         const existing = state.cart.find(
@@ -156,6 +166,8 @@ export const useInvoiceStore = create<InvoiceStoreState>((set, get) => ({
         customerName,
         customerPhone,
         paymentMethod,
+        billDiscountType,
+        billDiscountValue,
       } = get();
 
       if (cart.length === 0) {
@@ -178,6 +190,8 @@ export const useInvoiceStore = create<InvoiceStoreState>((set, get) => ({
         customerName: customerName || undefined,
         customerPhone: customerPhone || undefined,
         gstEnabled,
+        billDiscountType,
+        billDiscountValue,
         items: cart.map((item) => {
           const override = overrides[item.productId];
           return {
@@ -187,6 +201,8 @@ export const useInvoiceStore = create<InvoiceStoreState>((set, get) => ({
             unitPrice: item.unitPrice,
             gstRate: item.gstRate,
             override: override?.override ?? false,
+            itemDiscountType: item.itemDiscountType ?? "NONE",
+            itemDiscountValue: item.itemDiscountValue ?? 0,
           };
         }),
       };

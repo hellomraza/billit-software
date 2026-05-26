@@ -3,8 +3,11 @@
 import { MoneyText } from "@/components/shared/money-text";
 import { QuantityControl } from "@/components/shared/quantity-control";
 import type { StockWarning } from "@/lib/utils/cross-tab-stock";
-import type { DraftItem } from "@/types/draft";
+import { useBillingTabsStore } from "@/stores/billing-tabs-store";
+import type { DiscountType, DraftItem } from "@/types/draft";
 import { ShoppingCart, X } from "lucide-react";
+import { useRef } from "react";
+import { DiscountHoverCard } from "./discount-hover-card";
 
 interface BillingCartProps {
   items: DraftItem[];
@@ -21,6 +24,86 @@ export function BillingCart({
   stockWarnings,
   isReadOnly = false,
 }: BillingCartProps) {
+  const activeTabId = useBillingTabsStore((s) => s.activeTabId);
+  const setItemDiscount = useBillingTabsStore((s) => s.setItemDiscount);
+  const clearItemDiscount = useBillingTabsStore((s) => s.clearItemDiscount);
+
+  const inputRefs = useRef<
+    Record<string, { timeout?: number; messageTimeout?: number }>
+  >({});
+
+  const clearPendingDiscountUpdate = (productId: string) => {
+    const ref = inputRefs.current[productId];
+    if (!ref) return;
+
+    if (ref.timeout) {
+      window.clearTimeout(ref.timeout);
+      delete ref.timeout;
+    }
+
+    if (ref.messageTimeout) {
+      window.clearTimeout(ref.messageTimeout);
+      delete ref.messageTimeout;
+    }
+  };
+
+  const commitItemDiscount = (
+    productId: string,
+    discountType: DiscountType,
+    discountValue: number,
+  ) => {
+    clearPendingDiscountUpdate(productId);
+    setItemDiscount(activeTabId, productId, discountType, discountValue);
+  };
+
+  const scheduleItemDiscount = (
+    productId: string,
+    discountType: DiscountType,
+    discountValue: number,
+  ) => {
+    clearPendingDiscountUpdate(productId);
+    const ref = (inputRefs.current[productId] =
+      inputRefs.current[productId] || {});
+
+    ref.timeout = window.setTimeout(() => {
+      commitItemDiscount(productId, discountType, discountValue);
+    }, 250) as unknown as number;
+  };
+
+  function ItemDiscountHoverCard({ item }: { item: DraftItem }) {
+    const amountCap = item.unitPrice * item.quantity;
+
+    return (
+      <DiscountHoverCard
+        title="Item discount"
+        subjectLabel={item.productName}
+        triggerLabel="Discount"
+        currentType={item.itemDiscountType ?? "NONE"}
+        currentValue={item.itemDiscountValue ?? 0}
+        amountCap={amountCap}
+        currentSummary={
+          item.itemDiscountType && item.itemDiscountType !== "NONE"
+            ? item.itemDiscountType === "PERCENTAGE"
+              ? `−${item.itemDiscountValue}%`
+              : `−₹${(item.itemDiscountValue ?? 0).toFixed(2)}`
+            : null
+        }
+        isReadOnly={isReadOnly}
+        onValueChange={(discountType, discountValue) => {
+          scheduleItemDiscount(item.productId, discountType, discountValue);
+        }}
+        onValueCommit={(discountType, discountValue) => {
+          commitItemDiscount(item.productId, discountType, discountValue);
+        }}
+        onRemove={() => {
+          clearItemDiscount(activeTabId, item.productId);
+          clearPendingDiscountUpdate(item.productId);
+        }}
+        footerNote="Applies to this line item only"
+      />
+    );
+  }
+
   if (items.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-muted-foreground h-full min-h-75">
@@ -47,10 +130,21 @@ export function BillingCart({
                 amount={item.unitPrice}
                 className="text-muted-foreground text-xs"
               />
-              <MoneyText
-                amount={item.quantity * item.unitPrice}
-                className="font-semibold text-sm"
-              />
+              <div className="flex items-center gap-3">
+                <MoneyText
+                  amount={item.quantity * item.unitPrice}
+                  className="font-semibold text-sm"
+                />
+                {item.itemDiscountType && item.itemDiscountType !== "NONE" ? (
+                  <span className="text-amber-600 text-xs font-medium">
+                    {item.itemDiscountType === "PERCENTAGE"
+                      ? `−${item.itemDiscountValue}%`
+                      : `−₹${(item.itemDiscountValue ?? 0).toFixed(2)}`}
+                  </span>
+                ) : null}
+
+                <ItemDiscountHoverCard item={item} />
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -75,6 +169,7 @@ export function BillingCart({
           </button>
         </div>
       ))}
+
       {items.map((item) => {
         const warning = stockWarnings?.get(item.productId);
         if (!warning) return null;

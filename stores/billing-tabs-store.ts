@@ -23,6 +23,8 @@ function makeEmptyDraft(
     customerName: "",
     customerPhone: "",
     paymentMethod: "CASH",
+    billDiscountType: "NONE",
+    billDiscountValue: 0,
     isDeleted: false,
     createdAt: now,
     updatedAt: now,
@@ -134,6 +136,108 @@ export const useBillingTabsStore = create<BillingTabsState>()(
                   syncStatus: "SYNCED",
                 }
               : d,
+          ),
+        })),
+
+      setItemDiscount: (
+        clientDraftId,
+        productId,
+        discountType,
+        discountValue,
+      ) =>
+        set((state) => ({
+          drafts: state.drafts.map((d) =>
+            d.clientDraftId !== clientDraftId
+              ? d
+              : {
+                  ...d,
+                  items: d.items.map((item) => {
+                    if (item.productId !== productId) return item;
+                    // Base clamping
+                    let v = Math.max(0, discountValue);
+                    if (discountType === "PERCENTAGE") {
+                      v = Math.min(100, v);
+                    } else if (discountType === "FLAT") {
+                      const cap = item.unitPrice * item.quantity;
+                      v = Math.min(v, cap);
+                    }
+                    // Round to 2 decimals
+                    v = Math.round(v * 100) / 100;
+                    return {
+                      ...item,
+                      itemDiscountType: discountType,
+                      itemDiscountValue: v,
+                    };
+                  }),
+                  localUpdatedAt: new Date().toISOString(),
+                  syncStatus: "SYNCED",
+                },
+          ),
+        })),
+
+      clearItemDiscount: (clientDraftId, productId) =>
+        set((state) => ({
+          drafts: state.drafts.map((d) =>
+            d.clientDraftId !== clientDraftId
+              ? d
+              : {
+                  ...d,
+                  items: d.items.map((item) =>
+                    item.productId !== productId
+                      ? item
+                      : {
+                          ...item,
+                          itemDiscountType: "NONE",
+                          itemDiscountValue: 0,
+                        },
+                  ),
+                  localUpdatedAt: new Date().toISOString(),
+                  syncStatus: "SYNCED",
+                },
+          ),
+        })),
+
+      setBillDiscount: (clientDraftId, discountType, discountValue) =>
+        set((state) => ({
+          drafts: state.drafts.map((d) =>
+            d.clientDraftId !== clientDraftId
+              ? d
+              : (() => {
+                  let v = Math.max(0, discountValue);
+                  if (discountType === "PERCENTAGE") v = Math.min(100, v);
+                  if (discountType === "FLAT") {
+                    // cap flat bill discount to pre-discount grand total (approx)
+                    const pre = d.items.reduce(
+                      (s, it) =>
+                        s + it.unitPrice * it.quantity * (1 + it.gstRate / 100),
+                      0,
+                    );
+                    v = Math.min(v, pre);
+                  }
+                  v = Math.round(v * 100) / 100;
+                  return {
+                    ...d,
+                    billDiscountType: discountType,
+                    billDiscountValue: v,
+                    localUpdatedAt: new Date().toISOString(),
+                    syncStatus: "SYNCED",
+                  };
+                })(),
+          ),
+        })),
+
+      clearBillDiscount: (clientDraftId) =>
+        set((state) => ({
+          drafts: state.drafts.map((d) =>
+            d.clientDraftId !== clientDraftId
+              ? d
+              : {
+                  ...d,
+                  billDiscountType: "NONE",
+                  billDiscountValue: 0,
+                  localUpdatedAt: new Date().toISOString(),
+                  syncStatus: "SYNCED",
+                },
           ),
         })),
 
