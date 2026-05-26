@@ -12,6 +12,7 @@ import { useInvoiceActions, useInvoicePhase } from "@/stores/invoice-store";
 import { type PaymentMethod } from "@/types";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { DiscountHoverCard } from "./discount-hover-card";
 
 interface BillingSummaryPanelProps {
   onFinalize: () => void;
@@ -47,28 +48,19 @@ export function BillingSummaryPanel({
   const setBillDiscount = useBillingTabsStore((s) => s.setBillDiscount);
   const clearBillDiscount = useBillingTabsStore((s) => s.clearBillDiscount);
 
-  const [billDiscountOpen, setBillDiscountOpen] = useState(false);
-  const activeBillDiscountType = (activeDraft?.billDiscountType ?? "NONE") as
-    | "NONE"
-    | "PERCENTAGE"
-    | "FLAT";
-  const activeBillDiscountValue = activeDraft?.billDiscountValue ?? 0;
-
-  const [localBillType, setLocalBillType] = useState<
-    "NONE" | "PERCENTAGE" | "FLAT"
-  >(activeBillDiscountType);
-  const [localBillValue, setLocalBillValue] = useState<number>(
-    activeBillDiscountValue,
-  );
   const [confirmZeroOpen, setConfirmZeroOpen] = useState(false);
-  const [billClampMessage, setBillClampMessage] = useState<string | null>(null);
-  const prevBillRef = useRef({ type: localBillType, value: localBillValue });
+  const [billDiscountOpen, setBillDiscountOpen] = useState(false);
   const pendingBillDiscountRef = useRef<{
     type: "PERCENTAGE" | "FLAT";
     value: number;
   } | null>(null);
   const billDebounceRef = useRef<number | null>(null);
-  const billClampTimeoutRef = useRef<number | null>(null);
+
+  const activeBillDiscountType = (activeDraft?.billDiscountType ?? "NONE") as
+    | "NONE"
+    | "PERCENTAGE"
+    | "FLAT";
+  const activeBillDiscountValue = activeDraft?.billDiscountValue ?? 0;
 
   const activeBillDiscountLabel = useMemo(() => {
     if (activeBillDiscountType === "NONE" || activeBillDiscountValue <= 0) {
@@ -82,167 +74,6 @@ export function BillingSummaryPanel({
 
   const billDiscountIsActive = activeBillDiscountType !== "NONE";
 
-  const clearBillClampMessage = () => {
-    if (billClampTimeoutRef.current) {
-      window.clearTimeout(billClampTimeoutRef.current);
-      billClampTimeoutRef.current = null;
-    }
-    setBillClampMessage(null);
-  };
-
-  const normalizeBillDiscountValue = (
-    discountType: "PERCENTAGE" | "FLAT",
-    rawValue: number,
-  ): { value: number; message: string | null } => {
-    let normalizedValue = Math.max(0, rawValue);
-    let message: string | null = null;
-
-    if (discountType === "PERCENTAGE") {
-      normalizedValue = Math.min(100, normalizedValue);
-    } else {
-      const cap = Math.max(0, calcResult.preDiscountGrandTotal);
-
-      if (normalizedValue > cap) {
-        normalizedValue = cap;
-        message = "Discount capped at bill total.";
-      }
-    }
-
-    return {
-      value: Math.round(normalizedValue * 100) / 100,
-      message,
-    };
-  };
-
-  const commitBillDiscount = (
-    discountType: "NONE" | "PERCENTAGE" | "FLAT",
-    rawValue: number,
-    immediate = false,
-  ) => {
-    if (!activeDraft?.clientDraftId) {
-      return;
-    }
-
-    const normalizedResult =
-      discountType === "NONE"
-        ? { value: 0, message: null }
-        : normalizeBillDiscountValue(discountType, rawValue);
-    const normalizedValue = normalizedResult.value;
-    const wouldZeroGrandTotal =
-      discountType !== "NONE" &&
-      calculateDiscounts(
-        itemsForCalc,
-        discountType,
-        normalizedValue,
-        gstEnabled,
-      ).grandTotal === 0;
-    const isSameAsActive =
-      activeBillDiscountType === discountType &&
-      activeBillDiscountValue === normalizedValue;
-
-    const apply = () => {
-      if (normalizedResult.message) {
-        setBillClampMessage(normalizedResult.message);
-        if (billClampTimeoutRef.current) {
-          window.clearTimeout(billClampTimeoutRef.current);
-        }
-        billClampTimeoutRef.current = window.setTimeout(
-          clearBillClampMessage,
-          3000,
-        ) as unknown as number;
-      }
-
-      if (discountType !== "NONE" && wouldZeroGrandTotal && !isSameAsActive) {
-        pendingBillDiscountRef.current = {
-          type: discountType,
-          value: normalizedValue,
-        };
-        setConfirmZeroOpen(true);
-        return;
-      }
-
-      pendingBillDiscountRef.current = null;
-      setBillDiscount(activeDraft.clientDraftId, discountType, normalizedValue);
-    };
-
-    if (billDebounceRef.current) {
-      window.clearTimeout(billDebounceRef.current);
-      billDebounceRef.current = null;
-    }
-
-    if (immediate) {
-      apply();
-      return;
-    }
-
-    billDebounceRef.current = window.setTimeout(
-      apply,
-      300,
-    ) as unknown as number;
-  };
-
-  const handleBillTypeChange = (nextType: "PERCENTAGE" | "FLAT") => {
-    if (isReadOnly) {
-      return;
-    }
-
-    prevBillRef.current = {
-      type: activeBillDiscountType,
-      value: activeBillDiscountValue,
-    };
-    clearBillClampMessage();
-    setLocalBillType(nextType);
-    setLocalBillValue(0);
-    commitBillDiscount(nextType, 0, true);
-  };
-
-  const handleBillValueChange = (nextValue: number) => {
-    if (isReadOnly) {
-      return;
-    }
-
-    clearBillClampMessage();
-    const normalizedValue = Math.max(0, nextValue);
-    setLocalBillValue(normalizedValue);
-    commitBillDiscount(localBillType, normalizedValue);
-  };
-
-  const handleBillValueBlur = () => {
-    if (isReadOnly) {
-      return;
-    }
-
-    clearBillClampMessage();
-    commitBillDiscount(localBillType, localBillValue, true);
-  };
-
-  const handleBillDiscountRemove = () => {
-    clearBillClampMessage();
-    pendingBillDiscountRef.current = null;
-    clearBillDiscount(activeDraft?.clientDraftId ?? "");
-    setBillDiscountOpen(false);
-    setLocalBillType("NONE");
-    setLocalBillValue(0);
-  };
-
-  useEffect(() => {
-    setLocalBillType(activeBillDiscountType);
-    setLocalBillValue(activeBillDiscountValue);
-  }, [activeBillDiscountType, activeBillDiscountValue]);
-
-  useEffect(
-    () => () => {
-      if (billDebounceRef.current) {
-        window.clearTimeout(billDebounceRef.current);
-      }
-
-      if (billClampTimeoutRef.current) {
-        window.clearTimeout(billClampTimeoutRef.current);
-      }
-    },
-    [],
-  );
-
   const itemsForCalc = useMemo(
     () =>
       (activeDraft?.items ?? []).map((it) => ({
@@ -252,6 +83,16 @@ export function BillingSummaryPanel({
         itemDiscountType: (it.itemDiscountType ?? "NONE") as any,
         itemDiscountValue: it.itemDiscountValue ?? 0,
       })),
+    [activeDraft?.items],
+  );
+
+  const preDiscountGrandTotal = useMemo(
+    () =>
+      (activeDraft?.items ?? []).reduce(
+        (sum, item) =>
+          sum + item.unitPrice * item.quantity * (1 + item.gstRate / 100),
+        0,
+      ),
     [activeDraft?.items],
   );
 
@@ -274,7 +115,6 @@ export function BillingSummaryPanel({
 
   const subtotalBeforeItemDiscounts = subtotal + itemDiscountTotal;
   const showItemDiscounts = itemDiscountTotal > 0;
-  const showAfterItemDiscounts = showItemDiscounts;
   const showGstLine = gstEnabled && Math.abs(gstAmount) > 0;
   const showBillDiscountLine = calcResult.billDiscountAmount > 0;
   const billDiscountSummaryLabel =
@@ -282,139 +122,210 @@ export function BillingSummaryPanel({
       ? `Bill discount (${activeBillDiscountValue.toFixed(0)}%)`
       : "Bill discount";
 
-  const handlePaymentKeyDown = (
-    e: React.KeyboardEvent,
-    method: PaymentMethod,
-  ) => {
-    const buttons = Array.from(
-      paymentButtonsRef.current?.querySelectorAll("button") || [],
-    );
-    const currentIndex = buttons.findIndex((btn) =>
-      btn.textContent?.includes(method),
-    );
-
-    let nextIndex = currentIndex;
-    if (e.key === "ArrowRight") {
-      e.preventDefault();
-      nextIndex = (currentIndex + 1) % buttons.length;
-    } else if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      nextIndex = (currentIndex - 1 + buttons.length) % buttons.length;
-    } else {
-      return;
-    }
-
-    const nextButton = buttons[nextIndex] as HTMLButtonElement;
-    nextButton?.focus();
-    const nextMethod = nextButton?.textContent?.trim() as
-      | PaymentMethod
-      | undefined;
-    if (nextMethod) {
-      onPaymentMethodChange(nextMethod);
-    }
-  };
-
   const announceAction = (message: string) => {
     if (announcementRef.current) {
       announcementRef.current.textContent = message;
     }
   };
 
+  const clearPendingBillDiscount = () => {
+    pendingBillDiscountRef.current = null;
+    if (billDebounceRef.current) {
+      window.clearTimeout(billDebounceRef.current);
+      billDebounceRef.current = null;
+    }
+  };
+
+  const normalizeBillDiscountValue = (
+    discountType: "PERCENTAGE" | "FLAT",
+    rawValue: number,
+  ) => {
+    const normalizedValue = Math.max(0, rawValue);
+
+    if (discountType === "PERCENTAGE") {
+      return Math.round(Math.min(100, normalizedValue) * 100) / 100;
+    }
+
+    return (
+      Math.round(Math.min(preDiscountGrandTotal, normalizedValue) * 100) / 100
+    );
+  };
+
+  const commitBillDiscount = (
+    discountType: "NONE" | "PERCENTAGE" | "FLAT",
+    rawValue: number,
+    immediate = false,
+  ) => {
+    if (!activeDraft?.clientDraftId) {
+      return;
+    }
+
+    const normalizedValue =
+      discountType === "NONE"
+        ? 0
+        : normalizeBillDiscountValue(discountType, rawValue);
+    const wouldZeroGrandTotal =
+      discountType !== "NONE" &&
+      calculateDiscounts(
+        itemsForCalc,
+        discountType,
+        normalizedValue,
+        gstEnabled,
+      ).grandTotal === 0;
+    const isSameAsActive =
+      activeBillDiscountType === discountType &&
+      activeBillDiscountValue === normalizedValue;
+
+    const apply = () => {
+      if (discountType !== "NONE" && wouldZeroGrandTotal && !isSameAsActive) {
+        pendingBillDiscountRef.current = {
+          type: discountType,
+          value: normalizedValue,
+        };
+        setConfirmZeroOpen(true);
+        return;
+      }
+
+      clearPendingBillDiscount();
+      setBillDiscount(activeDraft.clientDraftId, discountType, normalizedValue);
+    };
+
+    if (billDebounceRef.current) {
+      window.clearTimeout(billDebounceRef.current);
+      billDebounceRef.current = null;
+    }
+
+    if (immediate) {
+      apply();
+      return;
+    }
+
+    billDebounceRef.current = window.setTimeout(
+      apply,
+      300,
+    ) as unknown as number;
+  };
+
+  const handleBillDiscountRemove = () => {
+    clearPendingBillDiscount();
+    clearBillDiscount(activeDraft?.clientDraftId ?? "");
+    setBillDiscountOpen(false);
+  };
+
+  const openBillDiscountEditor = () => {
+    setBillDiscountOpen(true);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (billDebounceRef.current) {
+        window.clearTimeout(billDebounceRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div className="border-t bg-muted/30 shrink-0">
       <div className="p-4 space-y-3 text-sm">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Subtotal</span>
-          <MoneyText amount={subtotal} />
-        </div>
-        {/* Bill discount input / control */}
         <div>
-          {(activeDraft?.billDiscountType ?? "NONE") === "NONE" &&
-          !billDiscountOpen ? (
-            <Button
-              type="button"
-              variant="link"
-              className="text-xs text-primary"
-              onClick={() => setBillDiscountOpen(true)}
-              disabled={isReadOnly}
-            >
-              Add bill discount
-            </Button>
-          ) : null}
+          {billDiscountIsActive ? (
+            <div className="flex items-center justify-between gap-3 rounded-md border bg-background/70 px-3 py-2 text-xs">
+              <div className="min-w-0">
+                <div className="text-muted-foreground">Bill discount</div>
+                <div className="truncate font-semibold text-amber-700">
+                  {activeBillDiscountLabel}
+                </div>
+              </div>
 
-          {(billDiscountOpen ||
-            (activeDraft?.billDiscountType ?? "NONE") !== "NONE") && (
-            <div className="mt-2 p-2 bg-muted/20 rounded">
-              {billDiscountIsActive && activeBillDiscountLabel ? (
-                <div className="mb-3 flex items-center justify-between rounded-md border bg-background/70 px-3 py-2 text-xs">
-                  <span className="text-muted-foreground">Active discount</span>
-                  <span className="font-semibold text-amber-700">
-                    {activeBillDiscountLabel}
-                  </span>
-                  <button
-                    type="button"
-                    className="text-rose-600"
-                    onClick={handleBillDiscountRemove}
-                    disabled={isReadOnly}
-                  >
-                    Remove
-                  </button>
-                </div>
-              ) : null}
-              <div className="flex items-center gap-2 mb-2">
-                <label className="text-sm font-medium">Type</label>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    className={`px-2 py-1 rounded ${localBillType === "PERCENTAGE" ? "bg-primary text-white" : "bg-transparent"}`}
-                    onClick={() => handleBillTypeChange("PERCENTAGE")}
-                    disabled={isReadOnly}
-                  >
-                    %
-                  </button>
-                  <button
-                    type="button"
-                    className={`px-2 py-1 rounded ${localBillType === "FLAT" ? "bg-primary text-white" : "bg-transparent"}`}
-                    onClick={() => handleBillTypeChange("FLAT")}
-                    disabled={isReadOnly}
-                  >
-                    ₹
-                  </button>
-                </div>
-              </div>
-              <div className="mb-2">
-                <label className="text-sm font-medium mb-1 block">Value</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  value={localBillValue}
-                  onChange={(e) => {
-                    handleBillValueChange(Number(e.target.value || 0));
-                  }}
-                  onBlur={handleBillValueBlur}
-                  disabled={isReadOnly}
-                  className="border rounded px-2 py-1 w-32"
-                />
-                {billClampMessage ? (
-                  <p className="mt-1 text-xs text-amber-700">
-                    {billClampMessage}
-                  </p>
-                ) : null}
-              </div>
-              <div>
-                <button
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
                   type="button"
-                  className="text-sm text-rose-600"
+                  variant="ghost"
+                  size="xs"
+                  onClick={openBillDiscountEditor}
+                  disabled={isReadOnly}
+                  className="h-7 px-2 text-xs"
+                >
+                  Edit
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
                   onClick={handleBillDiscountRemove}
                   disabled={isReadOnly}
+                  className="h-7 px-2 text-xs text-rose-600 hover:text-rose-700"
                 >
-                  Remove discount
-                </button>
+                  Remove
+                </Button>
               </div>
             </div>
+          ) : (
+            <DiscountHoverCard
+              open={billDiscountOpen}
+              onOpenChange={setBillDiscountOpen}
+              title="Bill discount"
+              subjectLabel={activeDraft?.tabLabel ?? "Current bill"}
+              triggerLabel="Add bill discount"
+              currentType={activeBillDiscountType}
+              currentValue={activeBillDiscountValue}
+              amountCap={preDiscountGrandTotal}
+              currentSummary={activeBillDiscountLabel}
+              isReadOnly={isReadOnly}
+              quickPicks={[]}
+              footerNote="Applies to this bill only"
+              percentageClampMessage="Discount capped at 100%."
+              amountClampMessage="Discount capped at bill total."
+              onValueChange={(
+                discountType: "PERCENTAGE" | "FLAT",
+                discountValue: number,
+              ) => {
+                commitBillDiscount(discountType, discountValue);
+              }}
+              onValueCommit={(
+                discountType: "PERCENTAGE" | "FLAT",
+                discountValue: number,
+              ) => {
+                commitBillDiscount(discountType, discountValue, true);
+              }}
+              onRemove={handleBillDiscountRemove}
+            />
           )}
+
+          {billDiscountIsActive ? (
+            <DiscountHoverCard
+              open={billDiscountOpen}
+              onOpenChange={setBillDiscountOpen}
+              title="Bill discount"
+              subjectLabel={activeDraft?.tabLabel ?? "Current bill"}
+              triggerLabel="Edit bill discount"
+              hideTrigger={true}
+              currentType={activeBillDiscountType}
+              currentValue={activeBillDiscountValue}
+              amountCap={preDiscountGrandTotal}
+              currentSummary={activeBillDiscountLabel}
+              isReadOnly={isReadOnly}
+              quickPicks={[]}
+              footerNote="Applies to this bill only"
+              percentageClampMessage="Discount capped at 100%."
+              amountClampMessage="Discount capped at bill total."
+              onValueChange={(
+                discountType: "PERCENTAGE" | "FLAT",
+                discountValue: number,
+              ) => {
+                commitBillDiscount(discountType, discountValue);
+              }}
+              onValueCommit={(
+                discountType: "PERCENTAGE" | "FLAT",
+                discountValue: number,
+              ) => {
+                commitBillDiscount(discountType, discountValue, true);
+              }}
+              onRemove={handleBillDiscountRemove}
+            />
+          ) : null}
         </div>
+
         <Separator />
         <div className="p-1 space-y-2">
           <div className="flex justify-between text-sm">
@@ -480,7 +391,35 @@ export function BillingSummaryPanel({
                   announceAction(`Payment method changed to ${method}`);
                 }
               }}
-              onKeyDown={(e) => handlePaymentKeyDown(e, method)}
+              onKeyDown={(e) => {
+                const buttons = Array.from(
+                  paymentButtonsRef.current?.querySelectorAll("button") || [],
+                );
+                const currentIndex = buttons.findIndex((btn) =>
+                  btn.textContent?.includes(method),
+                );
+
+                let nextIndex = currentIndex;
+                if (e.key === "ArrowRight") {
+                  e.preventDefault();
+                  nextIndex = (currentIndex + 1) % buttons.length;
+                } else if (e.key === "ArrowLeft") {
+                  e.preventDefault();
+                  nextIndex =
+                    (currentIndex - 1 + buttons.length) % buttons.length;
+                } else {
+                  return;
+                }
+
+                const nextButton = buttons[nextIndex] as HTMLButtonElement;
+                nextButton?.focus();
+                const nextMethod = nextButton?.textContent?.trim() as
+                  | PaymentMethod
+                  | undefined;
+                if (nextMethod) {
+                  onPaymentMethodChange(nextMethod);
+                }
+              }}
               aria-pressed={paymentMethod === method}
               aria-label={`${method} payment method`}
               disabled={isReadOnly}
@@ -537,18 +476,13 @@ export function BillingSummaryPanel({
           }
 
           pendingBillDiscountRef.current = null;
-          clearBillClampMessage();
           setConfirmZeroOpen(false);
         }}
         onCancel={() => {
           pendingBillDiscountRef.current = null;
-          clearBillClampMessage();
-          setLocalBillType(prevBillRef.current.type as any);
-          setLocalBillValue(prevBillRef.current.value);
           setConfirmZeroOpen(false);
         }}
       />
-      {/* Hidden live region for screen reader announcements */}
       <div
         ref={announcementRef}
         aria-live="polite"
