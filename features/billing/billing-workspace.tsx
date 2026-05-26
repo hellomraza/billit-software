@@ -542,7 +542,7 @@ export function BillingWorkspace({
           />
         </Card>
 
-        <Card className="w-full h-full py-0 border-0 md:w-80 lg:w-100 flex flex-col shadow-sm overflow-hidden shrink-0  sticky bottom-0 md:sticky md:top-4 lg:static bg-background z-10 rounded-t-lg md:rounded-lg">
+        <Card className="w-full h-full py-0 border-0 md:w-80 lg:w-5/12 flex flex-col shadow-sm overflow-hidden shrink-0  sticky bottom-0 md:sticky md:top-4 lg:static bg-background z-10 rounded-t-lg md:rounded-lg">
           <BillingCart
             items={cart}
             onUpdateQuantity={handleUpdateQuantity}

@@ -296,3 +296,23 @@ export const importProductsAction = validatedAction(
     }
   },
 );
+
+export const downloadProductsTemplateAction = async () => {
+  try {
+    const api = await createServerAxios();
+    const { data } = await api.get("/products/import/template", {
+      responseType: "blob",
+    });
+
+    return { data };
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      return {
+        error: err.message || "Failed to download template",
+      };
+    }
+    return {
+      error: "Failed to download template",
+    };
+  }
+};

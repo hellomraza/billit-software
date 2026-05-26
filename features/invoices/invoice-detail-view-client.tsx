@@ -117,18 +117,29 @@ export function InvoiceDetailViewClient({
               printed
             </span>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              disablePreviewMode();
-              toast.success("Preview Mode Disabled");
-            }}
-            className="gap-2"
-          >
-            <EyeOff className="h-4 w-4" />
-            Exit Preview
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.print()}
+              className="gap-2"
+            >
+              <Printer className="h-4 w-4" />
+              Print
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                disablePreviewMode();
+                toast.success("Preview Mode Disabled");
+              }}
+              className="gap-2"
+            >
+              <EyeOff className="h-4 w-4" />
+              Exit Preview
+            </Button>
+          </div>
         </div>
       )}
 

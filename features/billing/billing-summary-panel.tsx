@@ -331,14 +331,15 @@ export function BillingSummaryPanel({
         <div>
           {(activeDraft?.billDiscountType ?? "NONE") === "NONE" &&
           !billDiscountOpen ? (
-            <button
+            <Button
               type="button"
+              variant="link"
               className="text-xs text-primary"
               onClick={() => setBillDiscountOpen(true)}
               disabled={isReadOnly}
             >
               Add bill discount
-            </button>
+            </Button>
           ) : null}
 
           {(billDiscountOpen ||

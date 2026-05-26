@@ -1,6 +1,7 @@
 "use client";
 
 import { MoneyText } from "@/components/shared/money-text";
+import { Button } from "@/components/ui/button";
 import clientAxios from "@/lib/axios/client";
 import { formatDateTime } from "@/lib/formatters/date";
 import { ROUTES } from "@/lib/routes";
@@ -9,6 +10,7 @@ import { AxiosError } from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
 interface Props {
@@ -21,6 +23,7 @@ export function RefundSelectionForm({
   existingRefunds,
   tenantId,
 }: Props) {
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [quantities, setQuantities] = useState<Record<string, number>>(
     Object.fromEntries(invoice.items.map((it) => [it.productId, 0])),
   );
@@ -60,34 +63,38 @@ export function RefundSelectionForm({
     if (clamped !== val) setQuantities((s) => ({ ...s, [productId]: clamped }));
   };
 
-  const totalUnits = Object.values(quantities).reduce((a, b) => a + b, 0);
+  const itemizedRefundItems = Object.entries(quantities)
+    .filter(([, q]) => q > 0)
+    .map(([productId, quantity]) => ({ productId, quantity }));
 
-  const totalRefundAmount = Object.entries(quantities).reduce(
-    (sum, [pid, qty]) => {
-      const it = invoice.items.find((i) => i.productId === pid)!;
-      const unit = it.quantity > 0 ? it.subtotal / it.quantity : 0;
-      return sum + qty * unit;
+  const totalUnits = itemizedRefundItems.reduce(
+    (total, item) => total + item.quantity,
+    0,
+  );
+
+  const totalItemizedRefundAmount = itemizedRefundItems.reduce(
+    (sum, { productId, quantity }) => {
+      const item = invoice.items.find((i) => i.productId === productId)!;
+      const unit = item.quantity > 0 ? item.subtotal / item.quantity : 0;
+      return sum + quantity * unit;
     },
     0,
   );
 
+  const fullRefundAmount = Math.abs(invoice.grandTotal);
+
   const router = useRouter();
 
-  const handleConfirm = async () => {
+  const submitRefund = async (
+    items: Array<{ productId: string; quantity: number }>,
+    successMessage: string,
+  ) => {
     setError(null);
-    if (totalUnits === 0) {
-      setError("Select at least one item to return.");
-      return;
-    }
-
-    const itemsToRefund = Object.entries(quantities)
-      .filter(([, q]) => q > 0)
-      .map(([productId, quantity]) => ({ productId, quantity }));
 
     const payload = {
       clientGeneratedId: uuidv4(),
       refundReason: refundReason.trim() || null,
-      items: itemsToRefund,
+      items,
     };
 
     setSubmitting(true);
@@ -96,7 +103,9 @@ export function RefundSelectionForm({
       // note: tenantId is passed as prop from server page
       const { data } = await clientAxios.post(url, payload);
 
-      // On success (201) or idempotent 200, navigate to returned invoice
+      toast.success(successMessage);
+
+      // On success (201) or idempotent 200, navigate to the refund invoice
       const created = data?.data || data;
       const newId =
         created?.invoiceId ||
@@ -123,24 +132,36 @@ export function RefundSelectionForm({
           setError("This invoice has not finished syncing. Please wait.");
         } else {
           setError(
-            err.response?.data?.message ||
-              "Failed to process refund. Try again.",
+            err.response?.data?.message || "Failed to refund bill. Try again.",
           );
         }
       } else if (err instanceof Error) {
-        setError(err.message || "Failed to process refund. Try again.");
+        setError(err.message || "Failed to refund bill. Try again.");
       } else {
-        setError("Failed to process refund. Try again.");
+        setError("Failed to refund bill. Try again.");
       }
       setSubmitting(false);
     }
+  };
+
+  const handleFullRefund = async () => {
+    await submitRefund([], "This bill is fully refunded.");
+  };
+
+  const handleItemizedRefund = async () => {
+    if (totalUnits === 0) {
+      setError("Select at least one item for an itemized refund.");
+      return;
+    }
+
+    await submitRefund(itemizedRefundItems, "Selected items refunded.");
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Process Return</h2>
+          <h2 className="text-xl font-semibold">Refund bill</h2>
           <div className="text-sm text-muted-foreground">
             Invoice {invoice.invoiceNumber} •{" "}
             {formatDateTime(invoice.createdAt)}
@@ -154,70 +175,131 @@ export function RefundSelectionForm({
         </div>
       </div>
 
-      <div className="space-y-4">
-        {invoice.items.map((item) => {
-          const max = maxReturnable(item.productId, item.quantity);
-          const unitPrice =
-            item.quantity > 0 ? item.subtotal / item.quantity : 0;
-          const qty = quantities[item.productId] || 0;
-          return (
-            <div key={item.productId} className="p-4 border rounded-md">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">{item.productName}</div>
-                  <div className="text-sm text-muted-foreground">
-                    Sold: {item.quantity} • Already returned:{" "}
-                    {alreadyRefunded[item.productId] || 0}
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <div className="text-sm">Unit price</div>
-                  <MoneyText amount={Number(unitPrice.toFixed(2))} />
-                </div>
-              </div>
-
-              <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                <div>
-                  <label className="text-sm text-muted-foreground block">
-                    Return quantity
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={max}
-                    value={qty}
-                    onChange={(e) =>
-                      handleQuantityChange(item.productId, e.target.value)
-                    }
-                    onBlur={() => handleQuantityBlur(item.productId)}
-                    className="w-24 input"
-                    disabled={max === 0 || submitting}
-                  />
-                  {max === 0 && (
-                    <div className="text-xs text-muted-foreground">
-                      Already returned
-                    </div>
-                  )}
-                </div>
-
-                <div className="md:col-span-2 text-right">
-                  <div className="text-sm text-muted-foreground">
-                    Line refund
-                  </div>
-                  <div className="font-medium text-rose-600">
-                    <MoneyText amount={-(qty * unitPrice)} />
-                  </div>
-                </div>
-              </div>
+      <div className="rounded-lg border border-dashed p-4 bg-muted/20 space-y-3">
+        <div className="flex items-start justify-between gap-4 flex-col sm:flex-row sm:items-center">
+          <div>
+            <div className="font-medium">Full bill refund</div>
+            <div className="text-sm text-muted-foreground">
+              Refund the entire bill without selecting individual items.
             </div>
-          );
-        })}
+          </div>
+
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => setShowAdvancedOptions((value) => !value)}
+            disabled={submitting}
+          >
+            {showAdvancedOptions
+              ? "Hide itemized options"
+              : "Show itemized options"}
+          </Button>
+        </div>
+
+        <div className="flex items-center justify-between rounded-md bg-background p-4">
+          <div>
+            <div className="text-sm text-muted-foreground">Refund total</div>
+            <div className="text-xs text-muted-foreground">
+              This bill will be fully refunded.
+            </div>
+          </div>
+          <div className="font-semibold text-rose-600">
+            <MoneyText amount={-Number(fullRefundAmount.toFixed(2))} />
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="text-sm text-muted-foreground">
+            The refund will be recorded with no item lines. Add a reason if you
+            want it on the refund invoice.
+          </div>
+
+          <Button
+            type="button"
+            onClick={handleFullRefund}
+            disabled={submitting}
+          >
+            {submitting ? "Refunding..." : "Refund bill"}
+          </Button>
+        </div>
       </div>
+
+      {showAdvancedOptions && (
+        <div className="space-y-4 rounded-lg border p-4">
+          <div>
+            <h3 className="font-medium">Itemized refund options</h3>
+            <p className="text-sm text-muted-foreground">
+              Keep this path for future item-level refunds. It stays hidden
+              unless you open advanced options.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {invoice.items.map((item) => {
+              const max = maxReturnable(item.productId, item.quantity);
+              const unitPrice =
+                item.quantity > 0 ? item.subtotal / item.quantity : 0;
+              const qty = quantities[item.productId] || 0;
+              return (
+                <div key={item.productId} className="p-4 border rounded-md">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">{item.productName}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Sold: {item.quantity} • Already refunded:{" "}
+                        {alreadyRefunded[item.productId] || 0}
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="text-sm">Unit price</div>
+                      <MoneyText amount={Number(unitPrice.toFixed(2))} />
+                    </div>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                    <div>
+                      <label className="text-sm text-muted-foreground block">
+                        Refund quantity
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={max}
+                        value={qty}
+                        onChange={(e) =>
+                          handleQuantityChange(item.productId, e.target.value)
+                        }
+                        onBlur={() => handleQuantityBlur(item.productId)}
+                        className="w-24 input"
+                        disabled={max === 0 || submitting}
+                      />
+                      {max === 0 && (
+                        <div className="text-xs text-muted-foreground">
+                          Already refunded
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="md:col-span-2 text-right">
+                      <div className="text-sm text-muted-foreground">
+                        Line refund
+                      </div>
+                      <div className="font-medium text-rose-600">
+                        <MoneyText amount={-(qty * unitPrice)} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="p-4 border rounded-md">
         <label className="text-sm text-muted-foreground">
-          Reason for return (optional)
+          Refund reason (optional)
         </label>
         <textarea
           maxLength={500}
@@ -230,33 +312,41 @@ export function RefundSelectionForm({
         <div className="text-sm text-muted-foreground mt-1">
           {refundReason.length}/500
         </div>
+      </div>
 
-        <div className="flex justify-between items-center mt-4">
-          <div>
-            <div>Total units</div>
-            <div className="font-semibold">{totalUnits}</div>
-          </div>
+      {error && <div className="text-sm text-rose-600">{error}</div>}
 
-          <div className="text-right">
-            <div className="text-sm">Total refund</div>
-            <div className="font-semibold text-rose-600">
-              <MoneyText amount={-Number(totalRefundAmount.toFixed(2))} />
+      {showAdvancedOptions && (
+        <div className="p-4 border rounded-md space-y-4">
+          <div className="flex justify-between items-center gap-4">
+            <div className="text-sm text-muted-foreground">
+              Advanced itemized refund total
+            </div>
+
+            <div className="text-right">
+              <div className="font-semibold text-rose-600">
+                <MoneyText
+                  amount={-Number(totalItemizedRefundAmount.toFixed(2))}
+                />
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {totalUnits} item{totalUnits === 1 ? "" : "s"} selected
+              </div>
             </div>
           </div>
-        </div>
 
-        {error && <div className="text-sm text-rose-600 mt-2">{error}</div>}
-
-        <div className="flex justify-end mt-4">
-          <button
-            className="btn btn-primary"
-            onClick={handleConfirm}
-            disabled={submitting || totalUnits === 0}
-          >
-            {submitting ? "Processing..." : "Confirm Return"}
-          </button>
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              onClick={handleItemizedRefund}
+              disabled={submitting}
+              variant="outline"
+            >
+              {submitting ? "Refunding..." : "Refund selected items"}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
