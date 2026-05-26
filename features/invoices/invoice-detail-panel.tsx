@@ -120,7 +120,7 @@ export function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps) {
         <Card className="animate-in fade-in slide-in-from-bottom duration-500 delay-200">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm text-muted-foreground uppercase tracking-wider">
-              Returns
+              Refunds
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
@@ -143,7 +143,9 @@ export function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps) {
                   </div>
 
                   <div className="text-sm text-muted-foreground mr-4">
-                    {r.itemCount} items
+                    {r.itemCount > 0
+                      ? `${r.itemCount} item${r.itemCount === 1 ? "" : "s"} refunded`
+                      : "Full refund"}
                   </div>
 
                   <div className="text-right font-medium text-rose-600">
