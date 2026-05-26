@@ -47,7 +47,7 @@ export function getRefundButtonState(invoice: Invoice): RefundButtonState {
   if (areAllItemsFullyRefunded(invoice)) {
     return {
       kind: "disabled",
-      reason: "All items have already been returned.",
+      reason: "This bill has already been fully refunded.",
     };
   }
 
