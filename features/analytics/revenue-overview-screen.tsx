@@ -137,7 +137,7 @@ export function RevenueOverviewScreen({
         <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground/60" />
         <span>
           Showing records from <strong className="text-foreground">{startDate}</strong> to <strong className="text-foreground">{endDate}</strong>. 
-          Additional charts, GST overview, and product breakdowns will appear below as they are integrated.
+          Period changes update all sections simultaneously.
         </span>
       </div>
     </div>

@@ -1423,10 +1423,10 @@ const [revenueSummary, revenueChart, topProducts, paymentBreakdown, gstSummary] 
 
 ---
 
-- [ ] **ST-10.5.1** Create or update `features/analytics/revenue-overview-screen.tsx`. Compose all 7 components in the correct vertical order. Pass all required props from the server-fetched data.
+- [x] **ST-10.5.1** Create or update `features/analytics/revenue-overview-screen.tsx`. Compose all 7 components in the correct vertical order. Pass all required props from the server-fetched data.
   - **Expected output:** Revenue overview page shows all sections in the specified order. All data is correct. GST section appears only when applicable.
 
-- [ ] **ST-10.5.2** Add `app/(dashboard)/analytics/revenue/loading.tsx` with skeleton placeholders for the chart and lists sections (in addition to the overview cards loading state from US-08).
+- [x] **ST-10.5.2** Add `app/(dashboard)/analytics/revenue/loading.tsx` with skeleton placeholders for the chart and lists sections (in addition to the overview cards loading state from US-08).
   - **Expected output:** When navigating to the revenue page or changing periods, skeleton placeholders show while data loads.
 
 ---
