@@ -21,3 +21,11 @@ export async function getProductHealth(tenantId: string, window: 7 | 30 | 90) {
   });
   return data;
 }
+
+export async function getRevenueSummary(tenantId: string, period: string, dateFrom?: string, dateTo?: string) {
+  const api = await createServerAxios();
+  const { data } = await api.get(`/tenants/${tenantId}/analytics/revenue-summary`, {
+    params: { period, dateFrom, dateTo }
+  });
+  return data;
+}

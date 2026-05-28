@@ -1069,13 +1069,13 @@ Create `features/analytics/analytics-tab-bar.tsx` as a simple client component u
 
 ---
 
-- [ ] **ST-08.1.1** Create `app/(dashboard)/analytics/revenue/page.tsx` as an async server component. Fetch the default `last30days` revenue summary server-side. Pass to `RevenueOverviewScreen`.
+- [x] **ST-08.1.1** Create `app/(dashboard)/analytics/revenue/page.tsx` as an async server component. Fetch the default `last30days` revenue summary server-side. Pass to `RevenueOverviewScreen`.
   - **Expected output:** Page loads at `/analytics/revenue`. Initial data is rendered server-side.
 
-- [ ] **ST-08.1.2** Create `features/analytics/analytics-tab-bar.tsx`. Use `usePathname()` to highlight the active tab. Render "Stock Insights" and "Revenue Overview" tabs as `<Link>` elements.
+- [x] **ST-08.1.2** Create `features/analytics/analytics-tab-bar.tsx`. Use `usePathname()` to highlight the active tab. Render "Stock Insights" and "Revenue Overview" tabs as `<Link>` elements.
   - **Expected output:** Tab bar renders on both analytics pages. Active tab is highlighted. Clicking a tab navigates correctly.
 
-- [ ] **ST-08.1.3** Add `getRevenueSummary` to `lib/api/analytics.ts`:
+- [x] **ST-08.1.3** Add `getRevenueSummary` to `lib/api/analytics.ts`:
   ```typescript
   export async function getRevenueSummary(tenantId: string, period: string, dateFrom?: string, dateTo?: string) {
     const api = createServerAxios();
