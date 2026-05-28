@@ -31,9 +31,45 @@ export interface RevenueChartData {
   }>;
 }
 
+export interface TopProductItem {
+  rank: number;
+  productId: string;
+  productName: string;
+  netRevenue: number;
+  unitsSold: number;
+  percentOfTotal: number;
+}
+
+export interface TopProductsData {
+  topProducts: TopProductItem[];
+  totalNetRevenue: number;
+}
+
+export interface PaymentBreakdownItem {
+  method: "CASH" | "CARD" | "UPI";
+  invoiceCount: number;
+  totalAmount: number;
+  percentage: number;
+}
+
+export interface PaymentBreakdownData {
+  breakdown: PaymentBreakdownItem[];
+  totalInvoices: number;
+}
+
+export interface GstSummaryData {
+  totalGstCollected: number;
+  gstInvoiceCount: number;
+  nonGstInvoiceCount: number;
+  hasGstData: boolean;
+}
+
 interface RevenueOverviewScreenProps {
   revenueSummary: RevenueSummaryData;
   revenueChartData: RevenueChartData;
+  topProducts: TopProductsData;
+  paymentBreakdown: PaymentBreakdownData;
+  gstSummary: GstSummaryData;
   period: string;
   dateFrom?: string;
   dateTo?: string;
@@ -42,6 +78,9 @@ interface RevenueOverviewScreenProps {
 export function RevenueOverviewScreen({
   revenueSummary,
   revenueChartData,
+  topProducts,
+  paymentBreakdown,
+  gstSummary,
   period: activePeriod,
   dateFrom,
   dateTo,

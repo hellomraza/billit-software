@@ -37,3 +37,27 @@ export async function getRevenueChart(tenantId: string, period: string, dateFrom
   });
   return data;
 }
+
+export async function getTopProducts(tenantId: string, period: string, dateFrom?: string, dateTo?: string) {
+  const api = await createServerAxios();
+  const { data } = await api.get(`/tenants/${tenantId}/analytics/top-products`, {
+    params: { period, dateFrom, dateTo }
+  });
+  return data;
+}
+
+export async function getPaymentBreakdown(tenantId: string, period: string, dateFrom?: string, dateTo?: string) {
+  const api = await createServerAxios();
+  const { data } = await api.get(`/tenants/${tenantId}/analytics/payment-breakdown`, {
+    params: { period, dateFrom, dateTo }
+  });
+  return data;
+}
+
+export async function getGstSummary(tenantId: string, period: string, dateFrom?: string, dateTo?: string) {
+  const api = await createServerAxios();
+  const { data } = await api.get(`/tenants/${tenantId}/analytics/gst-summary`, {
+    params: { period, dateFrom, dateTo }
+  });
+  return data;
+}

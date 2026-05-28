@@ -1336,7 +1336,7 @@ const [revenueSummary, revenueChart, topProducts, paymentBreakdown, gstSummary] 
 
 ---
 
-- [ ] **ST-10.1.1** Add `getTopProducts`, `getPaymentBreakdown`, and `getGstSummary` to `lib/api/analytics.ts`. Update the page `Promise.all` to fetch all five data sets simultaneously.
+- [x] **ST-10.1.1** Add `getTopProducts`, `getPaymentBreakdown`, and `getGstSummary` to `lib/api/analytics.ts`. Update the page `Promise.all` to fetch all five data sets simultaneously.
   - **Expected output:** All five fetches run in parallel. All data is available as props.
 
 ---
