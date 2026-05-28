@@ -29,3 +29,11 @@ export async function getRevenueSummary(tenantId: string, period: string, dateFr
   });
   return data;
 }
+
+export async function getRevenueChart(tenantId: string, period: string, dateFrom?: string, dateTo?: string) {
+  const api = await createServerAxios();
+  const { data } = await api.get(`/tenants/${tenantId}/analytics/revenue-chart`, {
+    params: { period, dateFrom, dateTo }
+  });
+  return data;
+}

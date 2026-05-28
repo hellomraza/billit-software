@@ -1,4 +1,4 @@
-import { getRevenueSummary } from "@/lib/api/analytics";
+import { getRevenueSummary, getRevenueChart } from "@/lib/api/analytics";
 import { getTenantId } from "@/lib/get-tenant-id";
 import { RevenueOverviewScreen } from "@/features/analytics/revenue-overview-screen";
 
@@ -14,12 +14,16 @@ export default async function RevenueOverviewPage({
   const dateFrom = searchParamsResolved.dateFrom;
   const dateTo = searchParamsResolved.dateTo;
 
-  // Fetch revenue summary server-side with query params
-  const revenueSummary = await getRevenueSummary(tenantId, period, dateFrom, dateTo);
+  // Fetch both summary and chart data server-side in parallel
+  const [revenueSummary, revenueChartData] = await Promise.all([
+    getRevenueSummary(tenantId, period, dateFrom, dateTo),
+    getRevenueChart(tenantId, period, dateFrom, dateTo),
+  ]);
 
   return (
     <RevenueOverviewScreen
       revenueSummary={revenueSummary}
+      revenueChartData={revenueChartData}
       period={period}
       dateFrom={dateFrom}
       dateTo={dateTo}

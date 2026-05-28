@@ -19,8 +19,20 @@ export interface RevenueSummaryData {
   avgInvoiceValue: number;
 }
 
+export interface RevenueChartData {
+  aggregation: "daily" | "weekly" | "hourly";
+  dataPoints: Array<{
+    label: string;
+    netRevenue: number;
+    grossRevenue: number;
+    discounts: number;
+    invoiceCount: number;
+  }>;
+}
+
 interface RevenueOverviewScreenProps {
   revenueSummary: RevenueSummaryData;
+  revenueChartData: RevenueChartData;
   period: string;
   dateFrom?: string;
   dateTo?: string;
@@ -28,6 +40,7 @@ interface RevenueOverviewScreenProps {
 
 export function RevenueOverviewScreen({
   revenueSummary,
+  revenueChartData,
   period: activePeriod,
   dateFrom,
   dateTo,

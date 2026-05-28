@@ -1206,7 +1206,7 @@ export async function getRevenueChart(tenantId: string, period: string, dateFrom
 
 ---
 
-- [ ] **ST-09.1.1** Add `getRevenueChart` to `lib/api/analytics.ts`. Update `app/(dashboard)/analytics/revenue/page.tsx` to also fetch chart data in the `Promise.all` call.
+- [x] **ST-09.1.1** Add `getRevenueChart` to `lib/api/analytics.ts`. Update `app/(dashboard)/analytics/revenue/page.tsx` to also fetch chart data in the `Promise.all` call.
   - **Expected output:** Chart data is available as a prop to `RevenueOverviewScreen`.
 
 ---
