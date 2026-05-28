@@ -1359,7 +1359,7 @@ const [revenueSummary, revenueChart, topProducts, paymentBreakdown, gstSummary] 
 
 ---
 
-- [ ] **ST-10.2.1** Create `features/analytics/top-products-list.tsx`. Render each product row with rank, name, net revenue, units sold, percentage, and proportional bar. Handle the empty state.
+- [x] **ST-10.2.1** Create `features/analytics/top-products-list.tsx`. Render each product row with rank, name, net revenue, units sold, percentage, and proportional bar. Handle the empty state.
   - **Expected output:** List renders correctly. Rank 1 has the widest bar. Rank 10 has a narrower bar. Progress bars are visually proportional.
 
 ---

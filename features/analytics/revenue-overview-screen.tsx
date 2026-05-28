@@ -8,6 +8,7 @@ import { TrendingUp, FileText, IndianRupee, RefreshCw } from "lucide-react";
 import { PeriodSelector } from "./period-selector";
 import { OverviewCards } from "./overview-cards";
 import { RevenueBarChart } from "./revenue-bar-chart";
+import { TopProductsList } from "./top-products-list";
 
 export interface RevenueSummaryData {
   period: string;
@@ -122,6 +123,8 @@ export function RevenueOverviewScreen({
         dataPoints={revenueChartData.dataPoints}
         aggregation={revenueChartData.aggregation}
       />
+
+      <TopProductsList topProductsData={topProducts} />
 
       {/* Info footer */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground pt-4 border-t border-dashed bg-card/10 p-4 rounded-xl border">
