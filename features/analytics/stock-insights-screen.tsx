@@ -8,6 +8,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { CheckCircle, ChevronRight, AlertCircle } from "lucide-react";
+import { ProductHealthData, ProductHealthSection } from "./product-health-section";
+import { getStoredTenantId } from "@/lib/auth-tokens";
 
 interface LowStockProduct {
   productId: string;
@@ -30,13 +32,16 @@ interface DeficitSummary {
 interface StockInsightsScreenProps {
   lowStockData: LowStockData;
   deficitSummary: DeficitSummary;
+  productHealthData: ProductHealthData;
 }
 
 export function StockInsightsScreen({
   lowStockData,
   deficitSummary,
+  productHealthData,
 }: StockInsightsScreenProps) {
   const { lowStockProducts, count } = lowStockData;
+  const tenantId = getStoredTenantId() || "";
 
   // Ensure products are sorted by currentStock ascending (NEGATIVE first, then OUT_OF_STOCK, then LOW)
   const sortedProducts = [...(lowStockProducts || [])].sort(
@@ -137,21 +142,8 @@ export function StockInsightsScreen({
             </CardContent>
           </Card>
 
-          {/* Placeholder for Product Health Section (US-06) */}
-          <Card className="opacity-60">
-            <CardHeader>
-              <CardTitle>Product Health Categories</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground border border-dashed rounded-xl">
-                <AlertCircle className="h-8 w-8 text-muted-foreground/60 mb-2" />
-                <p className="text-sm font-medium">Product Health categories loading...</p>
-                <p className="text-xs text-muted-foreground/80 mt-0.5">
-                  Fast Selling, Slow Selling, and Dead Stock insights will appear here.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Product Health Section */}
+          <ProductHealthSection tenantId={tenantId} initialData={productHealthData} />
         </div>
 
         {/* Right column - Deficit Summary Placeholder (US-07) */}
