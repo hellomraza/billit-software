@@ -1380,7 +1380,7 @@ const [revenueSummary, revenueChart, topProducts, paymentBreakdown, gstSummary] 
 
 ---
 
-- [ ] **ST-10.3.1** Create `features/analytics/payment-breakdown.tsx`. Render all three methods with icons, counts, amounts, and percentage bars. All three always visible even when count = 0 (show "0 invoices — ₹0").
+- [x] **ST-10.3.1** Create `features/analytics/payment-breakdown.tsx`. Render all three methods with icons, counts, amounts, and percentage bars. All three always visible even when count = 0 (show "0 invoices — ₹0").
   - **Expected output:** All three methods shown. Zero-count methods show gracefully. Bars are proportional.
 
 ---
