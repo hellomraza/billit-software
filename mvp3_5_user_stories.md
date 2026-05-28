@@ -1154,7 +1154,7 @@ Two date inputs (from/to). When both are filled, navigate to the custom URL. Val
 
 ---
 
-- [ ] **ST-08.3.1** Create a `formatIndianCurrency(amount: number): string` utility in `lib/utils/format.ts`:
+- [x] **ST-08.3.1** Create a `formatIndianCurrency(amount: number): string` utility in `lib/utils/format.ts`:
   ```typescript
   export function formatIndianCurrency(amount: number): string {
     return new Intl.NumberFormat('en-IN', {
@@ -1166,10 +1166,10 @@ Two date inputs (from/to). When both are filled, navigate to the custom URL. Val
   ```
   - **Expected output:** `formatIndianCurrency(125430.50)` returns `"₹1,25,430.50"`.
 
-- [ ] **ST-08.3.2** Create `features/analytics/overview-cards.tsx`. Accept the revenue summary data as props. Render four cards with correct labels, values, and Indian currency formatting.
+- [x] **ST-08.3.2** Create `features/analytics/overview-cards.tsx`. Accept the revenue summary data as props. Render four cards with correct labels, values, and Indian currency formatting.
   - **Expected output:** All four cards render with correct values. Refund card shows both count and formatted amount.
 
-- [ ] **ST-08.3.3** Add skeleton loading state for overview cards. When Next.js is re-fetching (page is loading due to `searchParams` change), the `loading.tsx` file for this route shows skeleton cards.
+- [x] **ST-08.3.3** Add skeleton loading state for overview cards. When Next.js is re-fetching (page is loading due to `searchParams` change), the `loading.tsx` file for this route shows skeleton cards.
   - **Expected output:** Create `app/(dashboard)/analytics/revenue/loading.tsx` that shows 4 skeleton card placeholders.
 
 ---
