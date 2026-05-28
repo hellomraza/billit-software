@@ -1122,13 +1122,13 @@ Two date inputs (from/to). When both are filled, navigate to the custom URL. Val
 
 ---
 
-- [ ] **ST-08.2.1** Create `features/analytics/period-selector.tsx`. Render all 7 period options as a segmented control (or dropdown for mobile). Wire each to `router.push('/analytics/revenue?period=X')`.
+- [x] **ST-08.2.1** Create `features/analytics/period-selector.tsx`. Render all 7 period options as a segmented control (or dropdown for mobile). Wire each to `router.push('/analytics/revenue?period=X')`.
   - **Expected output:** Selecting "Last 7 days" pushes `?period=last7days` to the URL. The active option is highlighted based on the current URL param.
 
-- [ ] **ST-08.2.2** Implement the custom date range inputs. Show them only when "Custom range" is selected. Validate `dateFrom <= dateTo` before navigating. Show inline error without navigating if invalid.
+- [x] **ST-08.2.2** Implement the custom date range inputs. Show them only when "Custom range" is selected. Validate `dateFrom <= dateTo` before navigating. Show inline error without navigating if invalid.
   - **Expected output:** Custom inputs appear only for custom period. Invalid date range shows "Start date must be before end date" without changing the URL. Valid range navigates.
 
-- [ ] **ST-08.2.3** Update `app/(dashboard)/analytics/revenue/page.tsx` to read `period`, `dateFrom`, `dateTo` from `searchParams`. Pass to `getRevenueSummary()`. Pass `period` as prop to `PeriodSelector` for the active state.
+- [x] **ST-08.2.3** Update `app/(dashboard)/analytics/revenue/page.tsx` to read `period`, `dateFrom`, `dateTo` from `searchParams`. Pass to `getRevenueSummary()`. Pass `period` as prop to `PeriodSelector` for the active state.
   - **Expected output:** Selecting a period causes the page to re-render with data for that period.
 
 ---

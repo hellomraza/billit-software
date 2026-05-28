@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { AnalyticsTabBar } from "./analytics-tab-bar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { TrendingUp, FileText, IndianRupee, RefreshCw } from "lucide-react";
+import { PeriodSelector } from "./period-selector";
 
 export interface RevenueSummaryData {
   period: string;
@@ -19,9 +20,17 @@ export interface RevenueSummaryData {
 
 interface RevenueOverviewScreenProps {
   revenueSummary: RevenueSummaryData;
+  period: string;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
-export function RevenueOverviewScreen({ revenueSummary }: RevenueOverviewScreenProps) {
+export function RevenueOverviewScreen({
+  revenueSummary,
+  period: activePeriod,
+  dateFrom,
+  dateTo,
+}: RevenueOverviewScreenProps) {
   const {
     period,
     startDate,
@@ -46,6 +55,12 @@ export function RevenueOverviewScreen({ revenueSummary }: RevenueOverviewScreenP
       />
 
       <AnalyticsTabBar />
+
+      <PeriodSelector
+        currentPeriod={activePeriod}
+        currentDateFrom={dateFrom}
+        currentDateTo={dateTo}
+      />
 
       {/* Placeholder Screen Body to confirm T-08.1 setup */}
       <div className="space-y-6">
