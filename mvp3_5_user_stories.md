@@ -1265,16 +1265,16 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 ---
 
-- [ ] **ST-09.2.1** Create `features/analytics/revenue-bar-chart.tsx` as a client component. Import recharts components. Implement the bar chart with `ResponsiveContainer`, `BarChart`, `XAxis`, `YAxis`, `CartesianGrid`, `Bar`.
+- [x] **ST-09.2.1** Create `features/analytics/revenue-bar-chart.tsx` as a client component. Import recharts components. Implement the bar chart with `ResponsiveContainer`, `BarChart`, `XAxis`, `YAxis`, `CartesianGrid`, `Bar`.
   - **Expected output:** Chart renders with the data. Bars are visible. Chart is responsive.
 
-- [ ] **ST-09.2.2** Implement the custom `Tooltip` component. Show gross, discounts, net revenue, and invoice count. Use `formatIndianCurrency` for all monetary values.
+- [x] **ST-09.2.2** Implement the custom `Tooltip` component. Show gross, discounts, net revenue, and invoice count. Use `formatIndianCurrency` for all monetary values.
   - **Expected output:** Hovering a bar shows the tooltip with all four data points formatted correctly.
 
-- [ ] **ST-09.2.3** Handle X-axis label crowding: for daily aggregation with more than 14 data points, show every 7th label. Use `<XAxis interval={interval} />` where `interval = dataPoints.length > 14 ? 6 : 0`.
+- [x] **ST-09.2.3** Handle X-axis label crowding: for daily aggregation with more than 14 data points, show every 7th label. Use `<XAxis interval={interval} />` where `interval = dataPoints.length > 14 ? 6 : 0`.
   - **Expected output:** A 30-day chart shows approximately 4–5 date labels on the X-axis. A 7-day chart shows all 7 dates.
 
-- [ ] **ST-09.2.4** Integrate `<RevenueBarChart>` into `RevenueOverviewScreen`. Pass `dataPoints` and `aggregation` from the fetched chart data props.
+- [x] **ST-09.2.4** Integrate `<RevenueBarChart>` into `RevenueOverviewScreen`. Pass `dataPoints` and `aggregation` from the fetched chart data props.
   - **Expected output:** Chart appears on the Revenue Overview page below the overview cards.
 
 ---

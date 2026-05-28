@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { TrendingUp, FileText, IndianRupee, RefreshCw } from "lucide-react";
 import { PeriodSelector } from "./period-selector";
 import { OverviewCards } from "./overview-cards";
+import { RevenueBarChart } from "./revenue-bar-chart";
 
 export interface RevenueSummaryData {
   period: string;
@@ -77,6 +78,11 @@ export function RevenueOverviewScreen({
       />
 
       <OverviewCards revenueSummary={revenueSummary} />
+
+      <RevenueBarChart
+        dataPoints={revenueChartData.dataPoints}
+        aggregation={revenueChartData.aggregation}
+      />
 
       {/* Info footer */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground pt-4 border-t border-dashed bg-card/10 p-4 rounded-xl border">
