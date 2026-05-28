@@ -1034,7 +1034,7 @@ A segmented control with three options: "7 days", "30 days", "90 days". The acti
 
 ---
 
-- [ ] **ST-07.1.1** Create `features/analytics/deficit-summary-widget.tsx`. Accept `deficitSummary` as a prop (already fetched by the page server component in US-05). Render the two states (no deficits / has deficits). Wire the "Manage deficits" link.
+- [x] **ST-07.1.1** Create `features/analytics/deficit-summary-widget.tsx`. Accept `deficitSummary` as a prop (already fetched by the page server component in US-05). Render the two states (no deficits / has deficits). Wire the "Manage deficits" link.
   - **Expected output:** Widget shows correct state. Link to `/deficits` works. Amber styling when deficits exist, neutral styling when none.
 
 ---
