@@ -10,6 +10,7 @@ import { OverviewCards } from "./overview-cards";
 import { RevenueBarChart } from "./revenue-bar-chart";
 import { TopProductsList } from "./top-products-list";
 import { PaymentBreakdown } from "./payment-breakdown";
+import { GstSummarySection } from "./gst-summary-section";
 
 export interface RevenueSummaryData {
   period: string;
@@ -128,6 +129,8 @@ export function RevenueOverviewScreen({
       <TopProductsList topProductsData={topProducts} />
 
       <PaymentBreakdown paymentBreakdownData={paymentBreakdown} />
+
+      <GstSummarySection gstSummary={gstSummary} />
 
       {/* Info footer */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground pt-4 border-t border-dashed bg-card/10 p-4 rounded-xl border">

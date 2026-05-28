@@ -1401,7 +1401,7 @@ const [revenueSummary, revenueChart, topProducts, paymentBreakdown, gstSummary] 
 
 ---
 
-- [ ] **ST-10.4.1** Create `features/analytics/gst-summary-section.tsx`. Accept `gstSummary` as prop. Conditionally render (`if (!gstSummary.hasGstData) return null`). Show total GST, invoice type counts, and the disclaimer note.
+- [x] **ST-10.4.1** Create `features/analytics/gst-summary-section.tsx`. Accept `gstSummary` as prop. Conditionally render (`if (!gstSummary.hasGstData) return null`). Show total GST, invoice type counts, and the disclaimer note.
   - **Expected output:** Section renders when `hasGstData = true`. Nothing renders when `hasGstData = false`. Disclaimer is visible.
 
 ---
