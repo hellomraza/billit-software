@@ -988,19 +988,19 @@ A segmented control with three options: "7 days", "30 days", "90 days". The acti
 
 ---
 
-- [ ] **ST-06.2.1** Render the Fast Selling section. Show green visual treatment. For each product: name, `avgDailySales` formatted to 1 decimal (e.g. "12.4 units/day"), `totalSoldInWindow` formatted with comma (e.g. "372 units").
+- [x] **ST-06.2.1** Render the Fast Selling section. Show green visual treatment. For each product: name, `avgDailySales` formatted to 1 decimal (e.g. "12.4 units/day"), `totalSoldInWindow` formatted with comma (e.g. "372 units").
   - **Expected output:** Fast selling products appear with green styling and correct values.
 
-- [ ] **ST-06.2.2** Render the Slow Selling section. Show amber visual treatment. For each product: name, `avgDailySales`, `daysSinceLastSale` formatted (e.g. "Last sold 5 days ago").
+- [x] **ST-06.2.2** Render the Slow Selling section. Show amber visual treatment. For each product: name, `avgDailySales`, `daysSinceLastSale` formatted (e.g. "Last sold 5 days ago").
   - **Expected output:** Slow selling products appear with amber styling.
 
-- [ ] **ST-06.2.3** Render the Dead Stock section. Show red visual treatment. For each product: name, `daysSinceLastSale` (e.g. "47 days without a sale"), `currentStock` (e.g. "12 units in stock").
+- [x] **ST-06.2.3** Render the Dead Stock section. Show red visual treatment. For each product: name, `daysSinceLastSale` (e.g. "47 days without a sale"), `currentStock` (e.g. "12 units in stock").
   - **Expected output:** Dead stock products appear with red styling. Stock quantity shown correctly.
 
-- [ ] **ST-06.2.4** Render the Normal section as collapsed by default. Show "Show all {N} normal products" toggle. Implement expand/collapse with local state. When expanded, show each normal product's name and `avgDailySales`.
+- [x] **ST-06.2.4** Render the Normal section as collapsed by default. Show "Show all {N} normal products" toggle. Implement expand/collapse with local state. When expanded, show each normal product's name and `avgDailySales`.
   - **Expected output:** Normal section is collapsed on load. Toggle expands/collapses. N is the correct count of normal products.
 
-- [ ] **ST-06.2.5** Render the "no categories available" states. Check `categoriesAvailable` flag from API response. Show the correct message based on `insufficientReason`.
+- [x] **ST-06.2.5** Render the "no categories available" states. Check `categoriesAvailable` flag from API response. Show the correct message based on `insufficientReason`.
   - **Expected output:** When the backend returns `categoriesAvailable: false`, the correct message is shown instead of the category sections.
 
 ---

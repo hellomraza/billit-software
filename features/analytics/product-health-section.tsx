@@ -144,8 +144,8 @@ export function ProductHealthSection({
                       <div key={item.productId} className="bg-background border rounded-lg p-3 text-xs space-y-1">
                         <p className="font-semibold text-foreground">{item.productName}</p>
                         <div className="flex items-center justify-between text-muted-foreground pt-1">
-                          <span>Avg: <strong className="text-emerald-700">{(item.avgDailySales || 0).toFixed(1)}/day</strong></span>
-                          <span>Total: <strong>{item.totalSoldInWindow || 0} units</strong></span>
+                          <span>Avg: <strong className="text-emerald-700">{(item.avgDailySales || 0).toFixed(1)} units/day</strong></span>
+                          <span>Total: <strong>{(item.totalSoldInWindow || 0).toLocaleString()} units</strong></span>
                         </div>
                       </div>
                     ))}
@@ -170,8 +170,8 @@ export function ProductHealthSection({
                       <div key={item.productId} className="bg-background border rounded-lg p-3 text-xs space-y-1">
                         <p className="font-semibold text-foreground">{item.productName}</p>
                         <div className="flex items-center justify-between text-muted-foreground pt-1">
-                          <span>Avg: <strong className="text-amber-700">{(item.avgDailySales || 0).toFixed(1)}/day</strong></span>
-                          <span>Last sold: <strong>{item.daysSinceLastSale === 0 ? "Today" : `${item.daysSinceLastSale}d ago`}</strong></span>
+                          <span>Avg: <strong className="text-amber-700">{(item.avgDailySales || 0).toFixed(1)} units/day</strong></span>
+                          <span>Last sold: <strong>{item.daysSinceLastSale === 0 ? "Last sold today" : `Last sold ${item.daysSinceLastSale} days ago`}</strong></span>
                         </div>
                       </div>
                     ))}
@@ -196,8 +196,8 @@ export function ProductHealthSection({
                       <div key={item.productId} className="bg-background border rounded-lg p-3 text-xs space-y-1">
                         <p className="font-semibold text-foreground">{item.productName}</p>
                         <div className="flex items-center justify-between text-muted-foreground pt-1">
-                          <span>Unsold: <strong className="text-red-700">{item.daysSinceLastSale || 0} days</strong></span>
-                          <span>Stock: <strong>{item.currentStock || 0} units</strong></span>
+                          <span>Unsold: <strong className="text-red-700">{item.daysSinceLastSale || 0} days without a sale</strong></span>
+                          <span>Stock: <strong>{item.currentStock || 0} units in stock</strong></span>
                         </div>
                       </div>
                     ))}
@@ -227,7 +227,7 @@ export function ProductHealthSection({
                       <div key={item.productId} className="bg-background border rounded-lg p-3 text-xs flex justify-between items-center">
                         <span className="font-medium text-foreground truncate max-w-[70%]">{item.productName}</span>
                         <span className="text-muted-foreground font-semibold shrink-0">
-                          {(item.avgDailySales || 0).toFixed(1)}/day
+                          {(item.avgDailySales || 0).toFixed(1)} units/day
                         </span>
                       </div>
                     ))}
