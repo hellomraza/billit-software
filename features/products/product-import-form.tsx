@@ -60,7 +60,6 @@ export function ProductImportForm() {
       const { data } = await downloadProductsTemplateAction();
 
       const url = window.URL.createObjectURL(new Blob([data]));
-      console.log("Generated blob URL:", url);
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", "products_import_template.csv");
