@@ -7,14 +7,14 @@ import { CreditCard, Banknote, Smartphone, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PaymentBreakdownItem {
-  method: "CASH" | "CARD" | "UPI";
+  paymentMethod: "CASH" | "CARD" | "UPI";
   invoiceCount: number;
   totalAmount: number;
   percentage: number;
 }
 
 interface PaymentBreakdownData {
-  breakdown: PaymentBreakdownItem[];
+  paymentBreakdown: PaymentBreakdownItem[];
   totalInvoices: number;
 }
 
@@ -47,7 +47,7 @@ const defaultMethods = [
 ];
 
 export function PaymentBreakdown({ paymentBreakdownData }: PaymentBreakdownProps) {
-  const { breakdown } = paymentBreakdownData;
+  const breakdown = paymentBreakdownData.paymentBreakdown;
 
   return (
     <Card className="border border-border">
@@ -59,7 +59,7 @@ export function PaymentBreakdown({ paymentBreakdownData }: PaymentBreakdownProps
         <div className="space-y-4">
           {defaultMethods.map((m) => {
             // Find matched item or default to empty values
-            const matched = breakdown?.find((b) => b.method === m.method) || {
+            const matched = breakdown?.find((b) => b.paymentMethod === m.method) || {
               invoiceCount: 0,
               totalAmount: 0,
               percentage: 0,

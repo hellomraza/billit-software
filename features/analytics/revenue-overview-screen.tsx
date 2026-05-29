@@ -49,14 +49,14 @@ export interface TopProductsData {
 }
 
 export interface PaymentBreakdownItem {
-  method: "CASH" | "CARD" | "UPI";
+  paymentMethod: "CASH" | "CARD" | "UPI";
   invoiceCount: number;
   totalAmount: number;
   percentage: number;
 }
 
 export interface PaymentBreakdownData {
-  breakdown: PaymentBreakdownItem[];
+  paymentBreakdown: PaymentBreakdownItem[];
   totalInvoices: number;
 }
 
@@ -136,7 +136,7 @@ export function RevenueOverviewScreen({
       <div className="flex items-center gap-2 text-xs text-muted-foreground pt-4 border-t border-dashed bg-card/10 p-4 rounded-xl border">
         <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground/60" />
         <span>
-          Showing records from <strong className="text-foreground">{startDate}</strong> to <strong className="text-foreground">{endDate}</strong>. 
+          Showing records from <strong className="text-foreground">{startDate}</strong> to <strong className="text-foreground">{endDate}</strong>.
           Period changes update all sections simultaneously.
         </span>
       </div>
