@@ -38,7 +38,7 @@ export function LowStockBadge() {
   if (count === 0) return null;
 
   return (
-    <SidebarMenuBadge className="bg-destructive text-destructive-foreground font-semibold px-1.5 py-0.5 rounded text-xs select-none">
+    <SidebarMenuBadge className="bg-destructive text-destructive-foreground font-semibold px-1.5 py-0.5 rounded text-xs select-none text-white">
       {count > 99 ? "99+" : count}
     </SidebarMenuBadge>
   );

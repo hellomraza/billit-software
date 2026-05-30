@@ -1,5 +1,6 @@
 import GstToggleButton from "@/app/(dashboard)/components/gst-toggle-button";
 import ToggleSidebarButton from "./sidebar/toggle-sidebar-button";
+import NavButtons from "./nav-buttons";
 
 export function AppTopBar() {
   return (
@@ -11,7 +12,7 @@ export function AppTopBar() {
           BillIt MVP
         </h2>
       </div>
-      <GstToggleButton />
+      <NavButtons />
     </header>
   );
 }
