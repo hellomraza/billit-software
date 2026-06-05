@@ -89,14 +89,13 @@ export function CreateProductForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="deficitThreshold">Low Stock Threshold *</Label>
+            <Label htmlFor="deficitThreshold">Low Stock Threshold</Label>
             <Input
               id="deficitThreshold"
               name="deficitThreshold"
               type="number"
               step="1"
               placeholder="10"
-              required
               disabled={isPending}
             />
             <p className="text-xs text-muted-foreground">
@@ -105,13 +104,15 @@ export function CreateProductForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="openingStock">Opening Stock</Label>
+            <Label htmlFor="openingStock">Opening Stock *</Label>
             <Input
               id="openingStock"
               name="openingStock"
               type="number"
               step="1"
+              min={0}
               placeholder="0"
+              required
               disabled={isPending}
             />
             <p className="text-xs text-muted-foreground">
