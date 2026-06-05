@@ -3,7 +3,7 @@
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { formatIndianCurrency } from "@/lib/utils/format";
-import { Sparkles, PackageOpen } from "lucide-react";
+import { Sparkles, PackageOpen, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TopProductItem {
@@ -18,22 +18,65 @@ interface TopProductItem {
 interface TopProductsData {
   topProducts: TopProductItem[];
   totalNetRevenue: number;
+  totalUnitsSold: number;
 }
 
 interface TopProductsListProps {
   topProductsData: TopProductsData;
+  sortBy: "revenue" | "units_sold";
+  onSortByChange: (value: "revenue" | "units_sold") => void;
+  loading?: boolean;
 }
 
-export function TopProductsList({ topProductsData }: TopProductsListProps) {
+export function TopProductsList({
+  topProductsData,
+  sortBy,
+  onSortByChange,
+  loading = false,
+}: TopProductsListProps) {
   const { topProducts } = topProductsData;
 
   return (
     <Card className="border border-border">
-      <CardHeader className="flex flex-row items-center gap-2 border-b pb-4">
-        <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-        <CardTitle className="text-base font-semibold">Top Performing Products</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+          <CardTitle className="text-base font-semibold">Top Performing Products</CardTitle>
+        </div>
+        <div className="flex rounded-lg border bg-muted/30 p-1 select-none">
+          <button
+            onClick={() => onSortByChange("revenue")}
+            className={cn(
+              "rounded-md px-2.5 py-1 text-xs font-semibold transition-all duration-200 focus-visible:outline-none",
+              sortBy === "revenue"
+                ? "bg-background text-foreground shadow-sm border border-border/40"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            By Revenue
+          </button>
+          <button
+            onClick={() => onSortByChange("units_sold")}
+            className={cn(
+              "rounded-md px-2.5 py-1 text-xs font-semibold transition-all duration-200 focus-visible:outline-none",
+              sortBy === "units_sold"
+                ? "bg-background text-foreground shadow-sm border border-border/40"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            By Units Sold
+          </button>
+        </div>
       </CardHeader>
-      <CardContent className="pt-6">
+      <CardContent className="pt-6 relative">
+        {loading && (
+          <div className="absolute inset-0 bg-background/50 backdrop-blur-[0.5px] flex items-center justify-center rounded-b-xl z-10">
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              <RefreshCw className="h-4 w-4 animate-spin text-primary" />
+              <span>Updating list...</span>
+            </div>
+          </div>
+        )}
         {!topProducts || topProducts.length === 0 ? (
           <div className="h-[250px] flex flex-col items-center justify-center text-center text-muted-foreground border border-dashed rounded-xl p-6">
             <PackageOpen className="h-10 w-10 text-muted-foreground/60 mb-2" />
@@ -69,10 +112,14 @@ export function TopProductsList({ topProductsData }: TopProductsListProps) {
                     </div>
 
                     <div className="text-right shrink-0 flex items-center gap-3">
-                      <span className="text-muted-foreground font-medium">
+                      <span className={cn(
+                        sortBy === "units_sold" ? "font-bold text-foreground" : "text-muted-foreground font-medium"
+                      )}>
                         {product.unitsSold.toLocaleString()} {product.unitsSold === 1 ? "unit" : "units"}
                       </span>
-                      <span className="font-bold text-foreground">
+                      <span className={cn(
+                        sortBy === "revenue" ? "font-bold text-foreground" : "text-muted-foreground font-medium"
+                      )}>
                         {formatIndianCurrency(product.netRevenue)}
                       </span>
                       <span className="text-[10px] text-muted-foreground font-bold bg-muted/60 dark:bg-muted/30 px-1.5 py-0.5 rounded-sm">

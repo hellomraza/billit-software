@@ -38,10 +38,10 @@ export async function getRevenueChart(tenantId: string, period: string, dateFrom
   return data;
 }
 
-export async function getTopProducts(tenantId: string, period: string, dateFrom?: string, dateTo?: string) {
+export async function getTopProducts(tenantId: string, period: string, dateFrom?: string, dateTo?: string, sortBy?: "revenue" | "units_sold") {
   const api = await createServerAxios();
   const { data } = await api.get(`/tenants/${tenantId}/analytics/top-products`, {
-    params: { period, dateFrom, dateTo }
+    params: { period, dateFrom, dateTo, sortBy }
   });
   return data;
 }

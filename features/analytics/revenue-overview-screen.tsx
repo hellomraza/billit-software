@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { PageHeader } from "@/components/shared/page-header";
 import { AnalyticsTabBar } from "./analytics-tab-bar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { RevenueBarChart } from "./revenue-bar-chart";
 import { TopProductsList } from "./top-products-list";
 import { PaymentBreakdown } from "./payment-breakdown";
 import { GstSummarySection } from "./gst-summary-section";
+import { getTopProducts } from "@/lib/api/analytics";
 
 export interface RevenueSummaryData {
   period: string;
@@ -46,6 +47,7 @@ export interface TopProductItem {
 export interface TopProductsData {
   topProducts: TopProductItem[];
   totalNetRevenue: number;
+  totalUnitsSold: number;
 }
 
 export interface PaymentBreakdownItem {
@@ -68,6 +70,7 @@ export interface GstSummaryData {
 }
 
 interface RevenueOverviewScreenProps {
+  tenantId: string;
   revenueSummary: RevenueSummaryData;
   revenueChartData: RevenueChartData;
   topProducts: TopProductsData;
@@ -79,6 +82,7 @@ interface RevenueOverviewScreenProps {
 }
 
 export function RevenueOverviewScreen({
+  tenantId,
   revenueSummary,
   revenueChartData,
   topProducts,
@@ -99,6 +103,40 @@ export function RevenueOverviewScreen({
     avgInvoiceValue,
   } = revenueSummary;
 
+  const [sortBy, setSortBy] = useState<"revenue" | "units_sold">("units_sold");
+  const [topProductsData, setTopProductsData] = useState<TopProductsData>(topProducts);
+  const [loadingTopProducts, setLoadingTopProducts] = useState(false);
+
+  useEffect(() => {
+    if (sortBy === "units_sold") {
+      setTopProductsData(topProducts);
+    }
+  }, [topProducts, sortBy]);
+
+  useEffect(() => {
+    if (sortBy === "units_sold") return;
+
+    let isMounted = true;
+    setLoadingTopProducts(true);
+    getTopProducts(tenantId, activePeriod, dateFrom, dateTo, sortBy)
+      .then((data) => {
+        if (isMounted) {
+          setTopProductsData(data);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch top products:", err);
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoadingTopProducts(false);
+        }
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [sortBy, activePeriod, dateFrom, dateTo, tenantId]);
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -106,7 +144,7 @@ export function RevenueOverviewScreen({
         description="Monitor your inventory health, deficits, and sales analytics."
         breadcrumbs={[
           { label: "Dashboard", href: "/" },
-          { label: "Analytics", href: "/analytics/stock" },
+          { label: "Analytics", href: "/analytics/revenue" },
           { label: "Revenue Overview" },
         ]}
       />
@@ -126,7 +164,12 @@ export function RevenueOverviewScreen({
         aggregation={revenueChartData.aggregation}
       />
 
-      <TopProductsList topProductsData={topProducts} />
+      <TopProductsList
+        topProductsData={topProductsData}
+        sortBy={sortBy}
+        onSortByChange={setSortBy}
+        loading={loadingTopProducts}
+      />
 
       <PaymentBreakdown paymentBreakdownData={paymentBreakdown} />
 

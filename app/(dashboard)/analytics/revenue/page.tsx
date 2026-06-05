@@ -30,13 +30,14 @@ export default async function RevenueOverviewPage({
   ] = await Promise.all([
     getRevenueSummary(tenantId, period, dateFrom, dateTo),
     getRevenueChart(tenantId, period, dateFrom, dateTo),
-    getTopProducts(tenantId, period, dateFrom, dateTo),
+    getTopProducts(tenantId, period, dateFrom, dateTo, "units_sold"),
     getPaymentBreakdown(tenantId, period, dateFrom, dateTo),
     getGstSummary(tenantId, period, dateFrom, dateTo),
   ]);
 
   return (
     <RevenueOverviewScreen
+      tenantId={tenantId}
       revenueSummary={revenueSummary}
       revenueChartData={revenueChartData}
       topProducts={topProducts}
