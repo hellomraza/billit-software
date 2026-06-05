@@ -8,8 +8,8 @@ export function AnalyticsTabBar() {
   const pathname = usePathname();
 
   const tabs = [
-    { label: "Stock Insights", href: "/analytics/stock" },
     { label: "Revenue Overview", href: "/analytics/revenue" },
+    { label: "Stock Insights", href: "/analytics/stock" },
   ];
 
   return (

@@ -12,7 +12,7 @@ export default function RevenueOverviewLoading() {
         description="Monitor your inventory health, deficits, and sales analytics."
         breadcrumbs={[
           { label: "Dashboard", href: "/" },
-          { label: "Analytics", href: "/analytics/stock" },
+          { label: "Analytics", href: "/analytics/revenue" },
           { label: "Revenue Overview" },
         ]}
       />

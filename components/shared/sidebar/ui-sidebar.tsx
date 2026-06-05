@@ -26,7 +26,7 @@ const NAV_ITEMS = [
   { href: "/products", label: "Products", icon: Package2 },
   { href: "/invoices", label: "Invoices", icon: FileText },
   { href: "/deficits", label: "Deficits", icon: AlertTriangle },
-  { href: "/analytics/stock", label: "Analytics", icon: BarChart2 },
+  { href: "/analytics/revenue", label: "Analytics", icon: BarChart2 },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
