@@ -12,6 +12,7 @@ import { TopProductsList } from "./top-products-list";
 import { PaymentBreakdown } from "./payment-breakdown";
 import { GstSummarySection } from "./gst-summary-section";
 import { getTopProducts } from "@/lib/api/analytics";
+import { cn } from "@/lib/utils";
 
 export interface RevenueSummaryData {
   period: string;
@@ -171,9 +172,13 @@ export function RevenueOverviewScreen({
         loading={loadingTopProducts}
       />
 
-      <PaymentBreakdown paymentBreakdownData={paymentBreakdown} />
-
-      <GstSummarySection gstSummary={gstSummary} />
+      <div className={cn(
+        "grid grid-cols-1 gap-6",
+        gstSummary.hasGstData && "lg:grid-cols-2"
+      )}>
+        <PaymentBreakdown paymentBreakdownData={paymentBreakdown} />
+        <GstSummarySection gstSummary={gstSummary} />
+      </div>
 
       {/* Info footer */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground pt-4 border-t border-dashed bg-card/10 p-4 rounded-xl border">
