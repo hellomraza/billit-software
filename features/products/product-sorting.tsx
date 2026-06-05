@@ -39,14 +39,6 @@ const ProductSorting = ({
 
   const getSortIcon = (): JSX.Element => {
     if (!column || isSorted === false) return <ArrowUpDown />;
-    console.log(
-      "Getting sort icon for column:",
-      column,
-      "with sort direction:",
-      isSorted,
-      sortToIconMap[column as keyof typeof sortToIconMap],
-      sortToIconMap[column as keyof typeof sortToIconMap][isSorted],
-    );
 
     const columnIcon =
       sortToIconMap[column as keyof typeof sortToIconMap][isSorted];

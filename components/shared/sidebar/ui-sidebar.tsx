@@ -12,18 +12,21 @@ import {
 import { cn } from "@/lib/utils";
 import {
   AlertTriangle,
+  BarChart2,
   FileText,
   Package2,
   Settings,
   ShoppingCart,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
+import { LowStockBadge } from "./low-stock-badge";
 
 const NAV_ITEMS = [
   { href: "/", label: "Billing", icon: ShoppingCart },
   { href: "/products", label: "Products", icon: Package2 },
   { href: "/invoices", label: "Invoices", icon: FileText },
   { href: "/deficits", label: "Deficits", icon: AlertTriangle },
+  { href: "/analytics/revenue", label: "Analytics", icon: BarChart2 },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -49,7 +52,8 @@ const UiSidebar = () => {
             {NAV_ITEMS.map((item) => {
               const isActive =
                 pathname === item.href ||
-                (item.href !== "/" && pathname.startsWith(item.href));
+                (item.href !== "/" && pathname.startsWith(item.href)) ||
+                (item.href.startsWith("/analytics") && pathname.startsWith("/analytics"));
               return (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
@@ -68,6 +72,7 @@ const UiSidebar = () => {
                     />
                     {item.label}
                   </SidebarMenuButton>
+                  {item.label === "Analytics" && <LowStockBadge />}
                 </SidebarMenuItem>
               );
             })}

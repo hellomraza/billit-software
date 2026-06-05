@@ -30,7 +30,7 @@ interface DiscountHoverCardProps {
   amountClampMessage?: string;
   triggerClassName?: string;
   contentClassName?: string;
-  onValueChange: (discountType: HoverCardTab, discountValue: number) => void;
+  onValueChange?: (discountType: HoverCardTab, discountValue: number) => void;
   onValueCommit: (discountType: HoverCardTab, discountValue: number) => void;
   onRemove: () => void;
 }
@@ -53,7 +53,6 @@ export function DiscountHoverCard({
   amountClampMessage = "Discount capped at total.",
   triggerClassName,
   contentClassName,
-  onValueChange,
   onValueCommit,
   onRemove,
 }: DiscountHoverCardProps) {
@@ -128,20 +127,17 @@ export function DiscountHoverCard({
     const next = Math.max(0, value);
     setPercentageValue(next);
     clearClampMessage();
-    onValueChange("PERCENTAGE", next);
   };
 
   const handleAmountChange = (value: number) => {
     const next = Math.max(0, value);
     setAmountValue(next);
     clearClampMessage();
-    onValueChange("FLAT", next);
   };
 
   const handlePercentageBlur = () => {
     const clamped = Math.min(Math.max(0, percentageValue), 100);
     setPercentageValue(clamped);
-    onValueCommit("PERCENTAGE", clamped);
 
     if (clamped < percentageValue) {
       showClampMessage(percentageClampMessage);
@@ -151,7 +147,6 @@ export function DiscountHoverCard({
   const handleAmountBlur = () => {
     const clamped = Math.min(Math.max(0, amountValue), amountCap);
     setAmountValue(clamped);
-    onValueCommit("FLAT", clamped);
 
     if (clamped < amountValue) {
       showClampMessage(amountClampMessage);
@@ -297,7 +292,6 @@ export function DiscountHoverCard({
                         onClick={() => {
                           setPercentageValue(preset);
                           clearClampMessage();
-                          onValueCommit("PERCENTAGE", preset);
                         }}
                         disabled={isReadOnly}
                       >

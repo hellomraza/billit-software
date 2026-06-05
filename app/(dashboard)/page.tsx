@@ -13,8 +13,8 @@ const page = async () => {
   const latestInvoices = invoicesResponse.data;
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-9rem)] animate-in fade-in duration-500 space-y-4">
-      <div className="animate-in fade-in duration-500 delay-200 h-[calc(100vh-6rem)] min-h-136">
+    <div className="flex flex-col min-h-[calc(100vh-9rem)] animate-in duration-500 space-y-4">
+      <div className="animate-in duration-500 delay-200 h-[calc(100vh-6rem)] min-h-136">
         <BillingShell
           initialProducts={initialProducts}
           tenantSettings={{ currency: "INR" }}

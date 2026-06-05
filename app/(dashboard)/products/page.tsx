@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
-import { ProductTable2 } from "@/features/products/ProductTable2";
+import { ProductTable } from "@/features/products/product-table";
 import { getProducts } from "@/lib/api/products";
 import { ROUTES } from "@/lib/routes";
 import { Download, Plus } from "lucide-react";
@@ -11,7 +11,7 @@ export default async function ProductsPage() {
   const products = productsResponse.data;
 
   return (
-    <div className="p-4 sm:p-8 space-y-6 h-full flex flex-col">
+    <div className="space-y-6 h-full flex flex-col">
       <PageHeader
         title="Products"
         actions={[
@@ -34,9 +34,7 @@ export default async function ProductsPage() {
         ]}
       />
 
-      <div className="flex-1 overflow-auto">
-        <ProductTable2 products={products} />
-      </div>
+      <ProductTable products={products} />
     </div>
   );
 }

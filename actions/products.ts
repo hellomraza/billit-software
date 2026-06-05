@@ -18,16 +18,19 @@ const createProductSchema = z.object({
   gstRate: z.coerce
     .number({ error: "GST rate must be a number" })
     .refine((v) => [0, 5, 12, 18, 28].includes(v), "Select a valid GST rate"),
-  deficitThreshold: z.coerce
-    .number({ error: "Threshold must be a number" })
-    .int("Threshold must be a whole number")
-    .min(1, "Threshold must be at least 1")
-    .default(10),
+  deficitThreshold: z.preprocess(
+    (val) => {
+      if (val === "" || val === null || val === undefined) return 1;
+      const num = Number(val);
+      if (isNaN(num) || num <= 0) return 1;
+      return num;
+    },
+    z.number().int("Threshold must be a whole number").min(1, "Threshold must be at least 1")
+  ),
   openingStock: z.coerce
-    .number({ error: "Opening stock must be a number" })
+    .number({ message: "Opening stock is required" })
     .int("Opening stock must be a whole number")
-    .min(0, "Opening stock cannot be negative")
-    .default(0),
+    .min(0, "Opening stock cannot be negative"),
 });
 
 type CreateProductInput = z.infer<typeof createProductSchema>;

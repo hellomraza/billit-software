@@ -20,7 +20,7 @@ const ProductSearch = ({
     );
   };
   return (
-    <div className="py-2 pl-2">
+    <div className="py-2 pb-4">
       <div className={cn("relative flex items-center w-full max-w-xs")}>
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         <Input

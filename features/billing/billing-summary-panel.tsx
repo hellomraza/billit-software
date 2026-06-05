@@ -212,10 +212,6 @@ export function BillingSummaryPanel({
     setBillDiscountOpen(false);
   };
 
-  const openBillDiscountEditor = () => {
-    setBillDiscountOpen(true);
-  };
-
   useEffect(() => {
     return () => {
       if (billDebounceRef.current) {
@@ -238,23 +234,43 @@ export function BillingSummaryPanel({
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="xs"
-                  onClick={openBillDiscountEditor}
-                  disabled={isReadOnly}
-                  className="h-7 px-2 text-xs"
-                >
-                  Edit
-                </Button>
+                <DiscountHoverCard
+                  open={billDiscountOpen}
+                  onOpenChange={setBillDiscountOpen}
+                  title="Bill discount"
+                  subjectLabel={activeDraft?.tabLabel ?? "Current bill"}
+                  triggerLabel="Edit"
+                  currentType={activeBillDiscountType}
+                  currentValue={activeBillDiscountValue}
+                  amountCap={preDiscountGrandTotal}
+                  currentSummary={activeBillDiscountLabel}
+                  isReadOnly={isReadOnly}
+                  quickPicks={[]}
+                  footerNote="Applies to this bill only"
+                  percentageClampMessage="Discount capped at 100%."
+                  amountClampMessage="Discount capped at bill total."
+                  triggerClassName="h-7 px-2 text-xs border border-transparent hover:bg-muted text-foreground hover:text-foreground font-semibold rounded-md flex items-center justify-center transition-colors bg-transparent"
+                  onValueChange={(
+                    discountType: "PERCENTAGE" | "FLAT",
+                    discountValue: number,
+                  ) => {
+                    commitBillDiscount(discountType, discountValue);
+                  }}
+                  onValueCommit={(
+                    discountType: "PERCENTAGE" | "FLAT",
+                    discountValue: number,
+                  ) => {
+                    commitBillDiscount(discountType, discountValue, true);
+                  }}
+                  onRemove={handleBillDiscountRemove}
+                />
                 <Button
                   type="button"
                   variant="ghost"
                   size="xs"
                   onClick={handleBillDiscountRemove}
                   disabled={isReadOnly}
-                  className="h-7 px-2 text-xs text-rose-600 hover:text-rose-700"
+                  className="h-7 px-2 text-xs text-rose-600 hover:text-rose-700 font-semibold"
                 >
                   Remove
                 </Button>
@@ -291,39 +307,6 @@ export function BillingSummaryPanel({
               onRemove={handleBillDiscountRemove}
             />
           )}
-
-          {billDiscountIsActive ? (
-            <DiscountHoverCard
-              open={billDiscountOpen}
-              onOpenChange={setBillDiscountOpen}
-              title="Bill discount"
-              subjectLabel={activeDraft?.tabLabel ?? "Current bill"}
-              triggerLabel="Edit bill discount"
-              hideTrigger={true}
-              currentType={activeBillDiscountType}
-              currentValue={activeBillDiscountValue}
-              amountCap={preDiscountGrandTotal}
-              currentSummary={activeBillDiscountLabel}
-              isReadOnly={isReadOnly}
-              quickPicks={[]}
-              footerNote="Applies to this bill only"
-              percentageClampMessage="Discount capped at 100%."
-              amountClampMessage="Discount capped at bill total."
-              onValueChange={(
-                discountType: "PERCENTAGE" | "FLAT",
-                discountValue: number,
-              ) => {
-                commitBillDiscount(discountType, discountValue);
-              }}
-              onValueCommit={(
-                discountType: "PERCENTAGE" | "FLAT",
-                discountValue: number,
-              ) => {
-                commitBillDiscount(discountType, discountValue, true);
-              }}
-              onRemove={handleBillDiscountRemove}
-            />
-          ) : null}
         </div>
 
         <Separator />
