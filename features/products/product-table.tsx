@@ -54,8 +54,8 @@ export function ProductTable({ products }: ProductTableProps) {
         columnFilters={columnFilters}
         setColumnFilters={setColumnFilters}
       />
-      <Card>
-        <CardContent>
+      <Card className="py-0">
+        <CardContent className="px-0">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
