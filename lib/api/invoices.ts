@@ -15,6 +15,8 @@ export interface InvoiceFilters {
   gstEnabled?: boolean;
   outletId?: string;
   productId?: string;
+  customerName?: string;
+  customerPhone?: string;
 }
 
 export interface PaginatedInvoices {
@@ -138,6 +140,8 @@ export async function getInvoices(
           }),
           ...(filters.outletId && { outletId: filters.outletId }),
           ...(filters.productId && { productId: filters.productId }),
+          ...(filters.customerName && { customerName: filters.customerName }),
+          ...(filters.customerPhone && { customerPhone: filters.customerPhone }),
         },
       },
     );

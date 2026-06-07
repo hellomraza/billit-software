@@ -49,6 +49,8 @@ export function InvoiceFiltersBar() {
   const dateTo = invoiceFiltersBar.dateTo || "";
   const productId = invoiceFiltersBar.productId || "";
   const invoiceType = invoiceFiltersBar.invoiceType || "";
+  const customerName = invoiceFiltersBar.customerName || "";
+  const customerPhone = invoiceFiltersBar.customerPhone || "";
 
   useEffect(() => {
     setInvoiceFiltersBar({
@@ -59,11 +61,15 @@ export function InvoiceFiltersBar() {
       dateTo: searchParams.get("dateTo") || "",
       productId: searchParams.get("productId") || "",
       invoiceType: searchParams.get("invoiceType") || "",
+      customerName: searchParams.get("customerName") || "",
+      customerPhone: searchParams.get("customerPhone") || "",
     });
   }, [searchParams, setInvoiceFiltersBar]);
 
   const debouncedInvoiceNumber = useDebouncedValue(invoiceNumber, 300);
   const debouncedProductId = useDebouncedValue(productId, 300);
+  const debouncedCustomerName = useDebouncedValue(customerName, 300);
+  const debouncedCustomerPhone = useDebouncedValue(customerPhone, 300);
 
   // Update URL params whenever filters change
   const updateParams = useCallback(
@@ -85,14 +91,34 @@ export function InvoiceFiltersBar() {
     [router, searchParams],
   );
 
-  // Handle debounced changes
-  const handleInvoiceNumberChange = useCallback(() => {
-    updateParams({ invoiceNumber: debouncedInvoiceNumber || undefined });
-  }, [debouncedInvoiceNumber, updateParams]);
+  // Handle debounced changes via useEffect to automatically search
+  useEffect(() => {
+    const currentParam = searchParams.get("invoiceNumber") || "";
+    if (debouncedInvoiceNumber !== currentParam) {
+      updateParams({ invoiceNumber: debouncedInvoiceNumber || undefined });
+    }
+  }, [debouncedInvoiceNumber, updateParams, searchParams]);
 
-  const handleProductIdChange = useCallback(() => {
-    updateParams({ productId: debouncedProductId || undefined });
-  }, [debouncedProductId, updateParams]);
+  useEffect(() => {
+    const currentParam = searchParams.get("productId") || "";
+    if (debouncedProductId !== currentParam) {
+      updateParams({ productId: debouncedProductId || undefined });
+    }
+  }, [debouncedProductId, updateParams, searchParams]);
+
+  useEffect(() => {
+    const currentParam = searchParams.get("customerName") || "";
+    if (debouncedCustomerName !== currentParam) {
+      updateParams({ customerName: debouncedCustomerName || undefined });
+    }
+  }, [debouncedCustomerName, updateParams, searchParams]);
+
+  useEffect(() => {
+    const currentParam = searchParams.get("customerPhone") || "";
+    if (debouncedCustomerPhone !== currentParam) {
+      updateParams({ customerPhone: debouncedCustomerPhone || undefined });
+    }
+  }, [debouncedCustomerPhone, updateParams, searchParams]);
 
   const handlePaymentMethodChange = (value: string | null) => {
     if (!value || value === "ALL") {
@@ -147,11 +173,13 @@ export function InvoiceFiltersBar() {
     dateFrom ||
     dateTo ||
     productId ||
-    invoiceType;
+    invoiceType ||
+    customerName ||
+    customerPhone;
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Invoice Number Search */}
         <div className="space-y-2">
           <Label htmlFor="invoiceNumber">Invoice Number</Label>
@@ -162,7 +190,34 @@ export function InvoiceFiltersBar() {
             onChange={(e) => {
               mergeInvoiceFiltersBar({ invoiceNumber: e.target.value });
             }}
-            onBlur={handleInvoiceNumberChange}
+            className="h-10"
+          />
+        </div>
+
+        {/* Customer Name */}
+        <div className="space-y-2">
+          <Label htmlFor="customerName">Customer Name</Label>
+          <Input
+            id="customerName"
+            placeholder="Search customer name..."
+            value={customerName}
+            onChange={(e) => {
+              mergeInvoiceFiltersBar({ customerName: e.target.value });
+            }}
+            className="h-10"
+          />
+        </div>
+
+        {/* Customer Phone */}
+        <div className="space-y-2">
+          <Label htmlFor="customerPhone">Mobile Number</Label>
+          <Input
+            id="customerPhone"
+            placeholder="Search mobile number..."
+            value={customerPhone}
+            onChange={(e) => {
+              mergeInvoiceFiltersBar({ customerPhone: e.target.value });
+            }}
             className="h-10"
           />
         </div>
@@ -273,7 +328,6 @@ export function InvoiceFiltersBar() {
                 onChange={(e) => {
                   mergeInvoiceFiltersBar({ productId: e.target.value });
                 }}
-                onBlur={handleProductIdChange}
                 className="h-10"
               />
             </div>

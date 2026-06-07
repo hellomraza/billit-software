@@ -15,6 +15,8 @@ export default async function InvoicesPage({
     paymentMethod?: string;
     gstEnabled?: string;
     productId?: string;
+    customerName?: string;
+    customerPhone?: string;
   }>;
 }) {
   const searchParamValues = await searchParams;
@@ -41,6 +43,8 @@ export default async function InvoicesPage({
           ? false
           : undefined,
     productId: searchParamValues.productId,
+    customerName: searchParamValues.customerName,
+    customerPhone: searchParamValues.customerPhone,
   });
 
   return (
