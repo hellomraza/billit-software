@@ -47,7 +47,7 @@ export function InvoiceItemsTable({
                       </span>
                     )}
                   </span>
-                  {item.itemDiscountAmount && item.itemDiscountAmount > 0 && (
+                  {item.itemDiscountAmount && item.itemDiscountAmount > 0 ? (
                     <span className="text-xs text-muted-foreground mt-1">
                       {item.itemDiscountType === "PERCENTAGE" ? (
                         <>
@@ -66,7 +66,7 @@ export function InvoiceItemsTable({
                         </>
                       )}
                     </span>
-                  )}
+                  ) : null}
                 </div>
               </TableCell>
               <TableCell className="text-right tabular-nums text-muted-foreground text-sm">
