@@ -95,7 +95,7 @@ export function InvoiceFiltersBar() {
   }, [debouncedProductId, updateParams]);
 
   const handlePaymentMethodChange = (value: string | null) => {
-    if (!value) {
+    if (!value || value === "ALL") {
       mergeInvoiceFiltersBar({ paymentMethod: "" });
       updateParams({ paymentMethod: undefined });
       return;
@@ -105,7 +105,7 @@ export function InvoiceFiltersBar() {
   };
 
   const handleGstEnabledChange = (value: string | null) => {
-    if (!value) {
+    if (!value || value === "ALL") {
       mergeInvoiceFiltersBar({ gstEnabled: "" });
       updateParams({ gstEnabled: undefined });
       return;
@@ -171,13 +171,14 @@ export function InvoiceFiltersBar() {
         <div className="space-y-2">
           <Label htmlFor="paymentMethod">Payment Method</Label>
           <Select
-            value={paymentMethod}
+            value={paymentMethod || "ALL"}
             onValueChange={handlePaymentMethodChange}
           >
             <SelectTrigger id="paymentMethod" className="h-10">
               <SelectValue placeholder="All methods" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="ALL">All methods</SelectItem>
               {PAYMENT_METHODS.map((method) => (
                 <SelectItem key={method} value={method}>
                   {method}
@@ -190,11 +191,12 @@ export function InvoiceFiltersBar() {
         {/* GST Type */}
         <div className="space-y-2">
           <Label htmlFor="gstEnabled">GST Type</Label>
-          <Select value={gstEnabled} onValueChange={handleGstEnabledChange}>
+          <Select value={gstEnabled || "ALL"} onValueChange={handleGstEnabledChange}>
             <SelectTrigger id="gstEnabled" className="h-10">
               <SelectValue placeholder="All types" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="ALL">All types</SelectItem>
               <SelectItem value="true">GST Invoices</SelectItem>
               <SelectItem value="false">Non-GST Invoices</SelectItem>
             </SelectContent>
