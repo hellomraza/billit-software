@@ -19,6 +19,8 @@ export interface InvoiceFiltersBarState {
   dateTo?: string;
   productId?: string;
   invoiceType?: string;
+  customerName?: string;
+  customerPhone?: string;
 }
 
 export type QuickFilterPill = "today" | "thisWeek" | "thisMonth" | null;
@@ -56,6 +58,8 @@ const EMPTY_FILTERS_BAR: InvoiceFiltersBarState = {
   dateTo: "",
   productId: "",
   invoiceType: "",
+  customerName: "",
+  customerPhone: "",
 };
 
 export const useInvoiceFiltersStore = create<InvoiceFiltersStoreState>()(

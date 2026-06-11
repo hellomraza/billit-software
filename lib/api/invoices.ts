@@ -15,6 +15,8 @@ export interface InvoiceFilters {
   gstEnabled?: boolean;
   outletId?: string;
   productId?: string;
+  customerName?: string;
+  customerPhone?: string;
 }
 
 export interface PaginatedInvoices {
@@ -38,6 +40,11 @@ export type InvoiceListResponse = {
   paymentMethod: PaymentMethod;
   customerName?: string;
   deficitCount: number;
+  originalInvoice?: {
+    id: string;
+    invoiceNumber: string;
+    createdAt: string;
+  };
 };
 
 interface ApiPaginatedResponse {
@@ -59,6 +66,7 @@ function transformInvoice(apiInvoice: InvoiceListResponse): InvoiceListItem {
     subtotal: apiInvoice.subtotal,
     totalGst: apiInvoice.gstTotal,
     grandTotal: apiInvoice.grandTotal,
+    originalInvoice: apiInvoice.originalInvoice,
   };
 }
 
@@ -108,6 +116,7 @@ function transformInvoiceDetail(apiInvoice: GetInvoiceResponse): Invoice {
     billDiscountValue: apiInvoice.billDiscountValue,
     billDiscountAmount: apiInvoice.billDiscountAmount,
     grandTotal: apiInvoice.grandTotal,
+    invoiceType: apiInvoice.invoiceType,
   };
 }
 
@@ -138,6 +147,8 @@ export async function getInvoices(
           }),
           ...(filters.outletId && { outletId: filters.outletId }),
           ...(filters.productId && { productId: filters.productId }),
+          ...(filters.customerName && { customerName: filters.customerName }),
+          ...(filters.customerPhone && { customerPhone: filters.customerPhone }),
         },
       },
     );
@@ -218,6 +229,7 @@ type GetInvoiceResponse = {
     quantity: number;
     currentResolutionStatus: "PENDING" | "RESOLVED";
   }>;
+  invoiceType: "SALE" | "REFUND";
 };
 export async function getInvoice(invoiceId: string): Promise<Invoice> {
   try {

@@ -15,18 +15,20 @@ export default async function InvoicesPage({
     paymentMethod?: string;
     gstEnabled?: string;
     productId?: string;
+    customerName?: string;
+    customerPhone?: string;
   }>;
 }) {
   const searchParamValues = await searchParams;
   const invoicesData = await getInvoices({
     page: searchParamValues.page ? Number(searchParamValues.page) : 1,
-    limit: 20,
+    limit: 10,
     dateFrom: searchParamValues.dateFrom,
     dateTo: searchParamValues.dateTo,
     invoiceNumber: searchParamValues.invoiceNumber,
     invoiceType:
       searchParamValues.invoiceType === "SALE" ||
-      searchParamValues.invoiceType === "REFUND"
+        searchParamValues.invoiceType === "REFUND"
         ? searchParamValues.invoiceType
         : undefined,
     paymentMethod: searchParamValues.paymentMethod as
@@ -41,10 +43,12 @@ export default async function InvoicesPage({
           ? false
           : undefined,
     productId: searchParamValues.productId,
+    customerName: searchParamValues.customerName,
+    customerPhone: searchParamValues.customerPhone,
   });
 
   return (
-    <div className="p-4 sm:p-8 space-y-6 h-full flex flex-col max-w-350 mx-auto">
+    <div className="space-y-6 h-full flex flex-col max-w-350 mx-auto">
       <PageHeader title="Invoices" />
 
       <InvoiceFiltersBar />

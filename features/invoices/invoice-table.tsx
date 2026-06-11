@@ -65,15 +65,31 @@ export function InvoiceTable({
             id: "invoiceNumber",
             header: "Invoice #",
             cell: (row) => (
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-primary tabular-nums">
-                  {row.invoiceNumber}
-                </span>
-                {row.invoiceType === "REFUND" ? (
-                  <Badge className="h-5 border-rose-200 bg-rose-50 text-rose-700">
-                    Refund
-                  </Badge>
-                ) : null}
+              <div className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-primary tabular-nums">
+                    {row.invoiceNumber}
+                  </span>
+                  {row.invoiceType === "REFUND" ? (
+                    <Badge className="h-5 border-rose-200 bg-rose-50 text-rose-700">
+                      Refund
+                    </Badge>
+                  ) : null}
+                </div>
+                {row.invoiceType === "REFUND" && row.originalInvoice && (
+                  <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <span>for</span>
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/invoices/${row.originalInvoice?.id}`);
+                      }}
+                      className="font-medium hover:underline text-rose-600 dark:text-rose-400 tabular-nums cursor-pointer"
+                    >
+                      {row.originalInvoice.invoiceNumber}
+                    </span>
+                  </div>
+                )}
               </div>
             ),
           },
