@@ -40,6 +40,11 @@ export type InvoiceListResponse = {
   paymentMethod: PaymentMethod;
   customerName?: string;
   deficitCount: number;
+  originalInvoice?: {
+    id: string;
+    invoiceNumber: string;
+    createdAt: string;
+  };
 };
 
 interface ApiPaginatedResponse {
@@ -61,6 +66,7 @@ function transformInvoice(apiInvoice: InvoiceListResponse): InvoiceListItem {
     subtotal: apiInvoice.subtotal,
     totalGst: apiInvoice.gstTotal,
     grandTotal: apiInvoice.grandTotal,
+    originalInvoice: apiInvoice.originalInvoice,
   };
 }
 
@@ -110,6 +116,7 @@ function transformInvoiceDetail(apiInvoice: GetInvoiceResponse): Invoice {
     billDiscountValue: apiInvoice.billDiscountValue,
     billDiscountAmount: apiInvoice.billDiscountAmount,
     grandTotal: apiInvoice.grandTotal,
+    invoiceType: apiInvoice.invoiceType,
   };
 }
 
@@ -222,6 +229,7 @@ type GetInvoiceResponse = {
     quantity: number;
     currentResolutionStatus: "PENDING" | "RESOLVED";
   }>;
+  invoiceType: "SALE" | "REFUND";
 };
 export async function getInvoice(invoiceId: string): Promise<Invoice> {
   try {

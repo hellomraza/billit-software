@@ -16,29 +16,6 @@ interface InvoiceDetailPanelProps {
 export function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps) {
   return (
     <div className="space-y-6 invoice-details">
-      {invoice.invoiceType === "REFUND" && invoice.originalInvoice && (
-        <Card className="animate-in fade-in slide-in-from-top duration-500">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm text-muted-foreground uppercase tracking-wider">
-              Refund for
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <Link
-                href={ROUTES.INVOICE_DETAIL(invoice.originalInvoice.id)}
-                className="font-medium text-primary tabular-nums"
-              >
-                {invoice.originalInvoice.invoiceNumber}
-              </Link>
-              <div className="text-sm text-muted-foreground">
-                {formatDateTime(invoice.originalInvoice.createdAt)}
-              </div>
-            </div>
-            <div className="text-sm text-muted-foreground">Refund</div>
-          </CardContent>
-        </Card>
-      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="animate-in fade-in slide-in-from-left duration-500">
           <CardHeader className="pb-3">
@@ -53,6 +30,17 @@ export function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps) {
                 {invoice.invoiceNumber}
               </span>
             </div>
+            {invoice.invoiceType === "REFUND" && invoice.originalInvoice && (
+              <div className="flex justify-between">
+                <span className="text-sm font-medium">Original Invoice</span>
+                <Link
+                  href={ROUTES.INVOICE_DETAIL(invoice.originalInvoice.id)}
+                  className="text-sm font-mono text-rose-600 dark:text-rose-400 font-bold hover:underline"
+                >
+                  {invoice.originalInvoice.invoiceNumber}
+                </Link>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-sm font-medium">Date & Time</span>
               <span className="text-sm text-muted-foreground">
